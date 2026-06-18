@@ -1,0 +1,1611 @@
+{
+  "version": "1.0",
+  "specialties": [
+    {
+      "id": "general-surgery",
+      "nameVn": "Ngoại tổng hợp",
+      "icon": "scissors",
+      "surgeries": [
+        {
+          "id": "appendectomy-laparoscopic",
+          "nameVn": "Cắt ruột thừa nội soi",
+          "nameEn": "Laparoscopic appendectomy",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 45,
+          "durationMax": 90,
+          "urgency": "urgent",
+          "bloodLoss": "low",
+          "painLevel": "moderate",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Nguy cơ dạ dày đầy — cân nhắc RSI nếu phẫu thuật cấp cứu",
+            "Bơm CO₂ ổ bụng làm tăng ETCO₂ và áp lực đường thở — tăng thông khí phút",
+            "Giảm đau đa mô thức sau mổ: paracetamol + NSAID + morphine PCA"
+          ]
+        },
+        {
+          "id": "cholecystectomy-laparoscopic",
+          "nameVn": "Cắt túi mật nội soi",
+          "nameEn": "Laparoscopic cholecystectomy",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "reverse-trendelenburg",
+          "durationMin": 60,
+          "durationMax": 120,
+          "urgency": "elective",
+          "bloodLoss": "minimal",
+          "painLevel": "moderate",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Tư thế đầu cao giúp phẫu trường nhưng giảm hồi lưu tĩnh mạch",
+            "Đau vai phải sau mổ do kích thích cơ hoành bởi CO₂ — giải thích cho bệnh nhân",
+            "Cân nhắc dexamethasone và ondansetron dự phòng PONV"
+          ]
+        },
+        {
+          "id": "inguinal-hernia-repair",
+          "nameVn": "Sửa thoát vị bẹn",
+          "nameEn": "Inguinal hernia repair",
+          "anaesthesiaOptions": ["general", "neuraxial", "regional", "local"],
+          "recommendedAnaesthesia": "neuraxial",
+          "position": "supine",
+          "durationMin": 45,
+          "durationMax": 90,
+          "urgency": "elective",
+          "bloodLoss": "minimal",
+          "painLevel": "mild",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Tê tủy sống T10 đủ cho phẫu thuật mở; gây mê toàn thân cho nội soi",
+            "Bệnh nhân cao tuổi hoặc bệnh nội khoa nặng — ưu tiên gây tê vùng",
+            "Chú ý thoát vị nghẹt: cần RSI và xử lý dạ dày đầy"
+          ]
+        },
+        {
+          "id": "gastrectomy",
+          "nameVn": "Cắt dạ dày",
+          "nameEn": "Gastrectomy (partial/total)",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 180,
+          "durationMax": 360,
+          "urgency": "elective",
+          "bloodLoss": "moderate",
+          "painLevel": "severe",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Đặt catheter ngoài màng cứng ngực (TEA) để giảm đau sau mổ và giảm biến chứng hô hấp",
+            "Theo dõi thân nhiệt và điện giải trong mổ dài",
+            "Nguy cơ hít sặc cao nếu hẹp môn vị — RSI bắt buộc"
+          ]
+        },
+        {
+          "id": "right-hemicolectomy",
+          "nameVn": "Cắt đại tràng phải",
+          "nameEn": "Right hemicolectomy",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 150,
+          "durationMax": 270,
+          "urgency": "elective",
+          "bloodLoss": "moderate",
+          "painLevel": "severe",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Kết hợp gây mê toàn thân + tê ngoài màng cứng (TIVA + TEA) tối ưu giảm đau và phục hồi sớm",
+            "Chuẩn bị truyền máu nếu mất máu dự kiến > 500 mL",
+            "Chương trình ERAS: tránh nhịn ăn kéo dài, hạn chế dịch truyền"
+          ]
+        },
+        {
+          "id": "splenectomy",
+          "nameVn": "Cắt lách",
+          "nameEn": "Splenectomy",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 90,
+          "durationMax": 180,
+          "urgency": "urgent",
+          "bloodLoss": "high",
+          "painLevel": "severe",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Chuẩn bị máu và tiểu cầu trước mổ; lách to có thể chứa 30% thể tích máu",
+            "Nguy cơ chảy máu ẩn từ tĩnh mạch lách — đặt đường truyền lớn và xét áp lực động mạch xâm lấn",
+            "Sau mổ: giảm miễn dịch — hỏi tiêm vaccine phế cầu, não mô cầu, Hib"
+          ]
+        },
+        {
+          "id": "hepatectomy-partial",
+          "nameVn": "Cắt gan bán phần",
+          "nameEn": "Partial hepatectomy",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 180,
+          "durationMax": 420,
+          "urgency": "elective",
+          "bloodLoss": "high",
+          "painLevel": "severe",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Áp lực tĩnh mạch trung tâm thấp (CVP < 5 mmHg) trong thì cắt gan giảm mất máu — hạn chế dịch chủ động",
+            "Nghiệm pháp Pringle (kẹp cuống gan) ảnh hưởng huyết động — cần theo dõi liên tục",
+            "Đánh giá chức năng gan còn lại (Child-Pugh, MELD) và dự trữ thể tích gan trước mổ"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "orthopedic",
+      "nameVn": "Chấn thương chỉnh hình",
+      "icon": "bone",
+      "surgeries": [
+        {
+          "id": "orif-femur",
+          "nameVn": "Kết hợp xương đùi",
+          "nameEn": "ORIF femur fracture",
+          "anaesthesiaOptions": ["general", "neuraxial", "regional"],
+          "recommendedAnaesthesia": "neuraxial",
+          "position": "supine",
+          "durationMin": 90,
+          "durationMax": 180,
+          "urgency": "urgent",
+          "bloodLoss": "moderate",
+          "painLevel": "severe",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Gãy xương đùi gây mất máu ẩn 500-1500 mL vào mô mềm — đánh giá thể tích tuần hoàn trước mổ",
+            "Tê tủy sống hoặc gây mê toàn thân đều chấp nhận; tê giúp bệnh nhân già tỉnh táo sớm hơn",
+            "Nguy cơ thuyên tắc mỡ và huyết khối — phẫu thuật sớm trong 24-48 giờ"
+          ]
+        },
+        {
+          "id": "total-hip-replacement",
+          "nameVn": "Thay khớp háng toàn phần",
+          "nameEn": "Total hip arthroplasty",
+          "anaesthesiaOptions": ["general", "neuraxial", "regional"],
+          "recommendedAnaesthesia": "neuraxial",
+          "position": "lateral",
+          "durationMin": 90,
+          "durationMax": 150,
+          "urgency": "elective",
+          "bloodLoss": "moderate",
+          "painLevel": "severe",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Tê tủy sống giảm mất máu, giảm tỷ lệ huyết khối và PONV so với gây mê toàn thân",
+            "Cement xương có thể gây tụt huyết áp và ngừng tim — sẵn sàng epinephrine",
+            "Chuyển tư thế nằm nghiêng cẩn thận ở bệnh nhân béo phì hoặc cột sống bệnh lý"
+          ]
+        },
+        {
+          "id": "total-knee-replacement",
+          "nameVn": "Thay khớp gối toàn phần",
+          "nameEn": "Total knee arthroplasty",
+          "anaesthesiaOptions": ["general", "neuraxial", "regional"],
+          "recommendedAnaesthesia": "neuraxial",
+          "position": "supine",
+          "durationMin": 90,
+          "durationMax": 150,
+          "urgency": "elective",
+          "bloodLoss": "low",
+          "painLevel": "severe",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Garo chi dưới gây thiếu máu cục bộ — giới hạn thời gian < 2 giờ, theo dõi áp lực garo",
+            "Tê tủy sống kết hợp block thần kinh đùi (FNB) hoặc adductor canal block tối ưu giảm đau sau mổ",
+            "Thả garo tái tưới máu có thể gây tụt huyết áp và thuyên tắc mạch"
+          ]
+        },
+        {
+          "id": "knee-arthroscopy",
+          "nameVn": "Nội soi khớp gối",
+          "nameEn": "Knee arthroscopy",
+          "anaesthesiaOptions": ["general", "neuraxial", "regional", "local"],
+          "recommendedAnaesthesia": "regional",
+          "position": "supine",
+          "durationMin": 30,
+          "durationMax": 90,
+          "urgency": "elective",
+          "bloodLoss": "minimal",
+          "painLevel": "mild",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Block thần kinh đùi hoặc tê tủy sống liều thấp là lựa chọn phù hợp cho ngoại trú",
+            "Bơm nước khớp gối ít ảnh hưởng huyết động nhưng cần kiểm soát nhiệt độ dịch",
+            "Xuất viện trong ngày — đảm bảo giảm đau đủ bằng thuốc uống"
+          ]
+        },
+        {
+          "id": "acl-reconstruction",
+          "nameVn": "Tái tạo dây chằng chéo trước",
+          "nameEn": "ACL reconstruction",
+          "anaesthesiaOptions": ["general", "neuraxial", "regional"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 60,
+          "durationMax": 120,
+          "urgency": "elective",
+          "bloodLoss": "minimal",
+          "painLevel": "moderate",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Block adductor canal hoặc femoral nerve block sau mổ giảm đau hiệu quả mà không yếu tứ đầu",
+            "Phẫu thuật thường ngoại trú — lên kế hoạch giảm đau tại nhà",
+            "Garo đùi trong phẫu thuật — kiểm tra thời gian và áp lực garo"
+          ]
+        },
+        {
+          "id": "below-knee-amputation",
+          "nameVn": "Cắt cụt cẳng chân",
+          "nameEn": "Below-knee amputation",
+          "anaesthesiaOptions": ["general", "neuraxial", "regional"],
+          "recommendedAnaesthesia": "neuraxial",
+          "position": "supine",
+          "durationMin": 60,
+          "durationMax": 120,
+          "urgency": "urgent",
+          "bloodLoss": "moderate",
+          "painLevel": "severe",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Bệnh nhân thường có đái tháo đường, bệnh mạch máu ngoại vi — đánh giá tim mạch kỹ",
+            "Tê tủy sống hoặc gây mê toàn thân; cân nhắc catheter thần kinh hông to liên tục giảm đau chi ma sau mổ",
+            "Hội chẩn tâm lý và phục hồi chức năng trước mổ nếu có thể"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cardiac",
+      "nameVn": "Tim mạch",
+      "icon": "heart",
+      "surgeries": [
+        {
+          "id": "cabg",
+          "nameVn": "Bắc cầu động mạch vành",
+          "nameEn": "Coronary artery bypass grafting (CABG)",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 240,
+          "durationMax": 360,
+          "urgency": "urgent",
+          "bloodLoss": "high",
+          "painLevel": "severe",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Gây mê tim mạch chuyên sâu: dùng fentanyl/sufentanil liều cao, theo dõi TOE trong mổ",
+            "Tuần hoàn ngoài cơ thể (CPB): heparin hóa toàn thân, bảo vệ cơ tim bằng dung dịch liệt tim",
+            "Theo dõi áp lực ĐM xâm lấn và CVP/PA catheter; cai máy tuần hoàn ngoài cơ thể thận trọng"
+          ]
+        },
+        {
+          "id": "valve-replacement",
+          "nameVn": "Thay van tim",
+          "nameEn": "Cardiac valve replacement",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 240,
+          "durationMax": 420,
+          "urgency": "elective",
+          "bloodLoss": "high",
+          "painLevel": "severe",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "TOE bắt buộc để đánh giá van trước và sau thay, kiểm tra dò van",
+            "Heparin toàn thân trong CPB; trung hòa bằng protamine sau khi cai máy",
+            "Cai máy CPB thận trọng: điều chỉnh tiền tải/hậu tải tùy sinh lý van mới"
+          ]
+        },
+        {
+          "id": "valve-repair",
+          "nameVn": "Sửa van tim",
+          "nameEn": "Cardiac valve repair",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 180,
+          "durationMax": 360,
+          "urgency": "elective",
+          "bloodLoss": "moderate",
+          "painLevel": "severe",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "TOE trong mổ đánh giá kết quả sửa van ngay lập tức — bắt buộc với tất cả các ca sửa van",
+            "Sửa van 2 lá: chú ý nguy cơ tắc nghẽn đường ra thất trái (SAM) sau sửa",
+            "Thời gian CPB kéo dài ảnh hưởng đông máu — chuẩn bị FFP, tiểu cầu, cryoprecipitate"
+          ]
+        },
+        {
+          "id": "aortic-aneurysm-repair",
+          "nameVn": "Phẫu thuật phình động mạch chủ",
+          "nameEn": "Aortic aneurysm repair (open)",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 240,
+          "durationMax": 480,
+          "urgency": "urgent",
+          "bloodLoss": "massive",
+          "painLevel": "severe",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Kẹp ĐM chủ gây tăng hậu tải đột ngột — chuẩn bị vasodilator (nitroglycerin, nitroprusside)",
+            "Thả kẹp ĐM chủ gây tụt huyết áp và tái tưới máu — bù dịch trước và chuẩn bị vận mạch",
+            "Nguy cơ thiếu máu tủy sống nếu kẹp trên ĐM thận — xét dẫn lưu DNT hoặc MEP monitoring"
+          ]
+        },
+        {
+          "id": "carotid-endarterectomy",
+          "nameVn": "Bóc nội mạc động mạch cảnh",
+          "nameEn": "Carotid endarterectomy",
+          "anaesthesiaOptions": ["general", "regional"],
+          "recommendedAnaesthesia": "regional",
+          "position": "supine",
+          "durationMin": 90,
+          "durationMax": 180,
+          "urgency": "urgent",
+          "bloodLoss": "low",
+          "painLevel": "moderate",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Tê vùng cổ (cervical plexus block) cho phép đánh giá thần kinh trong mổ — phát hiện thiếu máu não sớm",
+            "Duy trì huyết áp bình thường hoặc cao nhẹ trong thì kẹp ĐM cảnh để tưới máu bàng hệ",
+            "Heparin toàn thân khi kẹp mạch; theo dõi nhịp tim và huyết áp liên tục"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "neurosurgery",
+      "nameVn": "Phẫu thuật thần kinh",
+      "icon": "brain",
+      "surgeries": [
+        {
+          "id": "brain-tumor-craniotomy",
+          "nameVn": "Mổ u não mở sọ",
+          "nameEn": "Craniotomy for brain tumor",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 180,
+          "durationMax": 480,
+          "urgency": "elective",
+          "bloodLoss": "moderate",
+          "painLevel": "moderate",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Tránh tăng áp nội sọ: đầu cao 15-30°, PaCO₂ 35-40 mmHg, mannitol hoặc NaCl 3% nếu cần",
+            "Tránh N₂O (tăng thể tích khí nội sọ); ưu tiên TIVA với propofol/remifentanil",
+            "Hồi tỉnh êm dịu, không ho: dùng dexmedetomidine hoặc lidocaine IV trước rút ống"
+          ]
+        },
+        {
+          "id": "cerebral-aneurysm-clipping",
+          "nameVn": "Kẹp túi phình não",
+          "nameEn": "Cerebral aneurysm clipping",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 240,
+          "durationMax": 480,
+          "urgency": "urgent",
+          "bloodLoss": "moderate",
+          "painLevel": "moderate",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Tránh tăng đột ngột huyết áp trong dẫn đầu (nguy cơ vỡ túi phình lại)",
+            "Kỹ thuật tạm kẹp ĐM nuôi: bảo vệ não bằng etomidate hoặc thiopental burst suppression",
+            "Vasospasm sau SAH: duy trì thể tích tuần hoàn đủ, tránh thiếu máu não (HHH therapy post-op)"
+          ]
+        },
+        {
+          "id": "epidural-hematoma-evacuation",
+          "nameVn": "Mổ lấy máu tụ ngoài màng cứng",
+          "nameEn": "Epidural hematoma evacuation",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 60,
+          "durationMax": 120,
+          "urgency": "emergency",
+          "bloodLoss": "moderate",
+          "painLevel": "moderate",
+          "airwayDifficulty": "difficult",
+          "considerations": [
+            "RSI bắt buộc: bệnh nhân có thể có dạ dày đầy và rối loạn ý thức",
+            "Tránh ketamine (tăng áp nội sọ); dùng propofol hoặc thiopental để dẫn đầu",
+            "Hồi phục ý thức sau mổ là chỉ dấu tiên lượng — kế hoạch rút ống thở sớm nếu GCS > 8"
+          ]
+        },
+        {
+          "id": "decompressive-craniectomy",
+          "nameVn": "Mở sọ giải áp",
+          "nameEn": "Decompressive craniectomy",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 90,
+          "durationMax": 180,
+          "urgency": "emergency",
+          "bloodLoss": "moderate",
+          "painLevel": "moderate",
+          "airwayDifficulty": "difficult",
+          "considerations": [
+            "Phẫu thuật cấp cứu phù não nặng — tối ưu ICP trước mổ bằng manitol, NaCl ưu trương, đầu cao",
+            "Tránh hạ huyết áp: áp lực tưới máu não (CPP) ≥ 60 mmHg",
+            "Bệnh nhân thường đã đặt NKQ từ ICU — kiểm tra vị trí ống và cố định trước khi chuyển phòng mổ"
+          ]
+        },
+        {
+          "id": "lumbar-disc-surgery",
+          "nameVn": "Mổ thoát vị đĩa đệm thắt lưng",
+          "nameEn": "Lumbar disc surgery (microdiscectomy)",
+          "anaesthesiaOptions": ["general", "neuraxial"],
+          "recommendedAnaesthesia": "general",
+          "position": "prone",
+          "durationMin": 60,
+          "durationMax": 150,
+          "urgency": "elective",
+          "bloodLoss": "low",
+          "painLevel": "moderate",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Tư thế nằm sấp: đảm bảo bụng tự do (giảm áp lực TM đám rối cột sống, giảm mất máu)",
+            "Bảo vệ mắt và vùng tỳ đè — kiểm tra sau khi xoay tư thế",
+            "Monitoring điện thần kinh (SSEP/MEP) nếu có nguy cơ tổn thương rễ thần kinh"
+          ]
+        },
+        {
+          "id": "spinal-fixation",
+          "nameVn": "Cố định cột sống",
+          "nameEn": "Spinal fixation (posterior)",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "prone",
+          "durationMin": 120,
+          "durationMax": 360,
+          "urgency": "elective",
+          "bloodLoss": "moderate",
+          "painLevel": "severe",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Tư thế nằm sấp kéo dài: nguy cơ phù mặt, mù sau mổ (POVL) — duy trì huyết áp và Hb đủ",
+            "Xét dùng cell saver nếu dự kiến mất máu > 500 mL; hạn chế truyền máu dị loại",
+            "Neuromonitoring (MEP/SSEP) quan trọng trong phẫu thuật gần tủy sống"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "thoracic",
+      "nameVn": "Lồng ngực",
+      "icon": "lungs",
+      "surgeries": [
+        {
+          "id": "lobectomy",
+          "nameVn": "Cắt thùy phổi",
+          "nameEn": "Pulmonary lobectomy",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "lateral",
+          "durationMin": 150,
+          "durationMax": 300,
+          "urgency": "elective",
+          "bloodLoss": "moderate",
+          "painLevel": "severe",
+          "airwayDifficulty": "secured",
+          "considerations": [
+            "Đặt ống nội khí quản hai nòng (DLT) hoặc blocker phế quản để thông khí một phổi (OLV)",
+            "OLV gây giảm oxy máu: PEEP phổi phụ thuộc + FiO₂ tăng + tuyển mộ phế nang định kỳ",
+            "Đặt catheter ngoài màng cứng ngực trước mổ để kiểm soát đau sau mổ và hỗ trợ tập thở"
+          ]
+        },
+        {
+          "id": "pneumonectomy",
+          "nameVn": "Cắt toàn bộ phổi",
+          "nameEn": "Pneumonectomy",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "lateral",
+          "durationMin": 180,
+          "durationMax": 360,
+          "urgency": "elective",
+          "bloodLoss": "high",
+          "painLevel": "severe",
+          "airwayDifficulty": "secured",
+          "considerations": [
+            "Phổi còn lại phải gánh toàn bộ trao đổi khí — hạn chế dịch truyền phòng phù phổi sau mổ",
+            "Sau cắt phổi: tim dịch chuyển sang bên kia — nguy cơ xoắn tim, tụt huyết áp đột ngột",
+            "Theo dõi áp lực ĐM phổi nếu chức năng tim phổi kém"
+          ]
+        },
+        {
+          "id": "vats-procedure",
+          "nameVn": "Phẫu thuật lồng ngực nội soi (VATS)",
+          "nameEn": "Video-assisted thoracoscopic surgery (VATS)",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "lateral",
+          "durationMin": 90,
+          "durationMax": 240,
+          "urgency": "elective",
+          "bloodLoss": "low",
+          "painLevel": "moderate",
+          "airwayDifficulty": "secured",
+          "considerations": [
+            "OLV cần thiết — ưu tiên DLT hoặc Arndt blocker tùy giải phẫu đường thở",
+            "Ít sang chấn hơn mổ mở — thời gian hồi phục ngắn hơn, tỷ lệ biến chứng hô hấp thấp hơn",
+            "Cân nhắc chuyển mổ mở nếu chảy máu không kiểm soát được hoặc dính nặng"
+          ]
+        },
+        {
+          "id": "pneumothorax-drainage",
+          "nameVn": "Mổ tràn khí màng phổi",
+          "nameEn": "Pneumothorax surgery / pleurodesis",
+          "anaesthesiaOptions": ["general", "regional"],
+          "recommendedAnaesthesia": "general",
+          "position": "lateral",
+          "durationMin": 60,
+          "durationMax": 120,
+          "urgency": "urgent",
+          "bloodLoss": "minimal",
+          "painLevel": "moderate",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Tràn khí áp lực (tension pneumothorax): dẫn lưu khẩn trước khi gây mê nếu có",
+            "Tránh N₂O: làm tăng thể tích khí tràn màng phổi",
+            "Thở máy áp lực thấp tránh vỡ bóng khí phổi trong mổ"
+          ]
+        },
+        {
+          "id": "mediastinal-surgery",
+          "nameVn": "Phẫu thuật trung thất",
+          "nameEn": "Mediastinal mass resection",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 120,
+          "durationMax": 300,
+          "urgency": "elective",
+          "bloodLoss": "moderate",
+          "painLevel": "severe",
+          "airwayDifficulty": "difficult",
+          "considerations": [
+            "Khối trung thất trước lớn: nguy cơ xẹp đường thở khi mất trương lực cơ — khám tư thế đứng và nằm",
+            "Cân nhắc gây mê thở tự nhiên với ketamine hoặc dexmedetomidine cho khối chèn ép đường thở nặng",
+            "Hội chẩn phẫu thuật lồng ngực và gây mê chuyên sâu; chuẩn bị máy ECMO nếu cần"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "urology",
+      "nameVn": "Tiết niệu",
+      "icon": "kidney",
+      "surgeries": [
+        {
+          "id": "radical-prostatectomy",
+          "nameVn": "Cắt tuyến tiền liệt tận gốc",
+          "nameEn": "Radical prostatectomy (laparoscopic/robotic)",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "trendelenburg",
+          "durationMin": 180,
+          "durationMax": 360,
+          "urgency": "elective",
+          "bloodLoss": "moderate",
+          "painLevel": "moderate",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Tư thế Trendelenburg dốc + bơm CO₂: tăng áp lực nội sọ, giảm dung tích phổi — theo dõi chặt",
+            "Thời gian mổ robot kéo dài — nguy cơ phù mặt, mắt và tổn thương thần kinh do tư thế",
+            "Hạn chế dịch truyền: phẫu trường cần khô ráo; có thể cần lợi tiểu nếu phù nặng"
+          ]
+        },
+        {
+          "id": "nephrectomy",
+          "nameVn": "Cắt thận",
+          "nameEn": "Nephrectomy",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "lateral",
+          "durationMin": 120,
+          "durationMax": 240,
+          "urgency": "elective",
+          "bloodLoss": "moderate",
+          "painLevel": "severe",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Tư thế nằm nghiêng flexed: tránh chèn ép mạch máu nách và thần kinh đám rối cánh tay",
+            "Kiểm tra chức năng thận còn lại trước mổ; điều chỉnh thuốc thải qua thận",
+            "Đặt sonde Foley theo dõi nước tiểu trong mổ — chỉ dấu tưới máu thận bên còn lại"
+          ]
+        },
+        {
+          "id": "pcnl",
+          "nameVn": "Tán sỏi thận qua da",
+          "nameEn": "Percutaneous nephrolithotomy (PCNL)",
+          "anaesthesiaOptions": ["general", "neuraxial"],
+          "recommendedAnaesthesia": "general",
+          "position": "prone",
+          "durationMin": 90,
+          "durationMax": 180,
+          "urgency": "elective",
+          "bloodLoss": "low",
+          "painLevel": "moderate",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Tư thế nằm sấp: bảo vệ mắt, đường thở, điểm tỳ đè; đảm bảo bụng tự do",
+            "Dịch tưới rửa hấp thu vào tuần hoàn gây hạ natri và quá tải — theo dõi điện giải",
+            "Nguy cơ chảy máu từ tĩnh mạch thận — chuẩn bị dừng và phẫu thuật can thiệp"
+          ]
+        },
+        {
+          "id": "turp",
+          "nameVn": "Cắt đốt nội soi tuyến tiền liệt",
+          "nameEn": "Transurethral resection of prostate (TURP)",
+          "anaesthesiaOptions": ["neuraxial", "general"],
+          "recommendedAnaesthesia": "neuraxial",
+          "position": "lithotomy",
+          "durationMin": 60,
+          "durationMax": 120,
+          "urgency": "elective",
+          "bloodLoss": "low",
+          "painLevel": "mild",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Hội chứng TURP: hấp thu dịch tưới glycine gây hạ natri và quá tải tuần hoàn — theo dõi tri giác (ưu điểm tê tủy sống)",
+            "Tê tủy sống T10 đủ; bệnh nhân tỉnh giúp phát hiện sớm triệu chứng ngộ độc nước",
+            "Bệnh nhân thường cao tuổi, nhiều bệnh đi kèm — đánh giá toàn diện tim phổi trước mổ"
+          ]
+        },
+        {
+          "id": "radical-cystectomy",
+          "nameVn": "Cắt bàng quang tận gốc",
+          "nameEn": "Radical cystectomy",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 300,
+          "durationMax": 480,
+          "urgency": "elective",
+          "bloodLoss": "high",
+          "painLevel": "severe",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Phẫu thuật dài, mất máu nhiều — đặt đường động mạch xâm lấn và CVP từ đầu",
+            "Tạo hình bàng quang hoặc hồi tràng dẫn nước tiểu: điều chỉnh điện giải sau mổ",
+            "Gây tê ngoài màng cứng kết hợp gây mê toàn thân tối ưu giảm đau và phục hồi sớm"
+          ]
+        },
+        {
+          "id": "ureteroscopy",
+          "nameVn": "Nội soi niệu quản tán sỏi",
+          "nameEn": "Ureteroscopy with lithotripsy",
+          "anaesthesiaOptions": ["general", "neuraxial"],
+          "recommendedAnaesthesia": "neuraxial",
+          "position": "lithotomy",
+          "durationMin": 45,
+          "durationMax": 90,
+          "urgency": "elective",
+          "bloodLoss": "minimal",
+          "painLevel": "mild",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Tê tủy sống liều thấp hoặc tê ngoài màng cứng phù hợp cho thủ thuật ngắn",
+            "Tư thế sản khoa: nguy cơ tổn thương thần kinh đám rối thắt lưng cùng — đặt đúng tư thế",
+            "Dùng dịch tưới rửa áp lực thấp để hạn chế nguy cơ nhiễm khuẩn huyết từ đường tiết niệu"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gynecology",
+      "nameVn": "Phụ khoa",
+      "icon": "female",
+      "surgeries": [
+        {
+          "id": "hysterectomy-abdominal",
+          "nameVn": "Cắt tử cung qua bụng",
+          "nameEn": "Abdominal hysterectomy",
+          "anaesthesiaOptions": ["general", "neuraxial"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 90,
+          "durationMax": 180,
+          "urgency": "elective",
+          "bloodLoss": "moderate",
+          "painLevel": "severe",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Kết hợp gây tê ngoài màng cứng để giảm đau sau mổ và giảm nhu cầu opioid",
+            "Đặt sonde Foley ngay khi vào mổ theo yêu cầu phẫu thuật viên",
+            "Theo dõi mất máu kỹ; chuẩn bị máu nếu có myoma lớn hoặc dính"
+          ]
+        },
+        {
+          "id": "ovarian-cystectomy",
+          "nameVn": "Cắt u nang buồng trứng",
+          "nameEn": "Ovarian cystectomy (laparoscopic)",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "trendelenburg",
+          "durationMin": 60,
+          "durationMax": 120,
+          "urgency": "elective",
+          "bloodLoss": "minimal",
+          "painLevel": "moderate",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Tư thế Trendelenburg và bơm CO₂: ảnh hưởng hô hấp và tuần hoàn — theo dõi liên tục",
+            "U nang lớn: tránh vỡ u khi trocar — thảo luận với phẫu thuật viên kế hoạch",
+            "Dự phòng PONV: phụ nữ trẻ + opioid + phẫu thuật nội soi = nguy cơ cao"
+          ]
+        },
+        {
+          "id": "laparoscopic-gynecology",
+          "nameVn": "Phẫu thuật phụ khoa nội soi",
+          "nameEn": "Laparoscopic gynecologic surgery (general)",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "trendelenburg",
+          "durationMin": 60,
+          "durationMax": 180,
+          "urgency": "elective",
+          "bloodLoss": "minimal",
+          "painLevel": "moderate",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Dùng LMA nếu phẫu thuật ngắn và nguy cơ hít thấp; NKQ nếu béo phì hoặc dạ dày đầy",
+            "Thông khí kiểm soát áp lực (PCV) tránh barotrauma trong khi bơm CO₂",
+            "Đau vai sau mổ do CO₂ — giải thích và điều trị bằng NSAIDs"
+          ]
+        },
+        {
+          "id": "hysteroscopy",
+          "nameVn": "Nội soi tử cung",
+          "nameEn": "Hysteroscopy",
+          "anaesthesiaOptions": ["general", "neuraxial", "mac"],
+          "recommendedAnaesthesia": "general",
+          "position": "lithotomy",
+          "durationMin": 20,
+          "durationMax": 60,
+          "urgency": "elective",
+          "bloodLoss": "minimal",
+          "painLevel": "mild",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Hấp thu dịch tưới (glycine/sorbitol) nguy cơ hạ natri máu — theo dõi lượng dịch cân bằng",
+            "LMA hoặc gây mê tĩnh mạch ngắn (propofol TCI) phù hợp",
+            "Phản xạ mạch chậm do kéo cổ tử cung — sẵn sàng atropine"
+          ]
+        },
+        {
+          "id": "tubal-ligation",
+          "nameVn": "Triệt sản ống dẫn trứng",
+          "nameEn": "Tubal ligation",
+          "anaesthesiaOptions": ["general", "neuraxial"],
+          "recommendedAnaesthesia": "neuraxial",
+          "position": "trendelenburg",
+          "durationMin": 30,
+          "durationMax": 60,
+          "urgency": "elective",
+          "bloodLoss": "minimal",
+          "painLevel": "mild",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Tê tủy sống T4 đủ khi mổ mở; gây mê toàn thân nếu nội soi",
+            "Thủ thuật ngắn — chú ý thời gian rút kim tủy sống và mức tê",
+            "Thường thực hiện sau sinh: chú ý sinh lý sản phụ sau sinh (Hb, đông máu)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "obstetrics",
+      "nameVn": "Sản khoa",
+      "icon": "baby",
+      "surgeries": [
+        {
+          "id": "elective-cesarean",
+          "nameVn": "Mổ lấy thai chương trình",
+          "nameEn": "Elective cesarean section",
+          "anaesthesiaOptions": ["neuraxial", "general"],
+          "recommendedAnaesthesia": "neuraxial",
+          "position": "supine",
+          "durationMin": 45,
+          "durationMax": 90,
+          "urgency": "elective",
+          "bloodLoss": "moderate",
+          "painLevel": "moderate",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Tê tủy sống là tiêu chuẩn vàng: bupivacaine 0.5% nặng + fentanyl/morphine tủy sống",
+            "Hạ huyết áp mẹ sau tê tủy sống: nằm nghiêng trái, vasopressor (phenylephrine ưu tiên), bù dịch đồng tốc",
+            "Chuẩn bị gây mê toàn thân (RSI) nếu tê thất bại hoặc cấp cứu mẹ"
+          ]
+        },
+        {
+          "id": "emergency-cesarean",
+          "nameVn": "Mổ lấy thai cấp cứu",
+          "nameEn": "Emergency cesarean section",
+          "anaesthesiaOptions": ["neuraxial", "general"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 30,
+          "durationMax": 60,
+          "urgency": "emergency",
+          "bloodLoss": "high",
+          "painLevel": "moderate",
+          "airwayDifficulty": "difficult",
+          "considerations": [
+            "RSI bắt buộc: nguy cơ hít sặc cao (dạ dày đầy, tăng áp ổ bụng)",
+            "Thai suy cấp hoặc nhau bong non: cân nhắc gây mê toàn thân nhanh để đẩy nhanh thời gian rạch da",
+            "Đường thở sản phụ có thể khó: phù niêm mạc, vú to — chuẩn bị thiết bị đường thở khó"
+          ]
+        },
+        {
+          "id": "ectopic-pregnancy",
+          "nameVn": "Thai ngoài tử cung vỡ",
+          "nameEn": "Ruptured ectopic pregnancy",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 60,
+          "durationMax": 120,
+          "urgency": "emergency",
+          "bloodLoss": "massive",
+          "painLevel": "severe",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Sốc mất máu: hồi sức đồng thời với phẫu thuật — kích hoạt quy trình truyền máu khẩn cấp",
+            "RSI nhanh với ketamine (bảo tồn huyết động) nếu huyết áp thấp",
+            "Cell saver và truyền máu tỷ lệ 1:1:1 (HC:FFP:tiểu cầu) nếu mất máu ồ ạt"
+          ]
+        },
+        {
+          "id": "retained-placenta",
+          "nameVn": "Bóc nhau nhân tạo",
+          "nameEn": "Manual removal of placenta",
+          "anaesthesiaOptions": ["neuraxial", "general"],
+          "recommendedAnaesthesia": "neuraxial",
+          "position": "lithotomy",
+          "durationMin": 20,
+          "durationMax": 45,
+          "urgency": "urgent",
+          "bloodLoss": "moderate",
+          "painLevel": "severe",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Đau nhiều — gây tê tủy sống hoặc tê ngoài màng cứng bổ sung nếu đã có catheter từ sinh thường",
+            "Theo dõi mất máu: băng huyết sau sinh có thể diễn tiến nhanh",
+            "Oxytocin IV liên tục sau bóc nhau để co hồi tử cung"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ent",
+      "nameVn": "Tai mũi họng",
+      "icon": "ear",
+      "surgeries": [
+        {
+          "id": "tonsillectomy",
+          "nameVn": "Cắt amidan",
+          "nameEn": "Tonsillectomy",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 30,
+          "durationMax": 60,
+          "urgency": "elective",
+          "bloodLoss": "low",
+          "painLevel": "moderate",
+          "airwayDifficulty": "shared",
+          "considerations": [
+            "Đường thở chia sẻ với phẫu thuật viên — dùng NKQ cuff hoặc RAE tube; bảo vệ mắt",
+            "Nguy cơ chảy máu sau mổ (trong 10 ngày đầu) — hướng dẫn bệnh nhân dấu hiệu cần tái khám ngay",
+            "Trẻ có OSA nặng: cân nhắc theo dõi qua đêm sau mổ"
+          ]
+        },
+        {
+          "id": "adenoidectomy",
+          "nameVn": "Nạo VA",
+          "nameEn": "Adenoidectomy",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 20,
+          "durationMax": 45,
+          "urgency": "elective",
+          "bloodLoss": "minimal",
+          "painLevel": "mild",
+          "airwayDifficulty": "shared",
+          "considerations": [
+            "Thường gặp ở trẻ em — điều chỉnh liều thuốc theo cân nặng",
+            "Hít máu và mô vào đường thở là nguy cơ chính — đặt gạc họng và đảm bảo hút sạch trước rút ống",
+            "Phục hồi nhanh — kế hoạch xuất viện trong ngày nếu không biến chứng"
+          ]
+        },
+        {
+          "id": "fess",
+          "nameVn": "Nội soi xoang chức năng",
+          "nameEn": "Functional endoscopic sinus surgery (FESS)",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "reverse-trendelenburg",
+          "durationMin": 60,
+          "durationMax": 120,
+          "urgency": "elective",
+          "bloodLoss": "low",
+          "painLevel": "mild",
+          "airwayDifficulty": "shared",
+          "considerations": [
+            "Kiểm soát huyết áp tốt (MAP 60-65 mmHg) giảm chảy máu trường mổ — tê ngoài màng cứng hoặc remifentanil",
+            "Gạc mũi sau mổ: theo dõi chảy máu xuống họng — hút sạch trước rút ống",
+            "Tránh N₂O: nguy cơ tràn khí vào xoang bướm, vào mắt nếu phẫu thuật gần ổ mắt"
+          ]
+        },
+        {
+          "id": "laryngoscopy-microlaryngeal",
+          "nameVn": "Nội soi thanh quản trực tiếp vi phẫu",
+          "nameEn": "Microlaryngoscopy",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 30,
+          "durationMax": 90,
+          "urgency": "elective",
+          "bloodLoss": "minimal",
+          "painLevel": "mild",
+          "airwayDifficulty": "shared",
+          "considerations": [
+            "Đường thở chia sẻ: dùng NKQ siêu nhỏ (Laser tube 4.0) hoặc jet ventilation tùy kỹ thuật",
+            "Nguy cơ cháy đường thở nếu dùng laser — hạn chế FiO₂ < 0.3, dùng NKQ laser-safe",
+            "Hồi tỉnh êm dịu tránh ho mạnh gây phù thanh quản"
+          ]
+        },
+        {
+          "id": "thyroidectomy",
+          "nameVn": "Cắt tuyến giáp",
+          "nameEn": "Thyroidectomy (total/partial)",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 90,
+          "durationMax": 180,
+          "urgency": "elective",
+          "bloodLoss": "low",
+          "painLevel": "moderate",
+          "airwayDifficulty": "difficult",
+          "considerations": [
+            "Bướu cổ lớn hoặc xâm lấn khí quản: đánh giá CT cổ, chuẩn bị đặt NKQ thức tỉnh hoặc nội soi sợi quang",
+            "Monitoring thần kinh thanh quản quặt ngược (NIM EMG tube) bắt buộc nếu phẫu thuật viên yêu cầu",
+            "Sau mổ: nguy cơ hạ calci máu và tổn thương thần kinh quặt ngược — kiểm tra giọng nói và calci huyết thanh"
+          ]
+        },
+        {
+          "id": "parotidectomy",
+          "nameVn": "Cắt tuyến mang tai",
+          "nameEn": "Parotidectomy",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 120,
+          "durationMax": 240,
+          "urgency": "elective",
+          "bloodLoss": "low",
+          "painLevel": "moderate",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Tránh dùng thuốc giãn cơ hoặc dùng liều thấp ngắn — phẫu thuật viên cần monitoring thần kinh mặt (EMG)",
+            "NKQ RAE miệng hoặc đặt về phía đối diện giúp phẫu trường thông thoáng",
+            "Hồi tỉnh êm dịu, tránh Valsalva làm tăng nguy cơ chảy máu vào hố mổ"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ophthalmology",
+      "nameVn": "Nhãn khoa",
+      "icon": "eye",
+      "surgeries": [
+        {
+          "id": "cataract-phaco",
+          "nameVn": "Phẫu thuật phaco đục thủy tinh thể",
+          "nameEn": "Phacoemulsification (cataract surgery)",
+          "anaesthesiaOptions": ["local", "mac", "general"],
+          "recommendedAnaesthesia": "local",
+          "position": "supine",
+          "durationMin": 20,
+          "durationMax": 45,
+          "urgency": "elective",
+          "bloodLoss": "minimal",
+          "painLevel": "mild",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Tê cạnh nhãn cầu (peribulbar/retrobulbar): chú ý phản xạ oculocardiac (nhịp chậm, ngừng tim)",
+            "MAC với midazolam + fentanyl nhẹ đủ cho hầu hết bệnh nhân hợp tác",
+            "Gây mê toàn thân chỉ khi bệnh nhân không hợp tác (trẻ em, sa sút trí tuệ nặng)"
+          ]
+        },
+        {
+          "id": "glaucoma-trabeculectomy",
+          "nameVn": "Phẫu thuật cắt bè điều trị glaucoma",
+          "nameEn": "Trabeculectomy (glaucoma)",
+          "anaesthesiaOptions": ["local", "mac"],
+          "recommendedAnaesthesia": "local",
+          "position": "supine",
+          "durationMin": 45,
+          "durationMax": 90,
+          "urgency": "elective",
+          "bloodLoss": "minimal",
+          "painLevel": "mild",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Tê cạnh nhãn cầu hoặc dưới kết mạc phù hợp",
+            "Tránh tăng nhãn áp: không ho, không cố sức trong và sau mổ",
+            "Kiểm soát nhãn áp trước mổ bằng acetazolamide hoặc glycerine uống nếu cần"
+          ]
+        },
+        {
+          "id": "retinal-detachment-repair",
+          "nameVn": "Phẫu thuật bong võng mạc",
+          "nameEn": "Retinal detachment repair (vitrectomy/scleral buckle)",
+          "anaesthesiaOptions": ["general", "local"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 90,
+          "durationMax": 240,
+          "urgency": "urgent",
+          "bloodLoss": "minimal",
+          "painLevel": "mild",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Tránh N₂O nếu bơm khí nội nhãn (SF6, C3F8) — N₂O khuếch tán vào bóng khí gây tăng nhãn áp nguy hiểm",
+            "Phản xạ oculocardiac trong thao tác cơ mắt ngoài — sẵn sàng atropine",
+            "Tư thế sau mổ đặc biệt (nằm sấp) cần trao đổi với bệnh nhân và gây mê viên phục hồi"
+          ]
+        },
+        {
+          "id": "strabismus-surgery",
+          "nameVn": "Phẫu thuật lác mắt",
+          "nameEn": "Strabismus surgery",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 45,
+          "durationMax": 90,
+          "urgency": "elective",
+          "bloodLoss": "minimal",
+          "painLevel": "mild",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Phản xạ oculocardiac rất phổ biến — propofol và không dùng succinylcholine giúp giảm tần suất",
+            "PONV cao sau phẫu thuật mắt — dự phòng ondansetron + dexamethasone",
+            "Thường gặp ở trẻ em: khám sàng lọc nguy cơ sốt ác tính (tiền sử gia đình)"
+          ]
+        },
+        {
+          "id": "enucleation",
+          "nameVn": "Múc nội nhãn hoặc khoét bỏ nhãn cầu",
+          "nameEn": "Enucleation / evisceration",
+          "anaesthesiaOptions": ["general", "local"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 60,
+          "durationMax": 120,
+          "urgency": "elective",
+          "bloodLoss": "minimal",
+          "painLevel": "moderate",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Phản xạ oculocardiac mạnh khi kéo thần kinh thị giác — sẵn sàng atropine IV",
+            "Tâm lý: hỗ trợ tâm lý cho bệnh nhân mất mắt là phần quan trọng trong chăm sóc toàn diện",
+            "Block retrobulbar bổ sung giúp giảm đau sau mổ và giảm phản xạ oculocardiac"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pediatric",
+      "nameVn": "Phẫu thuật nhi",
+      "icon": "child",
+      "surgeries": [
+        {
+          "id": "cleft-lip-repair",
+          "nameVn": "Tạo hình khe hở môi",
+          "nameEn": "Cleft lip repair",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 60,
+          "durationMax": 120,
+          "urgency": "elective",
+          "bloodLoss": "minimal",
+          "painLevel": "moderate",
+          "airwayDifficulty": "difficult",
+          "considerations": [
+            "Đường thở có thể khó: khe hở môi/vòm ảnh hưởng mask seal và đặt ống — dùng NKQ RAE miệng",
+            "Dùng hỗn hợp lidocaine/epinephrine tại chỗ giúp giảm chảy máu trường mổ",
+            "Phục hồi: bảo vệ đường khâu môi, tránh trẻ đặt tay lên mặt — cần băng tay hạn chế"
+          ]
+        },
+        {
+          "id": "pyloric-stenosis-repair",
+          "nameVn": "Mổ hẹp môn vị phì đại",
+          "nameEn": "Pyloromyotomy (pyloric stenosis)",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 30,
+          "durationMax": 60,
+          "urgency": "urgent",
+          "bloodLoss": "minimal",
+          "painLevel": "moderate",
+          "airwayDifficulty": "difficult",
+          "considerations": [
+            "Trẻ thường kiềm chuyển hóa giảm clo máu — bù điện giải đủ trước mổ (không mổ cấp cứu ngay)",
+            "Dạ dày đầy: hút sạch qua sonde trước gây mê, RSI hoặc dẫn đầu ngồi đầu cao",
+            "Đường thở trẻ nhỏ: có sẵn ống NKQ nhiều cỡ; chuẩn bị mask thanh quản dự phòng"
+          ]
+        },
+        {
+          "id": "pediatric-hernia-repair",
+          "nameVn": "Sửa thoát vị bẹn nhi",
+          "nameEn": "Pediatric inguinal hernia repair",
+          "anaesthesiaOptions": ["general", "regional"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 30,
+          "durationMax": 60,
+          "urgency": "elective",
+          "bloodLoss": "minimal",
+          "painLevel": "mild",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Block ilioinguinal/iliohypogastric sau gây mê giảm đau sau mổ hiệu quả",
+            "Trẻ sinh non: nguy cơ ngừng thở sau mổ — cân nhắc theo dõi qua đêm nếu < 60 tuần tuổi sau thụ thai",
+            "Thoát vị nghẹt: RSI và xử trí dạ dày đầy bắt buộc"
+          ]
+        },
+        {
+          "id": "pediatric-circumcision",
+          "nameVn": "Cắt bao quy đầu nhi",
+          "nameEn": "Pediatric circumcision",
+          "anaesthesiaOptions": ["general", "regional"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 20,
+          "durationMax": 45,
+          "urgency": "elective",
+          "bloodLoss": "minimal",
+          "painLevel": "mild",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Block thần kinh mu dương vật (dorsal penile nerve block) với bupivacaine sau gây mê",
+            "LMA phù hợp cho thủ thuật ngắn ở trẻ khỏe mạnh",
+            "Điều chỉnh liều thuốc theo cân nặng; paracetamol đường trực tràng hoặc IV sau mổ"
+          ]
+        },
+        {
+          "id": "pediatric-cardiac-basic",
+          "nameVn": "Tim bẩm sinh — vá thông liên nhĩ/liên thất",
+          "nameEn": "Congenital heart repair (ASD/VSD closure)",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 180,
+          "durationMax": 360,
+          "urgency": "elective",
+          "bloodLoss": "moderate",
+          "painLevel": "severe",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Gây mê tim mạch nhi chuyên sâu: điều chỉnh sinh lý shunt trước và sau CPB",
+            "CPB nhi: vòng nhỏ hơn, tỷ lệ pha loãng máu cao hơn — theo dõi điện giải và đường huyết",
+            "Hồi sức ICU sau mổ bắt buộc; nhiều trẻ cần thở máy qua đêm"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "endoscopy",
+      "nameVn": "Nội soi / Thủ thuật",
+      "icon": "activity",
+      "surgeries": [
+        {
+          "id": "upper-gi-endoscopy",
+          "nameVn": "Nội soi dạ dày tá tràng",
+          "nameEn": "Upper GI endoscopy (EGD)",
+          "anaesthesiaOptions": ["mac", "general"],
+          "recommendedAnaesthesia": "mac",
+          "position": "lateral",
+          "durationMin": 15,
+          "durationMax": 30,
+          "urgency": "elective",
+          "bloodLoss": "minimal",
+          "painLevel": "mild",
+          "airwayDifficulty": "shared",
+          "considerations": [
+            "MAC với propofol TCI hoặc dexmedetomidine + fentanyl; giữ nhịp thở tự nhiên",
+            "Nguy cơ tắc nghẽn đường thở: ống nội soi + tiết dịch — theo dõi SpO₂ liên tục",
+            "Bệnh nhân có nguy cơ hít sặc cao (trào ngược, chảy máu tiêu hóa): cân nhắc NKQ"
+          ]
+        },
+        {
+          "id": "colonoscopy",
+          "nameVn": "Nội soi đại tràng",
+          "nameEn": "Colonoscopy",
+          "anaesthesiaOptions": ["mac", "general"],
+          "recommendedAnaesthesia": "mac",
+          "position": "lateral",
+          "durationMin": 20,
+          "durationMax": 60,
+          "urgency": "elective",
+          "bloodLoss": "minimal",
+          "painLevel": "mild",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Propofol TCI an toàn và hiệu quả; gây mê viên luôn trực tiếp theo dõi bên cạnh",
+            "Không cần NKQ trong hầu hết trường hợp; ngửa mặt lên và đặt cannula mũi O₂",
+            "Cần hỏi tiền sử uống thuốc chuẩn bị đại tràng để đánh giá điện giải và thể tích"
+          ]
+        },
+        {
+          "id": "ercp",
+          "nameVn": "Nội soi mật tụy ngược dòng",
+          "nameEn": "Endoscopic retrograde cholangiopancreatography (ERCP)",
+          "anaesthesiaOptions": ["mac", "general"],
+          "recommendedAnaesthesia": "general",
+          "position": "prone",
+          "durationMin": 45,
+          "durationMax": 120,
+          "urgency": "urgent",
+          "bloodLoss": "minimal",
+          "painLevel": "mild",
+          "airwayDifficulty": "shared",
+          "considerations": [
+            "Tư thế nằm sấp: đường thở khó tiếp cận — đặt NKQ trước khi lật tư thế",
+            "Thường bệnh nhân cao tuổi, bệnh nặng (vàng da tắc mật, viêm tụy) — đánh giá toàn trạng kỹ",
+            "Dùng CO₂ thay không khí để bơm giảm đau sau thủ thuật"
+          ]
+        },
+        {
+          "id": "bronchoscopy-flexible",
+          "nameVn": "Nội soi phế quản mềm",
+          "nameEn": "Flexible bronchoscopy",
+          "anaesthesiaOptions": ["mac", "general"],
+          "recommendedAnaesthesia": "mac",
+          "position": "supine",
+          "durationMin": 20,
+          "durationMax": 60,
+          "urgency": "urgent",
+          "bloodLoss": "minimal",
+          "painLevel": "mild",
+          "airwayDifficulty": "shared",
+          "considerations": [
+            "Xịt lidocaine thanh quản trước nội soi giảm phản xạ và nhu cầu sedation",
+            "FiO₂ tăng qua mặt nạ đục lỗ trong khi nội soi qua mũi; theo dõi SpO₂ liên tục",
+            "Ho máu: chuẩn bị epinephrine nội phế quản và đặt NKQ khẩn nếu chảy máu nặng"
+          ]
+        },
+        {
+          "id": "cystoscopy",
+          "nameVn": "Nội soi bàng quang",
+          "nameEn": "Cystoscopy",
+          "anaesthesiaOptions": ["local", "neuraxial", "mac"],
+          "recommendedAnaesthesia": "local",
+          "position": "lithotomy",
+          "durationMin": 15,
+          "durationMax": 30,
+          "urgency": "elective",
+          "bloodLoss": "minimal",
+          "painLevel": "mild",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Gel lidocaine niệu đạo đủ cho nội soi chẩn đoán ở nam giới tỉnh táo hợp tác",
+            "MAC với propofol nếu bệnh nhân lo lắng hoặc nội soi can thiệp",
+            "Phản xạ mạch chậm do kéo căng bàng quang — theo dõi nhịp tim"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "plastic",
+      "nameVn": "Tạo hình — Bỏng",
+      "icon": "sparkles",
+      "surgeries": [
+        {
+          "id": "skin-graft",
+          "nameVn": "Ghép da",
+          "nameEn": "Skin grafting (split-thickness/full-thickness)",
+          "anaesthesiaOptions": ["general", "neuraxial", "regional"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 60,
+          "durationMax": 180,
+          "urgency": "urgent",
+          "bloodLoss": "moderate",
+          "painLevel": "severe",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Nơi lấy da tự thân thường đau nhiều hơn nơi nhận — block vùng hoặc infiltration tại chỗ lấy da",
+            "Mất nhiệt qua vết thương hở rộng — dùng chăn sưởi, dịch truyền ấm",
+            "Bệnh nhân bỏng: khó đặt đường truyền, khó đặt NKQ nếu bỏng mặt/cổ"
+          ]
+        },
+        {
+          "id": "burn-debridement",
+          "nameVn": "Cắt lọc vết bỏng",
+          "nameEn": "Burn wound debridement",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 60,
+          "durationMax": 240,
+          "urgency": "urgent",
+          "bloodLoss": "high",
+          "painLevel": "severe",
+          "airwayDifficulty": "difficult",
+          "considerations": [
+            "Bỏng mặt/cổ: phù nề làm đường thở xấu nhanh — đặt NKQ sớm khi còn có thể",
+            "Mất nhiệt và mất máu nặng: hồi sức tích cực, dịch ấm, thiết bị làm ấm toàn thân",
+            "Tránh succinylcholine từ ngày 3 sau bỏng đến khi lành thương (tăng kali gây ngừng tim)"
+          ]
+        },
+        {
+          "id": "breast-reconstruction",
+          "nameVn": "Tái tạo vú",
+          "nameEn": "Breast reconstruction (TRAM/DIEP flap or implant)",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 240,
+          "durationMax": 480,
+          "urgency": "elective",
+          "bloodLoss": "moderate",
+          "painLevel": "severe",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Phẫu thuật dài — kiểm soát nhiệt độ, thể tích dịch và giảm đau đa mô thức",
+            "Vạt tự do (free flap): huyết áp và tưới máu ổn định quyết định sống còn của vạt",
+            "Block thành ngực (Pecs block/serratus plane block) giảm đau và giảm opioid sau mổ"
+          ]
+        },
+        {
+          "id": "rhinoplasty",
+          "nameVn": "Tạo hình mũi",
+          "nameEn": "Rhinoplasty",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "reverse-trendelenburg",
+          "durationMin": 90,
+          "durationMax": 180,
+          "urgency": "elective",
+          "bloodLoss": "low",
+          "painLevel": "mild",
+          "airwayDifficulty": "shared",
+          "considerations": [
+            "Đường thở chia sẻ — dùng NKQ miệng RAE để tránh vướng trường mổ",
+            "Kiểm soát huyết áp tốt giảm chảy máu trong mổ; tránh ho khi tỉnh",
+            "Hút sạch miệng họng trước rút ống; đặt gạc họng phía sau tránh nuốt máu"
+          ]
+        },
+        {
+          "id": "flap-surgery",
+          "nameVn": "Chuyển vạt da cơ",
+          "nameEn": "Flap surgery (pedicled or free flap)",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 180,
+          "durationMax": 480,
+          "urgency": "elective",
+          "bloodLoss": "moderate",
+          "painLevel": "severe",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Duy trì huyết áp đủ tưới máu vạt: tránh tụt huyết áp, sử dụng vasopressor thận trọng (co mạch ngoại vi)",
+            "Tránh hạ thân nhiệt: vạt da lạnh dễ hoại tử — chăn sưởi, dịch ấm",
+            "Theo dõi vạt sau mổ mỗi 1 giờ trong 24 giờ đầu — phát hiện sớm thiếu máu vạt"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dental-oral",
+      "nameVn": "Răng hàm mặt",
+      "icon": "tooth",
+      "surgeries": [
+        {
+          "id": "wisdom-tooth-extraction",
+          "nameVn": "Nhổ răng khôn",
+          "nameEn": "Wisdom tooth extraction (surgical)",
+          "anaesthesiaOptions": ["local", "mac", "general"],
+          "recommendedAnaesthesia": "local",
+          "position": "supine",
+          "durationMin": 30,
+          "durationMax": 90,
+          "urgency": "elective",
+          "bloodLoss": "minimal",
+          "painLevel": "moderate",
+          "airwayDifficulty": "shared",
+          "considerations": [
+            "Tê tại chỗ với articaine hoặc lidocaine + epinephrine đủ cho hầu hết trường hợp",
+            "MAC hoặc gây mê toàn thân cho bệnh nhân lo lắng hoặc nhổ nhiều răng cùng lúc",
+            "Bảo vệ đường thở khỏi máu và mảnh răng — đặt gạc họng"
+          ]
+        },
+        {
+          "id": "jaw-fracture-fixation",
+          "nameVn": "Kết hợp xương hàm",
+          "nameEn": "Mandible/maxilla fracture fixation",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 90,
+          "durationMax": 180,
+          "urgency": "urgent",
+          "bloodLoss": "low",
+          "painLevel": "moderate",
+          "airwayDifficulty": "difficult",
+          "considerations": [
+            "Đường thở qua mũi (nasotracheal intubation) để trường mổ miệng thông thoáng",
+            "Gãy xương hàm có thể gây khó mở miệng — chuẩn bị nội soi sợi quang thức tỉnh",
+            "Sau mổ buộc hàm: chuẩn bị kéo cắt ngay đầu giường phòng nôn mửa sau rút ống"
+          ]
+        },
+        {
+          "id": "orthognathic-surgery",
+          "nameVn": "Phẫu thuật chỉnh hình xương hàm",
+          "nameEn": "Orthognathic surgery (Le Fort / BSSO)",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "reverse-trendelenburg",
+          "durationMin": 180,
+          "durationMax": 360,
+          "urgency": "elective",
+          "bloodLoss": "moderate",
+          "painLevel": "severe",
+          "airwayDifficulty": "difficult",
+          "considerations": [
+            "Đặt NKQ qua mũi bắt buộc — có thể cần nội soi sợi quang nếu mở miệng hạn chế",
+            "Mất máu đáng kể từ xương hàm — cell saver và kiểm soát huyết áp thấp chủ động (MAP 60-65 mmHg)",
+            "Phù nề đường thở sau mổ: giữ NKQ hoặc theo dõi kỹ sau rút ống; dexamethasone giảm phù"
+          ]
+        },
+        {
+          "id": "palate-repair",
+          "nameVn": "Tạo hình khe hở vòm miệng",
+          "nameEn": "Cleft palate repair",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 90,
+          "durationMax": 180,
+          "urgency": "elective",
+          "bloodLoss": "low",
+          "painLevel": "moderate",
+          "airwayDifficulty": "difficult",
+          "considerations": [
+            "Thường gặp ở trẻ nhỏ: đặt NKQ RAE miệng, dùng Dingman mouth gag — nguy cơ xẹp đường thở khi đặt banh miệng",
+            "Hút sạch miệng họng trước rút ống để tránh hít máu và dịch tiết",
+            "Theo dõi đường thở sau mổ tại PACU ít nhất 2-4 giờ trước khi cho về bệnh phòng"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "emergency",
+      "nameVn": "Cấp cứu ngoại khoa",
+      "icon": "alert-triangle",
+      "surgeries": [
+        {
+          "id": "perforated-peptic-ulcer",
+          "nameVn": "Mổ thủng ổ loét dạ dày tá tràng",
+          "nameEn": "Perforated peptic ulcer repair",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 60,
+          "durationMax": 150,
+          "urgency": "emergency",
+          "bloodLoss": "low",
+          "painLevel": "severe",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "RSI bắt buộc: bụng cấp, liệt ruột, dạ dày đầy — nguy cơ hít sặc rất cao",
+            "Nhiễm khuẩn ổ bụng: kháng sinh phổ rộng ngay khi chẩn đoán; hồi sức dịch trước mổ",
+            "Bệnh nhân có thể có nhiễm khuẩn huyết nặng — theo dõi huyết động xâm lấn nếu nặng"
+          ]
+        },
+        {
+          "id": "bowel-obstruction",
+          "nameVn": "Mổ tắc ruột",
+          "nameEn": "Bowel obstruction surgery",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 90,
+          "durationMax": 240,
+          "urgency": "emergency",
+          "bloodLoss": "moderate",
+          "painLevel": "severe",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "RSI bắt buộc: ruột giãn, dạ dày đầy — hút qua sonde dạ dày trước khởi mê",
+            "Bù nước và điện giải (K⁺, Cl⁻) trước mổ nếu tắc ruột cao",
+            "Theo dõi huyết động chặt chẽ nếu có dấu hiệu hoại tử ruột hoặc nhiễm khuẩn huyết"
+          ]
+        },
+        {
+          "id": "abdominal-trauma",
+          "nameVn": "Mổ chấn thương bụng",
+          "nameEn": "Laparotomy for abdominal trauma",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 90,
+          "durationMax": 300,
+          "urgency": "emergency",
+          "bloodLoss": "massive",
+          "painLevel": "severe",
+          "airwayDifficulty": "difficult",
+          "considerations": [
+            "Hồi sức kiểm soát tổn thương (DCR): truyền máu tỷ lệ 1:1:1, hạn chế dịch tinh thể, tránh hạ thân nhiệt/toan/đông máu",
+            "Tránh ketamine nếu nghi ngờ chấn thương sọ não kèm theo",
+            "Cân nhắc phẫu thuật kiểm soát tổn thương (DCS) giai đoạn 1 nếu bệnh nhân không ổn định sinh lý"
+          ]
+        },
+        {
+          "id": "chest-trauma-surgery",
+          "nameVn": "Mổ chấn thương ngực",
+          "nameEn": "Thoracotomy for chest trauma",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "lateral",
+          "durationMin": 60,
+          "durationMax": 180,
+          "urgency": "emergency",
+          "bloodLoss": "massive",
+          "painLevel": "severe",
+          "airwayDifficulty": "difficult",
+          "considerations": [
+            "Chấn thương ngực hở: đặt NKQ ngay, tránh thở máy áp lực cao nếu nghi tràn khí áp lực",
+            "Tràn máu màng phổi lớn: dẫn lưu trước mổ; chuẩn bị cell saver và truyền máu ồ ạt",
+            "Chấn thương tim kèm theo: hội chẩn tim mạch; xét siêu âm tim FAST ngay"
+          ]
+        },
+        {
+          "id": "ruptured-aortic-aneurysm",
+          "nameVn": "Phình ĐM chủ bụng vỡ",
+          "nameEn": "Ruptured abdominal aortic aneurysm",
+          "anaesthesiaOptions": ["general"],
+          "recommendedAnaesthesia": "general",
+          "position": "supine",
+          "durationMin": 180,
+          "durationMax": 480,
+          "urgency": "emergency",
+          "bloodLoss": "massive",
+          "painLevel": "severe",
+          "airwayDifficulty": "standard",
+          "considerations": [
+            "Duy trì huyết áp hạn chế (systolic 80-90 mmHg) cho đến khi phẫu thuật viên kẹp ĐM chủ",
+            "Kích hoạt quy trình truyền máu khẩn cấp ngay khi chẩn đoán; cell saver bắt buộc",
+            "Hội chứng thiếu máu tái tưới máu sau thả kẹp ĐM chủ: toan chuyển hóa, tăng kali — chuẩn bị bicarbonat, calci"
+          ]
+        }
+      ]
+    }
+  ]
+}

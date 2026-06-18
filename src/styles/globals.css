@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-bg:      #0f172a;
+    --color-surface: #1e293b;
+    --color-border:  #334155;
+    --color-accent:  #38bdf8;
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background-color: var(--color-bg);
+    color: #f1f5f9;
+    font-family: 'Be Vietnam Pro', ui-sans-serif, system-ui, sans-serif;
+    /* Đảm bảo text sắc nét trên màn hình OLED */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Hỗ trợ safe-area trên iPhone X+ */
+  .pt-safe { padding-top: env(safe-area-inset-top); }
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+
+  /* Tabular numbers toàn cục cho số y tế */
+  input[type="number"] {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Ẩn spinner trên input number (iOS/Android) */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] { -moz-appearance: textfield; }
+}
