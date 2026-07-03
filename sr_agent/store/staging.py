@@ -178,10 +178,14 @@ class StagingStore:
     def purge_expired(self, ttl_hours: int = TTL_HOURS) -> list[str]:
         """Đánh EXPIRED + xóa bản ghi quá TTL không tương tác. Trả về uids đã purge."""
         cutoff = (datetime.now(timezone.utc) - timedelta(hours=ttl_hours)).isoformat()
-        terminal = (DocStatus.APPROVED.value, DocStatus.REJECTED.value)
+        terminal = (
+            DocStatus.APPROVED.value,
+            DocStatus.APPROVED_LOCAL.value,
+            DocStatus.REJECTED.value,
+        )
         rows = self.conn.execute(
             """SELECT uid FROM documents
-               WHERE last_interaction_at < ? AND status NOT IN (?, ?)""",
+               WHERE last_interaction_at < ? AND status NOT IN (?, ?, ?)""",
             (cutoff, *terminal),
         ).fetchall()
         purged = [r["uid"] for r in rows]

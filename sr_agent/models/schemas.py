@@ -29,6 +29,7 @@ class DocStatus(str, Enum):
     PARSED = "parsed"
     QUEUED = "queued"       # đang nằm trong hàng đợi WIP chờ người duyệt
     APPROVED = "approved"   # đã đẩy sang Notion — giữ vĩnh viễn (audit)
+    APPROVED_LOCAL = "approved_local"  # approve ở dry-run (thiếu NOTION_TOKEN)
     REJECTED = "rejected"   # người dùng loại — giữ vĩnh viễn (audit)
     EXPIRED = "expired"     # quá TTL 72h không tương tác — auto-purge
     DLQ = "dlq"             # lỗi, chờ xử lý lại thủ công
@@ -104,6 +105,35 @@ class RubricResult(BaseModel):
     breakdown: list[RubricCriterionScore] = []
 
 
+class TechnicalMetadata(BaseModel):
+    """Siêu dữ liệu chất lượng kỹ thuật CS — LLM trích xuất NGHIÊM NGẶT
+    (extract-only, không suy diễn) từ Abstract/Introduction.
+
+    Schema này được đưa thẳng vào Ollama structured output (format=json schema)
+    nên mô tả field viết tiếng Anh cho model đọc.
+    """
+
+    has_code_repo: bool = Field(
+        description="True only if the authors explicitly provide a code repository link"
+    )
+    code_repo_url: str | None = Field(
+        default=None,
+        description="The exact repository URL (GitHub/GitLab/...) if stated, else null",
+    )
+    dataset_specification: str | None = Field(
+        default=None,
+        description='Dataset size/name stated verbatim (e.g. "10,000 samples", "ImageNet-1k"), else null',
+    )
+    evaluated_benchmarks: list[str] = Field(
+        default_factory=list,
+        description="Standard benchmark names the paper explicitly evaluates on",
+    )
+    declared_limitations: str | None = Field(
+        default=None,
+        description="Technical limitations the authors themselves acknowledge, else null",
+    )
+
+
 class CritiqueQuestion(BaseModel):
     """Câu hỏi phản biện sinh lúc parse, đổ vào Phần 2 trang Notion."""
 
@@ -142,6 +172,7 @@ class Document(BaseModel):
     full_text: str | None = None
 
     sections: AnySections | None = None
+    tech_meta: TechnicalMetadata | None = None
     critique_questions: list[CritiqueQuestion] = []
     rubric: RubricResult | None = None
 

@@ -248,14 +248,17 @@ def main(argv: list[str] | None = None) -> int:
 
 def _build_default_pipeline(store: StagingStore) -> Pipeline:
     """Cắm structural parser nếu Ollama sẵn sàng; không thì chạy tất định thuần."""
-    parser: ParserFn | None = None
-    try:
-        from sr_agent.parser.structural import StructuralParser
+    from sr_agent.parser.ollama_client import OllamaClient
+    from sr_agent.parser.structural import StructuralParser
 
-        parser = StructuralParser().parse
-    except Exception:  # Ollama chưa chạy / module chưa có -> pipeline vẫn hoạt động
-        logger.info("Structural parser không khả dụng — chạy pipeline tất định thuần")
-    return Pipeline(store, parser=parser)
+    client = OllamaClient()
+    if client.is_available():
+        return Pipeline(store, parser=StructuralParser(client).parse)
+    logger.info(
+        "Ollama không phản hồi tại %s — chạy pipeline tất định thuần (không LLM parse)",
+        client.base_url,
+    )
+    return Pipeline(store)
 
 
 if __name__ == "__main__":
