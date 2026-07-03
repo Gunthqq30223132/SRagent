@@ -15,17 +15,18 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # --- Định danh nguồn & quy tắc ID tĩnh -------------------------------------
-# Nguồn A: PubMed — PMID 8 chữ số. Nguồn B: arXiv — 'arxiv:YYMM.NNNNN'.
-# Hoãn mọi nguồn trung gian khác để giữ staging đồng nhất tuyệt đối.
+# Phạm vi CS-only. Nguồn A: IEEE Xplore (CS Transactions) — document ID 8 chữ số.
+# Nguồn B: arXiv — 'arxiv:YYMM.NNNNN'. Hoãn mọi nguồn trung gian khác để giữ
+# staging đồng nhất tuyệt đối.
 ID_PATTERNS: dict[str, re.Pattern[str]] = {
-    "pubmed": re.compile(r"^\d{8}$"),
+    "ieee": re.compile(r"^\d{8}$"),
     "arxiv": re.compile(r"^arxiv:\d{4}\.\d{4,5}$"),
 }
 
 # Authority tier: số nhỏ = uy tín cao. Dùng cho tầng 3 của D34.
 AUTHORITY_TIERS: dict[str, int] = {
-    "pubmed": 1,  # peer-reviewed journal literature
-    "arxiv": 2,   # preprint
+    "ieee": 1,   # peer-reviewed transactions/journals
+    "arxiv": 2,  # preprint
 }
 
 # --- Hàng đợi duyệt thủ công ------------------------------------------------
@@ -40,8 +41,9 @@ RUBRIC_PASS_THRESHOLD = 60.0   # dưới ngưỡng: loại trước khi tốn LL
 
 # --- Retry / rate limit -------------------------------------------------------
 MAX_RETRIES = 4                 # backoff 2s, 4s, 8s, 16s (exponential + jitter)
-PUBMED_MAX_RPS = 3              # E-utilities không API key: <=3 req/s
 CIRCUIT_BREAKER_FAILURES = 3    # N lỗi transient liên tiếp -> skip nguồn trong batch
+
+IEEE_API_KEY = os.getenv("IEEE_API_KEY", "")
 
 # --- Hạ tầng local ------------------------------------------------------------
 ROOT_DIR = Path(__file__).resolve().parent.parent

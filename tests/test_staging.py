@@ -7,7 +7,7 @@ from sr_agent.store.staging import StagingStore
 def make_doc(pmid: str, score: float | None = None, status=DocStatus.QUEUED):
     return Document(
         uid="",
-        source="pubmed",
+        source="ieee",
         source_id=pmid,
         authority_tier=1,
         title=f"Paper {pmid}",
@@ -20,11 +20,11 @@ def test_upsert_get_roundtrip(tmp_path):
     with StagingStore(tmp_path / "t.db") as store:
         doc = make_doc("11111111", 80)
         store.upsert(doc)
-        got = store.get("pubmed:11111111")
+        got = store.get("ieee:11111111")
         assert got is not None
         assert got.rubric.total == 80
-        assert store.exists("pubmed:11111111")
-        assert not store.exists("pubmed:22222222")
+        assert store.exists("ieee:11111111")
+        assert not store.exists("ieee:22222222")
 
 
 def test_wip_queue_sorted_by_rubric_and_limited(tmp_path):
@@ -52,9 +52,9 @@ def test_ttl_purge_only_untouched_non_terminal(tmp_path):
         store.conn.commit()
 
         purged = store.purge_expired(ttl_hours=72)
-        assert purged == ["pubmed:11111111"]  # APPROVED/REJECTED miễn purge
-        assert not store.exists("pubmed:11111111")
-        assert store.exists("pubmed:22222222")
+        assert purged == ["ieee:11111111"]  # APPROVED/REJECTED miễn purge
+        assert not store.exists("ieee:11111111")
+        assert store.exists("ieee:22222222")
 
 
 def test_ttl_keeps_recent_records(tmp_path):
@@ -65,10 +65,10 @@ def test_ttl_keeps_recent_records(tmp_path):
 
 def test_dlq_isolation(tmp_path):
     with StagingStore(tmp_path / "t.db") as store:
-        store.push_dlq("pubmed:11111111", "RateLimited", "429", retry_eligible=True)
+        store.push_dlq("ieee:11111111", "RateLimited", "429", retry_eligible=True)
         store.push_dlq("arxiv:2401.00001", "LayoutParseError", "bad xml")
         assert len(store.dlq_entries()) == 2
         retryable = store.dlq_entries(retry_eligible_only=True)
-        assert len(retryable) == 1 and retryable[0]["uid"] == "pubmed:11111111"
+        assert len(retryable) == 1 and retryable[0]["uid"] == "ieee:11111111"
         store.clear_dlq_entry(retryable[0]["id"])
         assert len(store.dlq_entries()) == 1

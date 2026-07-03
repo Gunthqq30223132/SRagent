@@ -15,7 +15,7 @@ from sr_agent.models.schemas import (
 def make_doc(**overrides):
     base = dict(
         uid="",
-        source="pubmed",
+        source="ieee",
         source_id="12345678",
         authority_tier=1,
         title="A Study of Things",
@@ -25,10 +25,10 @@ def make_doc(**overrides):
 
 
 class TestIdRules:
-    def test_pubmed_8_digit_ok(self):
-        assert make_doc().uid == "pubmed:12345678"
+    def test_ieee_8_digit_ok(self):
+        assert make_doc().uid == "ieee:12345678"
 
-    def test_pubmed_wrong_length_rejected(self):
+    def test_ieee_wrong_length_rejected(self):
         with pytest.raises(ValidationError):
             make_doc(source_id="1234567")
 
@@ -42,11 +42,11 @@ class TestIdRules:
 
     def test_uid_mismatch_rejected(self):
         with pytest.raises(ValidationError):
-            make_doc(uid="pubmed:99999999")
+            make_doc(uid="ieee:99999999")
 
     def test_make_uid_no_double_prefix(self):
         assert make_uid("arxiv", "arxiv:2401.12345") == "arxiv:2401.12345"
-        assert make_uid("pubmed", "12345678") == "pubmed:12345678"
+        assert make_uid("ieee", "12345678") == "ieee:12345678"
 
 
 class TestNormalizeTitle:

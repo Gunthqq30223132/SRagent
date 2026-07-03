@@ -51,7 +51,7 @@ class Section(BaseModel):
 
 
 class IMRADSections(BaseModel):
-    """Tài liệu Loại A (PubMed) — Introduction/Methods/Results/Discussion."""
+    """Tài liệu Loại A (IEEE/CS Transactions) — Introduction/Methods/Results/Discussion."""
 
     doc_type: Literal["A"] = "A"
     introduction: Section | None = None
@@ -127,8 +127,8 @@ def normalize_title(title: str) -> str:
 class Document(BaseModel):
     """Bản ghi chuẩn hóa duy nhất chảy xuyên suốt pipeline."""
 
-    uid: str  # "pubmed:12345678" | "arxiv:2401.12345" — computed từ source+source_id
-    source: Literal["pubmed", "arxiv"]
+    uid: str  # "ieee:12345678" | "arxiv:2401.12345" — computed từ source+source_id
+    source: Literal["ieee", "arxiv"]
     source_id: str
     authority_tier: int = Field(ge=1)
     alternate_uids: list[str] = []  # bản trùng bị merge (giữ vết, không vứt)
@@ -180,7 +180,7 @@ class Document(BaseModel):
 
 
 def make_uid(source: str, source_id: str) -> str:
-    """Khóa nội bộ đồng nhất: arXiv đã tự mang prefix, PubMed thì thêm."""
+    """Khóa nội bộ đồng nhất: arXiv đã tự mang prefix, IEEE thì thêm."""
     return source_id if source_id.startswith(f"{source}:") else f"{source}:{source_id}"
 
 

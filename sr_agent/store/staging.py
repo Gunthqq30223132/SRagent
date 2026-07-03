@@ -137,6 +137,13 @@ class StagingStore:
         )
         return {r["title_normalized"]: r["uid"] for r in rows}
 
+    def tiers_index(self) -> dict[str, int]:
+        """{uid: authority_tier} — input cho tầng 3 của D34."""
+        rows = self.conn.execute(
+            "SELECT uid, json_extract(payload, '$.authority_tier') AS tier FROM documents"
+        )
+        return {r["uid"]: int(r["tier"]) for r in rows}
+
     def set_status(self, uid: str, status: DocStatus, *, touch: bool = True) -> None:
         doc = self.get(uid)
         if doc is None:
