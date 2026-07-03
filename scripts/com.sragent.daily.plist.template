@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  LaunchAgent chạy SR-Agent ingest hằng ngày lúc 7:00.
+  Dùng launchd thay cron vì trên macOS cron KHÔNG chạy khi máy ngủ/gập nắp;
+  launchd tự chạy bù job bị lỡ ngay khi máy thức dậy.
+  File này là template: {{REPO_DIR}} và {{QUERY}} được scripts/install_launchd.sh thay thế.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.sragent.daily</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>{{REPO_DIR}}/.venv/bin/python</string>
+        <string>-m</string>
+        <string>sr_agent.pipeline</string>
+        <string>run</string>
+        <string>--query</string>
+        <string>{{QUERY}}</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>{{REPO_DIR}}</string>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>7</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>{{REPO_DIR}}/staging/launchd.log</string>
+    <key>StandardErrorPath</key>
+    <string>{{REPO_DIR}}/staging/launchd.log</string>
+
+    <key>RunAtLoad</key>
+    <false/>
+</dict>
+</plist>

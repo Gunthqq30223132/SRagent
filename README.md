@@ -24,12 +24,24 @@ Fetch (IEEE Xplore + arXiv)                 ── rẻ, tất định
 | Staging Store | `sr_agent/store/staging.py` | State machine `FETCHED → … → QUEUED → APPROVED/REJECTED`; DLQ; TTL purge |
 | Notion Publisher | `sr_agent/publish/notion_page.py` | Trang 3 phần (Metadata / Q&A / My Notes), idempotent, dry-run |
 
-## Cài đặt (macOS, Python 3.11+)
+## Quickstart trên MacBook Air M4 (16GB)
+
+```bash
+make setup                        # venv + deps + tạo .env từ template
+ollama pull qwen2.5:7b-instruct   # ~4.7GB (Q4); gemma3:4b ~3.3GB (profile nhanh)
+# điền IEEE_API_KEY / NOTION_TOKEN / NOTION_PARENT_PAGE_ID vào .env
+make doctor                       # kiểm tra tiền vận hành — phải "sẵn sàng" mới đi tiếp
+make run QUERY="efficient transformer inference"
+make ui                           # mở hàng đợi duyệt
+```
+
+Cả hai model đều vừa 16GB RAM kể cả khi Streamlit + trình duyệt đang mở. `make doctor` phân biệt lỗi **bắt buộc** (chặn pipeline, exit 1) và **tùy chọn** (thiếu Ollama → chạy tất định thuần; thiếu Notion → Approve dry-run) kèm hướng khắc phục từng mục.
+
+Cài thủ công không qua make:
 
 ```bash
 uv venv .venv && uv pip install -p .venv/bin/python -e ".[ui,dev]"
 cp .env.example .env        # điền IEEE_API_KEY, NOTION_TOKEN, NOTION_PARENT_PAGE_ID
-ollama pull qwen2.5:7b-instruct   # hoặc gemma3:4b (profile nhanh)
 ```
 
 | Env var | Bắt buộc | Mô tả |
@@ -46,9 +58,10 @@ ollama pull qwen2.5:7b-instruct   # hoặc gemma3:4b (profile nhanh)
 # Chạy 1 batch ingest (cron hằng ngày cũng gọi lệnh này)
 .venv/bin/python -m sr_agent.pipeline run --query "efficient transformer inference" --max-results 20
 
-# Xem trạng thái staging / tái xử lý hàng lỗi
+# Xem trạng thái staging / tái xử lý hàng lỗi / kiểm tra môi trường
 .venv/bin/python -m sr_agent.pipeline status
 .venv/bin/python -m sr_agent.pipeline retry-dlq
+.venv/bin/python -m sr_agent.pipeline doctor
 
 # Mở hàng đợi duyệt (top-5 theo điểm rubric)
 .venv/bin/streamlit run ui/app.py
@@ -60,11 +73,18 @@ ollama pull qwen2.5:7b-instruct   # hoặc gemma3:4b (profile nhanh)
 .venv/bin/python tests/bench_parser.py qwen2.5:7b-instruct gemma3:4b
 ```
 
-Cron gợi ý (chạy 7h sáng hằng ngày):
+## Lịch chạy hằng ngày: launchd, không phải cron
 
-```cron
-0 7 * * * cd /path/to/9router && .venv/bin/python -m sr_agent.pipeline run --query "your standing query" >> staging/cron.log 2>&1
+Trên macOS, **cron không chạy khi máy ngủ/gập nắp** — với MacBook Air thì job 7h sáng gần như không bao giờ nổ. Dùng launchd LaunchAgent: máy ngủ qua giờ hẹn thì job **tự chạy bù ngay khi thức dậy**.
+
+```bash
+make schedule QUERY="your standing query"   # cài com.sragent.daily, chạy 7:00 hằng ngày
+launchctl kickstart gui/$(id -u)/com.sragent.daily   # chạy thử ngay không đợi 7h
+tail -f staging/launchd.log                 # xem log
+make unschedule                             # gỡ
 ```
+
+Script cài đặt tự chạy `doctor` trước — check bắt buộc nào fail thì dừng, không cài lịch trên máy chưa sẵn sàng. Đổi query chỉ cần chạy lại `make schedule` (idempotent).
 
 ## Nguyên tắc thiết kế
 

@@ -14,6 +14,7 @@ CLI:
   python -m sr_agent.pipeline run --query "..." [--max-results 20]
   python -m sr_agent.pipeline retry-dlq
   python -m sr_agent.pipeline status
+  python -m sr_agent.pipeline doctor
 """
 
 from __future__ import annotations
@@ -223,7 +224,13 @@ def main(argv: list[str] | None = None) -> int:
     run_p.add_argument("--max-results", type=int, default=20)
     sub.add_parser("retry-dlq", help="tái xử lý DLQ retry_eligible")
     sub.add_parser("status", help="thống kê staging")
+    sub.add_parser("doctor", help="kiểm tra tiền vận hành (env, Ollama, storage)")
     args = ap.parse_args(argv)
+
+    if args.cmd == "doctor":
+        from sr_agent.doctor import main as doctor_main
+
+        return doctor_main()
 
     with StagingStore() as store:
         pipeline = _build_default_pipeline(store)

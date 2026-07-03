@@ -75,3 +75,13 @@ class OllamaClient:
             return self.client.get(f"{self.base_url}/api/tags", timeout=2).status_code == 200
         except httpx.HTTPError:
             return False
+
+    def list_models(self) -> list[str]:
+        """Tên các model đã pull (rỗng nếu Ollama không phản hồi)."""
+        try:
+            response = self.client.get(f"{self.base_url}/api/tags", timeout=2)
+            if response.status_code != 200:
+                return []
+            return [m.get("name", "") for m in response.json().get("models", [])]
+        except (httpx.HTTPError, ValueError):
+            return []
