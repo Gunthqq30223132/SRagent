@@ -1,0 +1,129 @@
+{
+  "_meta": {
+    "purpose": "Bộ seed offline cho demo chủ đề agentic AI (agentic engineering / harness / model / nhúng agent vào app) — dùng khi môi trường không truy cập được arXiv/IEEE API.",
+    "provenance": "12 bài arXiv THẬT, metadata tái dựng từ kiến thức model (cutoff 01/2026): ID/tựa/tác giả chính xác ở mức tốt nhất có thể nhưng CẦN XÁC MINH bằng live run trên máy có mạng. Abstract là bản tóm lược đại diện, KHÔNG phải nguyên văn.",
+    "synthetic_records": "Không có bản ghi dựng — các tầng D34 đã được demo ở rag_seed.json."
+  },
+  "papers": [
+    {
+      "source": "arxiv",
+      "source_id": "arxiv:2210.03629",
+      "authority_tier": 2,
+      "title": "ReAct: Synergizing Reasoning and Acting in Language Models",
+      "authors": ["Shunyu Yao", "Jeffrey Zhao", "Dian Yu", "Yuan Cao"],
+      "published_date": "2022-10-06T00:00:00+00:00",
+      "url": "https://arxiv.org/abs/2210.03629",
+      "abstract": "Language models have been used either to reason (chain-of-thought) or to act (generate commands), but not both together. ReAct prompts LLMs to interleave reasoning traces with task-specific actions: reasoning helps the model induce, track and update action plans and handle exceptions, while actions let it consult external sources such as APIs and knowledge bases to ground its reasoning. On question answering and fact verification, ReAct overcomes hallucination by interacting with a Wikipedia API; on ALFWorld and WebShop it outperforms imitation and reinforcement learning baselines with only one or two in-context examples. ReAct became the foundational control-loop pattern for virtually all subsequent LLM agents. Code at https://github.com/ysymyth/ReAct."
+    },
+    {
+      "source": "arxiv",
+      "source_id": "arxiv:2303.11366",
+      "authority_tier": 2,
+      "title": "Reflexion: Language Agents with Verbal Reinforcement Learning",
+      "authors": ["Noah Shinn", "Federico Cassano", "Edward Berman", "Shunyu Yao"],
+      "published_date": "2023-03-20T00:00:00+00:00",
+      "url": "https://arxiv.org/abs/2303.11366",
+      "abstract": "Agents cannot learn from mistakes within a single deployment because weight updates are impractical. Reflexion reinforces agents through language instead of gradients: after a failed episode, the agent generates a verbal self-reflection on what went wrong, stores it in an episodic memory buffer, and conditions the next attempt on these reflections. This trial-and-error loop needs no fine-tuning and works with any feedback signal, scalar or free-form. Reflexion reaches 91% pass@1 on HumanEval, surpassing GPT-4's 80%, and improves sequential decision-making and reasoning benchmarks, establishing self-critique memory as a core agent design pattern. Code at https://github.com/noahshinn/reflexion."
+    },
+    {
+      "source": "arxiv",
+      "source_id": "arxiv:2302.04761",
+      "authority_tier": 2,
+      "title": "Toolformer: Language Models Can Teach Themselves to Use Tools",
+      "authors": ["Timo Schick", "Jane Dwivedi-Yu", "Roberto Dessì", "Thomas Scialom"],
+      "published_date": "2023-02-09T00:00:00+00:00",
+      "url": "https://arxiv.org/abs/2302.04761",
+      "abstract": "Language models struggle with arithmetic, freshness and factual lookup — exactly what simple external tools solve. Toolformer shows a model can teach itself to use tools: given a handful of demonstrations per API, the model annotates its own training corpus with candidate API calls, keeps those that reduce perplexity on future tokens, and fine-tunes on the result. It learns when to call a calculator, search engine, translator, QA system, and calendar, deciding which arguments to pass and how to fold results into generation. Toolformer substantially improves zero-shot performance across tasks while preserving core language abilities, seeding the tool-use line that culminated in native function-calling APIs."
+    },
+    {
+      "source": "arxiv",
+      "source_id": "arxiv:2304.03442",
+      "authority_tier": 2,
+      "title": "Generative Agents: Interactive Simulacra of Human Behavior",
+      "authors": ["Joon Sung Park", "Joseph C. O'Brien", "Carrie J. Cai", "Michael S. Bernstein"],
+      "published_date": "2023-04-07T00:00:00+00:00",
+      "url": "https://arxiv.org/abs/2304.03442",
+      "abstract": "Believable proxies of human behavior require agents that remember, reflect, and plan over long horizons. This paper instantiates 25 generative agents in a sandbox town: an architecture combining a natural-language memory stream, retrieval weighted by recency, importance and relevance, periodic reflection that synthesizes memories into higher-level inferences, and recursive planning. Agents form opinions, spread information, and coordinate a Valentine's party from a single seeded intention. Ablations show memory, reflection, and planning each contribute critically to believability. The memory-reflection-planning triad became the reference cognitive architecture for long-lived application agents. Code at https://github.com/joonspk-research/generative_agents."
+    },
+    {
+      "source": "arxiv",
+      "source_id": "arxiv:2305.16291",
+      "authority_tier": 2,
+      "title": "Voyager: An Open-Ended Embodied Agent with Large Language Models",
+      "authors": ["Guanzhi Wang", "Yuqi Xie", "Yunfan Jiang", "Anima Anandkumar"],
+      "published_date": "2023-05-25T00:00:00+00:00",
+      "url": "https://arxiv.org/abs/2305.16291",
+      "abstract": "Voyager is a lifelong learning agent in Minecraft that explores, acquires skills, and makes discoveries without human intervention. Three components drive it: an automatic curriculum that proposes goals matched to the agent's ability, an ever-growing skill library of executable code verified by self-checking, and iterative prompting that refines programs from environment feedback and errors. Skills are stored as code and retrieved compositionally — a persistent, interpretable alternative to weight updates. Voyager obtains 3.3x more unique items and travels 2.3x farther than prior state of the art, demonstrating code-as-skill-memory as a durable agent engineering pattern. Code at https://github.com/MineDojo/Voyager."
+    },
+    {
+      "source": "arxiv",
+      "source_id": "arxiv:2308.11432",
+      "authority_tier": 2,
+      "title": "A Survey on Large Language Model based Autonomous Agents",
+      "authors": ["Lei Wang", "Chen Ma", "Xueyang Feng", "Ji-Rong Wen"],
+      "published_date": "2023-08-22T00:00:00+00:00",
+      "url": "https://arxiv.org/abs/2308.11432",
+      "abstract": "This survey unifies the fast-growing field of LLM-based autonomous agents under a single construction framework with four modules: profile (role and persona), memory (short-term context and long-term stores), planning (task decomposition, reflection, plan refinement), and action (tool invocation and environment interaction). It systematically reviews agent applications across social science, natural science and engineering, and consolidates evaluation strategies, both subjective and objective. The paper maintains a companion repository tracking the field and closes with open challenges: hallucination under long horizons, knowledge boundary calibration, efficiency, and human alignment of agent behavior. Repository at https://github.com/Paitesanshi/LLM-Agent-Survey."
+    },
+    {
+      "source": "arxiv",
+      "source_id": "arxiv:2308.08155",
+      "authority_tier": 2,
+      "title": "AutoGen: Enabling Next-Gen LLM Applications via Multi-Agent Conversation",
+      "authors": ["Qingyun Wu", "Gagan Bansal", "Jieyu Zhang", "Chi Wang"],
+      "published_date": "2023-08-16T00:00:00+00:00",
+      "url": "https://arxiv.org/abs/2308.08155",
+      "abstract": "AutoGen is an open-source framework for building LLM applications as conversations among customizable, conversable agents. Each agent can be backed by an LLM, a human, tools, or any combination, and developers compose them through natural-language and programmatic interaction patterns: two-agent chats, group chats with a manager, and human-in-the-loop proxies. The conversation-centric abstraction subsumes single-agent tool loops and enables division of labor — coder, critic, executor — with code execution sandboxed in Docker. Empirical studies across mathematics, coding, question answering, operations research and decision-making show multi-agent decomposition outperforming single-agent baselines. Framework at https://github.com/microsoft/autogen."
+    },
+    {
+      "source": "arxiv",
+      "source_id": "arxiv:2308.03688",
+      "authority_tier": 2,
+      "title": "AgentBench: Evaluating LLMs as Agents",
+      "authors": ["Xiao Liu", "Hao Yu", "Hanchen Zhang", "Jie Tang"],
+      "published_date": "2023-08-07T00:00:00+00:00",
+      "url": "https://arxiv.org/abs/2308.03688",
+      "abstract": "Chat benchmarks do not predict whether a model can act. AgentBench evaluates LLMs as agents across eight interactive environments spanning code (operating system, database, knowledge graph), games, and web tasks (shopping, browsing), measuring multi-turn decision-making with tool feedback. Testing 27 models reveals a wide capability gap: top commercial models complete many tasks while open-weight models of the era lag drastically, with failures dominated by poor long-term reasoning, instruction drift, and invalid action formats rather than knowledge gaps. AgentBench established the practice of evaluating agentic capability separately from conversational quality. Code and data at https://github.com/THUDM/AgentBench."
+    },
+    {
+      "source": "arxiv",
+      "source_id": "arxiv:2310.06770",
+      "authority_tier": 2,
+      "title": "SWE-bench: Can Language Models Resolve Real-World GitHub Issues?",
+      "authors": ["Carlos E. Jimenez", "John Yang", "Alexander Wettig", "Ofir Press"],
+      "published_date": "2023-10-10T00:00:00+00:00",
+      "url": "https://arxiv.org/abs/2310.06770",
+      "abstract": "SWE-bench tests whether language models can resolve 2,294 real GitHub issues drawn from 12 popular Python repositories: given a codebase and an issue, produce a patch that passes the repository's own tests. Solving an instance requires localizing the fault across files, editing code in context windows far exceeding typical limits, and validating against hidden tests — a setting incomparably harder than isolated code generation. At publication, the best model resolved under 2% of instances. SWE-bench (and its verified subset) became the de-facto yardstick for coding agents and the primary driver of agent harness development. Code at https://github.com/princeton-nlp/SWE-bench, data on huggingface.co/datasets/princeton-nlp/SWE-bench."
+    },
+    {
+      "source": "arxiv",
+      "source_id": "arxiv:2402.01030",
+      "authority_tier": 2,
+      "title": "Executable Code Actions Elicit Better LLM Agents",
+      "authors": ["Xingyao Wang", "Yangyi Chen", "Lifan Yuan", "Heng Ji"],
+      "published_date": "2024-02-01T00:00:00+00:00",
+      "url": "https://arxiv.org/abs/2402.01030",
+      "abstract": "Agent actions are usually emitted as JSON tool calls or constrained text, which caps expressiveness. CodeAct proposes Python code as the unified action space: each turn, the agent writes executable code that composes multiple tools, uses control flow, and reuses variables; the interpreter's output or traceback becomes the observation, enabling self-debugging within the loop. Across 17 tool-use benchmarks CodeAct achieves up to 20% higher success than JSON-format actions. The authors release CodeActInstruct and CodeActAgent, and the pattern directly informed execution-centric harnesses where the shell and interpreter are the agent's primary interface. Code at https://github.com/xingyaoww/code-act."
+    },
+    {
+      "source": "arxiv",
+      "source_id": "arxiv:2405.15793",
+      "authority_tier": 2,
+      "title": "SWE-agent: Agent-Computer Interfaces Enable Automated Software Engineering",
+      "authors": ["John Yang", "Carlos E. Jimenez", "Alexander Wettig", "Ofir Press"],
+      "published_date": "2024-05-06T00:00:00+00:00",
+      "url": "https://arxiv.org/abs/2405.15793",
+      "abstract": "The interface between an LLM and the computer matters as much as the model itself. SWE-agent introduces the Agent-Computer Interface (ACI): a purpose-built command layer — file viewer paginated to context-friendly windows, search that returns bounded results, an editor with integrated syntax-check feedback, and guardrails against destructive commands. With the same underlying model, a well-designed ACI raises SWE-bench resolution from 3.8% to 12.5% (pass@1), demonstrating quantitatively that harness engineering is a first-class lever on agent capability, independent of model scale. The ACI concept underpins modern coding harnesses. Code at https://github.com/SWE-agent/SWE-agent."
+    },
+    {
+      "source": "arxiv",
+      "source_id": "arxiv:2407.16741",
+      "authority_tier": 2,
+      "title": "OpenHands: An Open Platform for AI Software Developer Agents",
+      "authors": ["Xingyao Wang", "Boxuan Li", "Yufan Song", "Graham Neubig"],
+      "published_date": "2024-07-23T00:00:00+00:00",
+      "url": "https://arxiv.org/abs/2407.16741",
+      "abstract": "OpenHands (formerly OpenDevin) is an open platform for building generalist software-developer agents that write code, run commands, and browse the web like human developers. The platform contributes an event-stream architecture separating agent logic from environment state, sandboxed Docker runtimes for safe arbitrary code execution, a browsing sub-agent, multi-agent delegation, and an evaluation harness covering 15 benchmarks including SWE-bench. Community agents plug in through a documented abstraction, making OpenHands the reference open implementation for studying harness design choices — action spaces, memory condensation, sandboxing — under controlled evaluation. Code at https://github.com/All-Hands-AI/OpenHands."
+    }
+  ]
+}
