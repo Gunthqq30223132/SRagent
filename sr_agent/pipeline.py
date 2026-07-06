@@ -225,6 +225,12 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("retry-dlq", help="tái xử lý DLQ retry_eligible")
     sub.add_parser("status", help="thống kê staging")
     sub.add_parser("doctor", help="kiểm tra tiền vận hành (env, Ollama, storage)")
+    sub.add_parser("health", help="snapshot sức khỏe + alert (exit 1 nếu có sự cố mở)")
+    heal_p = sub.add_parser("heal", help="tự phục hồi: probe hạ tầng, retry DLQ, enrich")
+    heal_p.add_argument("--now", action="store_true",
+                        help="bỏ qua cửa sổ đêm của enrich (chạy tay/kiểm thử)")
+    enrich_p = sub.add_parser("enrich", help="tái xử lý doc heuristic-only bằng LLM")
+    enrich_p.add_argument("--limit", type=int, default=10)
     args = ap.parse_args(argv)
 
     if args.cmd == "doctor":
@@ -233,9 +239,18 @@ def main(argv: list[str] | None = None) -> int:
         return doctor_main()
 
     with StagingStore() as store:
-        pipeline = _build_default_pipeline(store)
         if args.cmd == "run":
+            import json as _json
+            from dataclasses import asdict
+            from datetime import datetime, timezone
+
+            from sr_agent.monitor import alerts
+
+            pipeline = _build_default_pipeline(store)
+            started = datetime.now(timezone.utc).isoformat()
             report = pipeline.run(args.query, max_results=args.max_results)
+            store.record_run(args.query, started, _json.dumps(asdict(report)))
+            alerts.evaluate(store)  # heartbeat + báo động theo chuyển trạng thái
             print(
                 f"fetched={report.fetched} new={report.new} dup={report.duplicates} "
                 f"superseded={report.superseded} rubric_rejected={report.rejected_by_rubric} "
@@ -243,6 +258,7 @@ def main(argv: list[str] | None = None) -> int:
                 f"skipped_sources={report.skipped_sources}"
             )
         elif args.cmd == "retry-dlq":
+            pipeline = _build_default_pipeline(store)
             print(f"retried={pipeline.retry_dlq()}")
         elif args.cmd == "status":
             for row in store.conn.execute(
@@ -250,7 +266,49 @@ def main(argv: list[str] | None = None) -> int:
             ):
                 print(f"{row['status']:>10}: {row['n']}")
             print(f"{'dlq':>10}: {len(store.dlq_entries())}")
+        elif args.cmd == "health":
+            return _print_health(store)
+        elif args.cmd == "heal":
+            import json as _json
+
+            from sr_agent.monitor.recover import heal
+
+            print(_json.dumps(heal(store, now=args.now), ensure_ascii=False, indent=2))
+        elif args.cmd == "enrich":
+            from sr_agent.monitor.recover import enrich_degraded
+
+            print(f"enriched={enrich_degraded(store, limit=args.limit)}")
     return 0
+
+
+def _print_health(store: StagingStore) -> int:
+    """In snapshot + alert; exit 1 nếu có sự cố. Chỉ đọc — không đổi state alert."""
+    from sr_agent.monitor import alerts, health, probes
+
+    snap = health.snapshot(store)
+    print(f"nguồn nghi sập (24h):   {', '.join(snap.sources_down) or 'không'}")
+    print(f"DLQ: {snap.dlq_total} tổng | {snap.dlq_retry_eligible} chờ retry | "
+          f"{snap.dlq_last_24h} trong 24h | {snap.dlq_permanent} vĩnh viễn "
+          f"| theo lỗi: {snap.dlq_by_error or '{}'}")
+    print(f"doc chưa phân tích LLM: {snap.degraded_count}")
+    print(f"documents theo status:  {snap.status_counts or '{}'}")
+    if snap.hours_since_last_run is not None:
+        print(f"batch gần nhất:         {snap.hours_since_last_run:.1f}h trước "
+              f"(query: {snap.last_run['query']!r})")
+    else:
+        print("batch gần nhất:         chưa có (bảng runs trống)")
+
+    ollama_up = probes.probe_ollama() if snap.degraded_count else None
+    desired = alerts.desired_alerts(snap, ollama_up=ollama_up)
+    stored_open = alerts.open_alerts(store)
+    for key, detail in desired.items():
+        print(f"🔴 {key}: {detail}")
+    for row in stored_open:
+        if row["key"] not in desired:
+            print(f"🟠 {row['key']} (đang mở, chờ heal xác nhận hồi phục)")
+    if not desired and not stored_open:
+        print("🟢 Không có sự cố.")
+    return 1 if (desired or stored_open) else 0
 
 
 def _build_default_pipeline(store: StagingStore) -> Pipeline:

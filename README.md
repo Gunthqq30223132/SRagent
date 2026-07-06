@@ -86,6 +86,20 @@ make unschedule                             # gỡ
 
 Script cài đặt tự chạy `doctor` trước — check bắt buộc nào fail thì dừng, không cài lịch trên máy chưa sẵn sàng. Đổi query chỉ cần chạy lại `make schedule` (idempotent).
 
+## Giám sát & tự phục hồi (M4)
+
+```bash
+make health          # snapshot + alert; exit 1 nếu có sự cố mở (dùng được trong script)
+make heal            # 1 chu kỳ tự phục hồi ngay (probe -> retry DLQ -> enrich)
+make enrich          # tái xử lý doc heuristic-only bằng LLM (cần Ollama)
+make schedule-ops    # cài 2 agent nền: heal (15 phút/lần) + enrich (02:00 hằng đêm)
+```
+
+- **Báo động chống alarm-fatigue**: máy trạng thái alert chỉ notify khi *chuyển* trạng thái — một tin 🔴 khi sự cố mở (nguồn sập / DLQ tăng đột biến / Ollama sập kèm doc chưa phân tích / 36h không có batch), im lặng khi đang mở, một tin 🟢 khi hồi phục. Sink: Notification Center macOS (mặc định) + `ALERT_WEBHOOK_URL` tùy chọn (ntfy.sh/Slack/Discord — xem `.env.example`).
+- **Tự phục hồi**: agent `com.sragent.heal` chạy 15 phút/lần (và ngay khi máy thức dậy) — probe mạng nguồn + Ollama; hạ tầng sống lại thì tự chạy lại standing query cho nguồn từng sập, `retry-dlq` bản ghi lẻ (fail thì tăng `attempts`, trần 5 lần), và enrich trong cửa sổ đêm.
+- **Cờ suy giảm**: doc QUEUED xử lý khi Ollama sập có badge ⚠️ "Chưa phân tích LLM" trong UI (suy trực tiếp từ `tech_meta IS NULL`, không thêm cột nào) — người duyệt không nhầm "chưa kiểm tra" với "không có artifact". `pipeline enrich` bổ sung phần LLM cho các doc này khi Ollama hoạt động.
+- **Dashboard**: tab "🩺 Sức khỏe hệ thống" trong chính Streamlit UI.
+
 ## Nguyên tắc thiết kế
 
 - **Rẻ trước, đắt sau**: dedup + rubric (hard rules Python) chạy trước, LLM 7B chỉ đụng vào các bản ghi đã qua gate — tránh nghẽn ở parser trên máy 16GB RAM.

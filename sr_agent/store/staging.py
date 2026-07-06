@@ -53,6 +53,24 @@ CREATE TABLE IF NOT EXISTS events (
     detail     TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL
 );
+
+-- M4: heartbeat batch (dead-man's switch) + standing query cho heal
+CREATE TABLE IF NOT EXISTS runs (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    query       TEXT NOT NULL,
+    started_at  TEXT NOT NULL,
+    finished_at TEXT NOT NULL,
+    report_json TEXT NOT NULL
+);
+
+-- M4: máy trạng thái alert — chỉ notify khi chuyển trạng thái (chống alarm fatigue)
+CREATE TABLE IF NOT EXISTS alerts (
+    key           TEXT PRIMARY KEY,
+    state         TEXT NOT NULL,
+    detail        TEXT NOT NULL DEFAULT '',
+    first_seen    TEXT NOT NULL,
+    last_notified TEXT
+);
 """
 
 
@@ -223,6 +241,53 @@ class StagingStore:
     def clear_dlq_entry(self, entry_id: int) -> None:
         self.conn.execute("DELETE FROM dlq WHERE id = ?", (entry_id,))
         self.conn.commit()
+
+    def bump_dlq_attempt(self, entry_id: int, *, max_attempts: int = 5) -> int:
+        """Tăng attempts sau một lần retry fail; chạm trần -> tắt retry_eligible.
+
+        Trả về số attempts mới. Chặn vòng retry vô hạn: entry chạm trần ở lại
+        DLQ làm audit nhưng heal không đụng nữa (alert DLQ_PERMANENT lo phần báo).
+        """
+        row = self.conn.execute(
+            "UPDATE dlq SET attempts = attempts + 1 WHERE id = ? "
+            "RETURNING attempts", (entry_id,)
+        ).fetchone()
+        attempts = int(row["attempts"]) if row else 0
+        if attempts >= max_attempts:
+            self.conn.execute(
+                "UPDATE dlq SET retry_eligible = 0 WHERE id = ?", (entry_id,)
+            )
+        self.conn.commit()
+        return attempts
+
+    # --- M4: degraded docs / runs ---------------------------------------------------
+
+    def degraded_uids(self) -> list[str]:
+        """Doc QUEUED xử lý heuristic-only (bỏ qua tầng LLM khi Ollama sập).
+
+        Bất biến dữ liệu: tech_meta CHỈ được ghi bởi StructuralParser, chỉ cắm
+        khi Ollama sống -> tech_meta IS NULL <=> chưa qua phân tích LLM.
+        """
+        rows = self.conn.execute(
+            """SELECT uid FROM documents
+               WHERE status = ? AND json_extract(payload, '$.tech_meta') IS NULL
+               ORDER BY rubric_score DESC""",
+            (DocStatus.QUEUED.value,),
+        )
+        return [r["uid"] for r in rows]
+
+    def record_run(self, query: str, started_at: str, report_json: str) -> None:
+        self.conn.execute(
+            "INSERT INTO runs (query, started_at, finished_at, report_json) "
+            "VALUES (?, ?, ?, ?)",
+            (query, started_at, _now(), report_json),
+        )
+        self.conn.commit()
+
+    def last_run(self) -> sqlite3.Row | None:
+        return self.conn.execute(
+            "SELECT * FROM runs ORDER BY id DESC LIMIT 1"
+        ).fetchone()
 
     # --- events -------------------------------------------------------------------
 

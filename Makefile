@@ -4,7 +4,8 @@
 PY := .venv/bin/python
 QUERY ?=
 
-.PHONY: setup doctor run status retry-dlq ui test bench schedule unschedule
+.PHONY: setup doctor run status retry-dlq ui test bench schedule unschedule \
+        health heal enrich schedule-ops
 
 setup:              ## tạo venv + cài deps + khởi tạo .env (không ghi đè)
 	uv venv .venv
@@ -27,6 +28,15 @@ status:             ## thống kê staging theo status
 retry-dlq:          ## tái xử lý các bản ghi DLQ retry_eligible
 	$(PY) -m sr_agent.pipeline retry-dlq
 
+health:             ## snapshot sức khỏe + alert (exit 1 nếu có sự cố mở)
+	$(PY) -m sr_agent.pipeline health
+
+heal:               ## chạy 1 chu kỳ tự phục hồi ngay (bỏ qua cửa sổ đêm)
+	$(PY) -m sr_agent.pipeline heal --now
+
+enrich:             ## tái xử lý doc heuristic-only bằng LLM (cần Ollama)
+	$(PY) -m sr_agent.pipeline enrich
+
 ui:                 ## mở hàng đợi duyệt Streamlit (top-5 theo rubric)
 	.venv/bin/streamlit run ui/app.py
 
@@ -42,5 +52,8 @@ ifeq ($(strip $(QUERY)),)
 endif
 	bash scripts/install_launchd.sh "$(QUERY)"
 
-unschedule:         ## gỡ launchd agent
+schedule-ops:       ## cài 2 agent vận hành: heal (15 phút) + enrich (02:00)
+	bash scripts/install_ops_agents.sh
+
+unschedule:         ## gỡ toàn bộ launchd agent (daily + heal + enrich)
 	bash scripts/uninstall_launchd.sh

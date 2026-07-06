@@ -1,15 +1,17 @@
 #!/bin/bash
-# Gỡ LaunchAgent com.sragent.daily khỏi launchd và xóa plist.
+# Gỡ toàn bộ LaunchAgent của SR-Agent (daily + heal + enrich) khỏi launchd.
 set -euo pipefail
-
-LABEL="com.sragent.daily"
-DEST="$HOME/Library/LaunchAgents/${LABEL}.plist"
 
 if [[ "$(uname)" != "Darwin" ]]; then
     echo "LỖI: launchd chỉ có trên macOS." >&2
     exit 1
 fi
 
-launchctl bootout "gui/$(id -u)" "$DEST" 2>/dev/null || true
-rm -f "$DEST"
-echo "Đã gỡ $LABEL."
+for LABEL in com.sragent.daily com.sragent.heal com.sragent.enrich; do
+    DEST="$HOME/Library/LaunchAgents/${LABEL}.plist"
+    if [[ -f "$DEST" ]]; then
+        launchctl bootout "gui/$(id -u)" "$DEST" 2>/dev/null || true
+        rm -f "$DEST"
+        echo "Đã gỡ $LABEL."
+    fi
+done

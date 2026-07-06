@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Enrich đêm: 02:00 tái xử lý các doc QUEUED heuristic-only (chưa qua tầng LLM
+  vì Ollama sập lúc ingest) bằng StructuralParser — tối đa 10 doc/đêm.
+  Máy ngủ qua 02:00 -> launchd chạy bù khi thức dậy.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.sragent.enrich</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>{{REPO_DIR}}/.venv/bin/python</string>
+        <string>-m</string>
+        <string>sr_agent.pipeline</string>
+        <string>enrich</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>{{REPO_DIR}}</string>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>2</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>{{REPO_DIR}}/staging/enrich.log</string>
+    <key>StandardErrorPath</key>
+    <string>{{REPO_DIR}}/staging/enrich.log</string>
+
+    <key>RunAtLoad</key>
+    <false/>
+</dict>
+</plist>
