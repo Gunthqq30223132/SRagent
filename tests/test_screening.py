@@ -12,7 +12,8 @@ from sr_agent.models.schemas import DocStatus, Document
 from sr_agent.store.staging import StagingStore
 from tests.test_pipeline import FakeFetcher, make_doc
 from tools.protocol_build import PicoConcept, ReviewProtocol
-from tools.screen_run import ScreenVerdict, compute_cohen_kappa, normalize_text, run_screening_a, verify_quote
+from tools.screen_run import ScreenVerdict, normalize_text, run_screening_a, verify_quote
+from sr_agent.monitor.health import compute_cohen_kappa
 
 OLLAMA = "http://localhost:11434"
 

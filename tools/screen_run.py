@@ -23,6 +23,9 @@ from pydantic import BaseModel, Field
 from sr_agent.config import OLLAMA_MODEL
 from sr_agent.models.schemas import DocStatus
 from sr_agent.store.staging import StagingStore
+from sr_agent.errors import TransientError
+from sr_agent.monitor.health import compute_cohen_kappa
+import httpx
 from tools.protocol_build import ReviewProtocol
 
 logger = logging.getLogger("tools.screen_run")
@@ -62,29 +65,7 @@ def verify_quote(source_text: str, quote: str) -> bool:
     return norm_quote in norm_source
 
 
-# --- Cohen's Kappa (D4) --------------------------------------------------------------
-
-def compute_cohen_kappa(verdicts: list[tuple[str, str]]) -> float | None:
-    valid_verdicts = [(a, b) for a, b in verdicts if a in ("include", "exclude") and b in ("include", "exclude")]
-    N = len(valid_verdicts)
-    if N < 2:
-        return None
-    
-    n_11 = sum(1 for a, b in valid_verdicts if a == "include" and b == "include")
-    n_12 = sum(1 for a, b in valid_verdicts if a == "include" and b == "exclude")
-    n_21 = sum(1 for a, b in valid_verdicts if a == "exclude" and b == "include")
-    n_22 = sum(1 for a, b in valid_verdicts if a == "exclude" and b == "exclude")
-    
-    p_o = (n_11 + n_22) / N
-    p_inc_a = (n_11 + n_12) / N
-    p_inc_b = (n_11 + n_21) / N
-    p_exc_a = (n_21 + n_22) / N
-    p_exc_b = (n_12 + n_22) / N
-    
-    p_e = p_inc_a * p_inc_b + p_exc_a * p_exc_b
-    if abs(1.0 - p_e) < 1e-9:
-        return 1.0 if p_o == 1.0 else 0.0
-    return (p_o - p_e) / (1.0 - p_e)
+# Deleted local compute_cohen_kappa (imported from health.py)
 
 
 # --- Prompt Builders ------------------------------------------------------------------
@@ -217,6 +198,8 @@ def invoke_screener_agent(client, system_prompt: str, user_prompt: str, source_t
         if not is_valid:
             return "invalid", criterion_id, evidence_quote, confidence
         return verdict, criterion_id, evidence_quote, confidence
+    except (TransientError, httpx.HTTPError) as exc:
+        raise exc
     except Exception as exc:
         logger.error(f"LLM generation failed: {exc}")
         return "invalid", None, None, "low"
@@ -270,8 +253,9 @@ def run_screening_a(store: StagingStore, protocol: ReviewProtocol, criteria: dic
 def run_screening_batch(store: StagingStore, protocol: ReviewProtocol, criteria: dict, limit: int) -> dict:
     from sr_agent.parser.ollama_client import OllamaClient
     
+    started_at = datetime.now(timezone.utc).isoformat()
     model_a = OLLAMA_MODEL
-    model_b = os.getenv("SR_SCREEN_MODEL_B", "gemma3:4b")
+    model_b = os.getenv("SR_SCREEN_MODEL_B", "gemma4:e4b")
     
     client_a = OllamaClient(model=model_a)
     client_b = OllamaClient(model=model_b)
@@ -279,6 +263,15 @@ def run_screening_batch(store: StagingStore, protocol: ReviewProtocol, criteria:
     if not client_a.is_available():
         logger.error("Ollama is not available. Cannot run multi-agent screening.")
         return {"processed": 0, "kappa": None}
+
+    # T1: check if model_b is in list_models()
+    available_models = client_a.list_models()
+    single_model_mode = False
+    if model_b not in available_models:
+        single_model_mode = True
+        store.log_event("screening:batch", "SCREEN_SINGLE_MODEL",
+                        f"model_b={model_b} không có trong ollama tags — screener_b chạy tạm trên {model_a}")
+        print(f"WARNING: model_b={model_b} is not available in Ollama tags. Fallback to single_model_mode using {model_a}.")
         
     # Get queued documents
     rows = store.conn.execute(
@@ -288,11 +281,6 @@ def run_screening_batch(store: StagingStore, protocol: ReviewProtocol, criteria:
     to_screen = []
     for r in rows:
         uid = r["uid"]
-        # Check if consensus has been reached (i.e. status is no longer queued or we have events showing it is processed)
-        # Actually, if a doc is rejected, it is not queued anymore.
-        # But if it is queued, we check if it has a final consensus verdict.
-        # A doc is fully processed if either:
-        # - it has SCREEN_EXCLUDED, SCREEN_INCLUDED, or SCREEN_ESCALATED event.
         has_consensus = store.conn.execute(
             "SELECT 1 FROM events WHERE uid = ? AND event_type IN ('SCREEN_EXCLUDED', 'SCREEN_INCLUDED', 'SCREEN_ESCALATED')",
             (uid,)
@@ -302,99 +290,134 @@ def run_screening_batch(store: StagingStore, protocol: ReviewProtocol, criteria:
             
     if not to_screen:
         print("No documents require screening.")
-        # Still compute kappa on existing data
-        all_verdicts = store.conn.execute(
-            """SELECT uid, agent, verdict FROM screening 
-               WHERE agent IN ('screener_a', 'screener_b') AND verdict IN ('include', 'exclude')"""
-        ).fetchall()
-        grouped = {}
-        for r in all_verdicts:
-            grouped.setdefault(r["uid"], {})[r["agent"]] = r["verdict"]
-        pairs = [(grouped[u]["screener_a"], grouped[u]["screener_b"]) for u in grouped if "screener_a" in grouped[u] and "screener_b" in grouped[u]]
-        return {"processed": 0, "kappa": compute_cohen_kappa(pairs)}
+        report_data = {
+            "processed": 0,
+            "kappa": None,
+            "kappa_docs": 0,
+            "single_model_mode": single_model_mode,
+            "escalated": 0
+        }
+        if single_model_mode:
+            report_data["kappa_reason"] = "single_model"
+        store.record_run(
+            query=f"screening:{protocol.topic_vi}",
+            started_at=started_at,
+            report_json=json.dumps(report_data)
+        )
+        return {"processed": 0, "kappa": None, "single_model_mode": single_model_mode}
         
     screened_count = 0
-    for uid in to_screen[:limit]:
-        doc = store.get(uid)
-        if not doc:
-            continue
+    batch_verdicts = []
+    escalated_count = 0
+    
+    try:
+        for uid in to_screen[:limit]:
+            doc = store.get(uid)
+            if not doc:
+                continue
+                
+            print(f"Screening: {uid} - {doc.title[:60]}")
+            source_text = f"{doc.title}\n{doc.abstract or ''}"
             
-        print(f"Screening: {uid} - {doc.title[:60]}")
-        source_text = f"{doc.title}\n{doc.abstract or ''}"
-        
-        # 1. Run Screener A
-        verdict_a_row = store.conn.execute(
-            "SELECT verdict, criterion_id, evidence_quote, confidence FROM screening WHERE uid = ? AND agent = 'screener_a'",
-            (uid,)
-        ).fetchone()
-        
-        if verdict_a_row:
-            verdict_a = verdict_a_row["verdict"]
-            crit_a = verdict_a_row["criterion_id"]
-            quote_a = verdict_a_row["evidence_quote"]
-            conf_a = verdict_a_row["confidence"]
-        else:
-            sys_a, usr_a = build_screener_a_prompts(doc.title, doc.abstract or "", protocol, criteria)
-            verdict_a, crit_a, quote_a, conf_a = invoke_screener_agent(client_a, sys_a, usr_a, source_text, protocol)
-            store.add_screen_verdict(uid, "screener_a", model_a, verdict_a, crit_a, quote_a, conf_a)
-            store.log_event(uid, "SCREENED", f"agent=screener_a, verdict={verdict_a}, criterion={crit_a or ''}")
+            # 1. Run Screener A
+            verdict_a_row = store.conn.execute(
+                "SELECT verdict, criterion_id, evidence_quote, confidence FROM screening WHERE uid = ? AND agent = 'screener_a'",
+                (uid,)
+            ).fetchone()
             
-        # 2. Run Screener B
-        verdict_b_row = store.conn.execute(
-            "SELECT verdict, criterion_id, evidence_quote, confidence FROM screening WHERE uid = ? AND agent = 'screener_b'",
-            (uid,)
-        ).fetchone()
-        
-        if verdict_b_row:
-            verdict_b = verdict_b_row["verdict"]
-            crit_b = verdict_b_row["criterion_id"]
-            quote_b = verdict_b_row["evidence_quote"]
-            conf_b = verdict_b_row["confidence"]
-        else:
-            sys_b, usr_b = build_screener_b_prompts(doc.title, doc.abstract or "", protocol, criteria)
-            # Screener B might use a different model, check if available or fallback to client_a
-            # Since client_b model might not be pulled, client_b.is_available() checks tags.
-            # If client_b model is not available in local ollama tags, it falls back to model_a
-            active_client_b = client_b if client_b.model in client_a.list_models() else client_a
-            verdict_b, crit_b, quote_b, conf_b = invoke_screener_agent(active_client_b, sys_b, usr_b, source_text, protocol)
-            store.add_screen_verdict(uid, "screener_b", active_client_b.model, verdict_b, crit_b, quote_b, conf_b)
-            store.log_event(uid, "SCREENED", f"agent=screener_b, verdict={verdict_b}, criterion={crit_b or ''}")
-
-        # 3. Consensus & Tie-breaker
-        if verdict_a == "invalid" or verdict_b == "invalid":
-            # Direct tie-breaker due to invalid verdict
-            v1_desc = f"Verdict: {verdict_a} (Criterion: {crit_a}, Quote: {quote_a})"
-            v2_desc = f"Verdict: {verdict_b} (Criterion: {crit_b}, Quote: {quote_b})"
-            run_tiebreaker_flow(store, client_a, uid, doc, protocol, criteria, v1_desc, v2_desc)
-        elif verdict_a == verdict_b:
-            if verdict_a == "exclude":
-                store.set_status(uid, DocStatus.REJECTED)
-                store.log_event(uid, "SCREEN_EXCLUDED", f"Consensus exclude. screener_a={crit_a}, screener_b={crit_b}")
+            if verdict_a_row:
+                verdict_a = verdict_a_row["verdict"]
+                crit_a = verdict_a_row["criterion_id"]
+                quote_a = verdict_a_row["evidence_quote"]
+                conf_a = verdict_a_row["confidence"]
             else:
-                store.log_event(uid, "SCREEN_INCLUDED", "Consensus include.")
-        else:
-            # Disagreement!
-            v1_desc = f"Verdict: {verdict_a} (Criterion: {crit_a}, Quote: {quote_a})"
-            v2_desc = f"Verdict: {verdict_b} (Criterion: {crit_b}, Quote: {quote_b})"
-            run_tiebreaker_flow(store, client_a, uid, doc, protocol, criteria, v1_desc, v2_desc)
+                sys_a, usr_a = build_screener_a_prompts(doc.title, doc.abstract or "", protocol, criteria)
+                verdict_a, crit_a, quote_a, conf_a = invoke_screener_agent(client_a, sys_a, usr_a, source_text, protocol)
+                store.add_screen_verdict(uid, "screener_a", model_a, verdict_a, crit_a, quote_a, conf_a)
+                store.log_event(uid, "SCREENED", f"agent=screener_a, verdict={verdict_a}, criterion={crit_a or ''}")
+                
+            # 2. Run Screener B
+            verdict_b_row = store.conn.execute(
+                "SELECT verdict, criterion_id, evidence_quote, confidence FROM screening WHERE uid = ? AND agent = 'screener_b'",
+                (uid,)
+            ).fetchone()
             
-        screened_count += 1
+            if verdict_b_row:
+                verdict_b = verdict_b_row["verdict"]
+                crit_b = verdict_b_row["criterion_id"]
+                quote_b = verdict_b_row["evidence_quote"]
+                conf_b = verdict_b_row["confidence"]
+            else:
+                sys_b, usr_b = build_screener_b_prompts(doc.title, doc.abstract or "", protocol, criteria)
+                active_client_b = client_a if single_model_mode else client_b
+                verdict_b, crit_b, quote_b, conf_b = invoke_screener_agent(active_client_b, sys_b, usr_b, source_text, protocol)
+                store.add_screen_verdict(uid, "screener_b", active_client_b.model, verdict_b, crit_b, quote_b, conf_b)
+                store.log_event(uid, "SCREENED", f"agent=screener_b, verdict={verdict_b}, criterion={crit_b or ''}")
+
+            if verdict_a in ("include", "exclude") and verdict_b in ("include", "exclude"):
+                batch_verdicts.append((verdict_a, verdict_b))
+
+            # 3. Consensus & Tie-breaker
+            if verdict_a == "invalid" or verdict_b == "invalid":
+                # Direct tie-breaker due to invalid verdict
+                v1_desc = f"Verdict: {verdict_a} (Criterion: {crit_a}, Quote: {quote_a})"
+                v2_desc = f"Verdict: {verdict_b} (Criterion: {crit_b}, Quote: {quote_b})"
+                is_esc = run_tiebreaker_flow(store, client_a, uid, doc, protocol, criteria, v1_desc, v2_desc)
+                if is_esc:
+                    escalated_count += 1
+            elif verdict_a == verdict_b:
+                if verdict_a == "exclude":
+                    store.set_status(uid, DocStatus.REJECTED)
+                    store.log_event(uid, "SCREEN_EXCLUDED", f"Consensus exclude. screener_a={crit_a}, screener_b={crit_b}")
+                else:
+                    store.log_event(uid, "SCREEN_INCLUDED", "Consensus include.")
+            else:
+                # Disagreement!
+                v1_desc = f"Verdict: {verdict_a} (Criterion: {crit_a}, Quote: {quote_a})"
+                v2_desc = f"Verdict: {verdict_b} (Criterion: {crit_b}, Quote: {quote_b})"
+                is_esc = run_tiebreaker_flow(store, client_a, uid, doc, protocol, criteria, v1_desc, v2_desc)
+                if is_esc:
+                    escalated_count += 1
+                
+            screened_count += 1
+    except (TransientError, httpx.HTTPError) as exc:
+        print(f"Transient error encountered during batch screening: {exc}")
+        remaining = len(to_screen[:limit]) - screened_count
+        print(f"Processed: {screened_count}. Remaining: {remaining}.")
 
     # Calculate Kappa
-    all_verdicts = store.conn.execute(
-        """SELECT uid, agent, verdict FROM screening 
-           WHERE agent IN ('screener_a', 'screener_b') AND verdict IN ('include', 'exclude')"""
-    ).fetchall()
-    grouped = {}
-    for r in all_verdicts:
-        grouped.setdefault(r["uid"], {})[r["agent"]] = r["verdict"]
-    pairs = [(grouped[u]["screener_a"], grouped[u]["screener_b"]) for u in grouped if "screener_a" in grouped[u] and "screener_b" in grouped[u]]
-    kappa = compute_cohen_kappa(pairs)
+    if single_model_mode:
+        kappa = None
+    else:
+        kappa = compute_cohen_kappa(batch_verdicts)
+        
+    report_data = {
+        "processed": screened_count,
+        "kappa": kappa,
+        "kappa_docs": len(batch_verdicts),
+        "single_model_mode": single_model_mode,
+        "escalated": escalated_count
+    }
+    if single_model_mode:
+        report_data["kappa_reason"] = "single_model"
+        
+    store.record_run(
+        query=f"screening:{protocol.topic_vi}",
+        started_at=started_at,
+        report_json=json.dumps(report_data)
+    )
     
-    return {"processed": screened_count, "kappa": kappa}
+    res = {
+        "processed": screened_count,
+        "kappa": kappa,
+        "single_model_mode": single_model_mode
+    }
+    if single_model_mode:
+        res["kappa_reason"] = "single_model"
+    return res
 
 
-def run_tiebreaker_flow(store: StagingStore, client, uid: str, doc, protocol: ReviewProtocol, criteria: dict, v1_desc: str, v2_desc: str):
+def run_tiebreaker_flow(store: StagingStore, client, uid: str, doc, protocol: ReviewProtocol, criteria: dict, v1_desc: str, v2_desc: str) -> bool:
     source_text = f"{doc.title}\n{doc.abstract or ''}"
     sys_tb, usr_tb = build_tiebreaker_prompts(doc.title, doc.abstract or "", protocol, criteria, v1_desc, v2_desc)
     
@@ -405,6 +428,7 @@ def run_tiebreaker_flow(store: StagingStore, client, uid: str, doc, protocol: Re
     if verdict_tb == "invalid" or conf_tb == "low":
         # Escalate to human
         store.log_event(uid, "SCREEN_ESCALATED", f"Tiebreaker low-confidence or invalid. tb_verdict={verdict_tb}")
+        return True
     else:
         # High confidence resolved
         if verdict_tb == "exclude":
@@ -412,6 +436,7 @@ def run_tiebreaker_flow(store: StagingStore, client, uid: str, doc, protocol: Re
             store.log_event(uid, "SCREEN_EXCLUDED", f"Tiebreaker resolved to exclude. criterion={crit_tb}")
         else:
             store.log_event(uid, "SCREEN_INCLUDED", "Tiebreaker resolved to include.")
+        return False
 
 
 def main(argv: list[str] | None = None) -> int:

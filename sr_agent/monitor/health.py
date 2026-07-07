@@ -33,6 +33,7 @@ class HealthSnapshot:
     screen_escalated_count: int = 0
     grounding_avg_24h: float | None = None
     extraction_docs_count_24h: int = 0
+    single_model_mode_recent: bool = False
 
 
 def _cutoff(hours: int) -> str:
@@ -103,10 +104,17 @@ def snapshot(store: StagingStore) -> HealthSnapshot:
         for u in grouped
         if "screener_a" in grouped[u] and "screener_b" in grouped[u]
     ]
-    snap.screen_kappa_recent = _compute_cohen_kappa(pairs)
+    snap.screen_kappa_recent = compute_cohen_kappa(pairs)
     snap.screen_kappa_docs_count = len(pairs)
 
     day_ago = _cutoff(24)
+    # T1: check if SCREEN_SINGLE_MODEL event exists in last 24h
+    single_model_event = conn.execute(
+        "SELECT 1 FROM events WHERE event_type = 'SCREEN_SINGLE_MODEL' AND created_at > ? LIMIT 1",
+        (day_ago,)
+    ).fetchone()
+    snap.single_model_mode_recent = (single_model_event is not None)
+
     ext_rows = conn.execute(
         "SELECT uid, verified FROM extraction WHERE created_at > ?", (day_ago,)
     ).fetchall()
@@ -117,14 +125,25 @@ def snapshot(store: StagingStore) -> HealthSnapshot:
     scores = []
     for uid, verifieds in ext_grouped.items():
         if verifieds:
-            scores.append(sum(verifieds) / len(verifieds))
+            # T2: Grounding score calculation
+            # count(verified=1) / count(verified IN (0,1))
+            # verified=2 is completely excluded from denominator
+            denom = sum(1 for v in verifieds if v in (0, 1))
+            if denom > 0:
+                scores.append(sum(1 for v in verifieds if v == 1) / denom)
     snap.grounding_avg_24h = sum(scores) / len(scores) if scores else None
     snap.extraction_docs_count_24h = len(ext_grouped)
 
     return snap
 
 
-def _compute_cohen_kappa(verdicts: list[tuple[str, str]]) -> float | None:
+def compute_cohen_kappa(verdicts: list[tuple[str, str]]) -> float | None:
+    """Calculates Cohen's Kappa coefficient for inter-rater agreement.
+    
+    Used both for cumulative database agreement monitoring (in health/alert check)
+    and for individual run batches (logged to runs table). Note that these serve
+    different scopes (entire history vs. single run).
+    """
     N = len(verdicts)
     if N < 2:
         return None
