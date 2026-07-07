@@ -5,3 +5,6 @@ __pycache__/
 staging/
 .pytest_cache/
 *.egg-info/
+._*
+.DS_Store
+
