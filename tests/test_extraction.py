@@ -52,10 +52,10 @@ class TestExtraction:
         dataset_spec = [e for e in exts if e["field"] == "dataset_spec"][0]
         assert dataset_spec["verified"] == 1
         
-        # verified_only=True should return all 4 because has_code_repo, baselines, metrics are empty quotes,
-        # which default to verified=1
+        # verified_only=True should return only 1 because dataset_spec is the only verified=1
         exts_verified = store.extractions("ieee:38111222", verified_only=True)
-        assert len(exts_verified) == 4
+        assert len(exts_verified) == 1
+        assert exts_verified[0]["field"] == "dataset_spec"
 
     @respx.mock
     def test_extraction_unverified_due_to_hallucinated_quote(self, store):
@@ -83,10 +83,9 @@ class TestExtraction:
         dataset_spec = [e for e in exts_all if e["field"] == "dataset_spec"][0]
         assert dataset_spec["verified"] == 0  # should be unverified due to hallucinated quote
         
-        # Verified only should not return dataset_spec
+        # Verified only should return empty because dataset_spec is verified=0 and others are verified=2
         exts_verified = store.extractions("ieee:38111222", verified_only=True)
-        assert len(exts_verified) == 3
-        assert "dataset_spec" not in [e["field"] for e in exts_verified]
+        assert len(exts_verified) == 0
         
         # Event should be logged
         events = [r["event_type"] for r in store.conn.execute("SELECT event_type FROM events WHERE uid = 'ieee:38111222'").fetchall()]

@@ -339,14 +339,19 @@ class TestScreenerBIndependence:
         doc.abstract = "Some content."
         store.upsert(doc)
 
-        respx.get(f"{OLLAMA}/api/tags").mock(return_value=httpx.Response(200, json={}))
+        # Mock tags to contain gemma4:e4b so dual-screening runs normally
+        respx.get(f"{OLLAMA}/api/tags").mock(return_value=httpx.Response(200, json={
+            "models": [{"name": "gemma4:e4b"}]
+        }))
+        
+        a_verdict_dict = {
+            "verdict": "exclude", "criterion_id": "ET1",
+            "evidence_quote": "ZZZ_UNIQUE_A_QUOTE", "confidence": "high"
+        }
         respx.post(f"{OLLAMA}/api/chat").mock(side_effect=[
             # Screener A
             httpx.Response(200, json={
-                "message": {"role": "assistant", "content": json.dumps({
-                    "verdict": "exclude", "criterion_id": "ET1",
-                    "evidence_quote": "Some content", "confidence": "high"
-                })}
+                "message": {"role": "assistant", "content": json.dumps(a_verdict_dict)}
             }),
             # Screener B
             httpx.Response(200, json={
@@ -358,6 +363,9 @@ class TestScreenerBIndependence:
         ])
 
         from tools.screen_run import run_screening_batch
+        # Set env so we check tags correctly
+        import os
+        os.environ["SR_SCREEN_MODEL_B"] = "gemma4:e4b"
         run_screening_batch(store, protocol, criteria, limit=1)
 
         # Inspect the requests captured by respx
@@ -373,8 +381,11 @@ class TestScreenerBIndependence:
         
         assert screener_b_request is not None
         req_body = json.loads(screener_b_request.content)
-        # Check that there is no reference to screener_a or its outputs in the messages
         messages_text = str(req_body["messages"])
+        
+        # Rigorous check: B's request body must NOT contain A's unique quote, 'screener_a', or A's verdict JSON
+        assert "ZZZ_UNIQUE_A_QUOTE" not in messages_text
         assert "screener_a" not in messages_text
-        assert "exclude" not in messages_text or "verdict" not in messages_text  # should only have exclusion criteria definitions, not screener_a's choice
+        assert json.dumps(a_verdict_dict) not in messages_text
+        assert '"verdict": "exclude"' not in messages_text  # B does not see A's output verdict
 
