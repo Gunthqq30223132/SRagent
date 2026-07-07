@@ -5,7 +5,7 @@ PY := .venv/bin/python
 QUERY ?=
 
 .PHONY: setup doctor run status retry-dlq ui test bench schedule unschedule \
-        health heal enrich schedule-ops
+        health heal enrich schedule-ops topic plan
 
 setup:              ## tạo venv + cài deps + khởi tạo .env (không ghi đè)
 	uv venv .venv
@@ -21,6 +21,18 @@ ifeq ($(strip $(QUERY)),)
 	$(error Thiếu QUERY. Dùng: make run QUERY="your standing query")
 endif
 	$(PY) -m sr_agent.pipeline run --query "$(QUERY)"
+
+topic:              ## chạy theo chủ đề qua query profile: make topic TERMS="..." [TOPIC="..."]
+ifeq ($(strip $(TERMS)),)
+	$(error Thiếu TERMS. Dùng: make topic TERMS="english key phrase" [TOPIC="ý định gốc"])
+endif
+	$(PY) tools/topic_run.py --terms "$(TERMS)" --topic "$(TOPIC)"
+
+plan:               ## lập manifest ID để duyệt trước khi nạp: make plan TERMS="..."
+ifeq ($(strip $(TERMS)),)
+	$(error Thiếu TERMS. Dùng: make plan TERMS="english key phrase")
+endif
+	$(PY) tools/topic_run.py --terms "$(TERMS)" --topic "$(TOPIC)" --plan
 
 status:             ## thống kê staging theo status
 	$(PY) -m sr_agent.pipeline status

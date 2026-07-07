@@ -73,6 +73,24 @@ cp .env.example .env        # điền IEEE_API_KEY, NOTION_TOKEN, NOTION_PARENT_
 .venv/bin/python tests/bench_parser.py qwen2.5:7b-instruct gemma3:4b
 ```
 
+## Luồng chủ đề → ID → nạp (cầu nối ngữ nghĩa, M5)
+
+Ngữ nghĩa của con người dừng ở tầng ngoại vi `tools/topic_run.py`; mọi thứ đi vào core là **ID khớp regex tĩnh** — core (router/Pipeline/config) không đổi một dòng, per-source query đạt được bằng wrapper `ProfiledFetcher` ở tầng adapter.
+
+```bash
+# Một lệnh: terms tiếng Anh -> query riêng từng nguồn (tools/profiles/) -> pipeline thật
+make topic TERMS="retrieval augmented generation" TOPIC="tổng hợp công nghệ RAG"
+
+# Đường curation: lập manifest ID -> người xem/sửa file -> nạp
+make plan TERMS="agent computer interface"          # in đường dẫn manifest
+.venv/bin/python tools/topic_run.py --from-plan staging/inbox/<file>.manifest.json
+
+# Nhờ Ollama sinh biến thể từ khóa từ chủ đề tiếng Việt (suy giảm êm nếu Ollama tắt)
+.venv/bin/python tools/topic_run.py --topic "tổng hợp công nghệ RAG" --expand
+```
+
+Manifest có provenance (ID nào đến từ query nào) và mảng `rejected` — ID không khớp `ID_PATTERNS` bị chặn tại biên, kể cả khi file bị sửa tay.
+
 ## Lịch chạy hằng ngày: launchd, không phải cron
 
 Trên macOS, **cron không chạy khi máy ngủ/gập nắp** — với MacBook Air thì job 7h sáng gần như không bao giờ nổ. Dùng launchd LaunchAgent: máy ngủ qua giờ hẹn thì job **tự chạy bù ngay khi thức dậy**.

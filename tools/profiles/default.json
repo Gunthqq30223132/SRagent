@@ -1,0 +1,12 @@
+{
+  "spec_version": "1.0",
+  "note": "Query profile per-source (nguyên lý Gusenbauer: mỗi hệ tìm kiếm một dialect). Placeholder {terms} được thay bằng từng cụm từ khóa tiếng Anh. Nhiều template = nhiều lần search, kết quả union + dedupe. LƯU Ý dialect: ArxivFetcher tự tiền tố 'all:' nên template arXiv chỉ là cụm từ (có ngoặc kép); IEEE nhận boolean đầy đủ qua querytext.",
+  "sources": {
+    "arxiv": {
+      "templates": ["\"{terms}\""]
+    },
+    "ieee": {
+      "templates": ["\"{terms}\""]
+    }
+  }
+}

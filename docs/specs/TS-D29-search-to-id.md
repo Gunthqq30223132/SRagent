@@ -1,5 +1,14 @@
 # TASK SPEC TS-D29-01 — `tools/search_to_id.py` (Cầu nối ngữ nghĩa → ID tất định)
 
+> ⚠️ **TRẠNG THÁI: ĐÃ HIỆN THỰC IN-HOUSE (v1.1) — spec v1.0 dưới đây giữ làm hồ sơ thiết kế.**
+>
+> Bản v1.1 được hiện thực tại **`tools/topic_run.py`** (+ `tools/profiles/default.json`, tests `tests/test_topic_run.py`) với 3 khác biệt so với v1.0, sau vòng tự phản biện:
+> 1. **Không cần cổng `run --ids-file` trong core**: per-source query đạt được bằng `ProfiledFetcher` — wrapper ở tầng adapter; nạp manifest đi qua `tools/topic_run.py --from-plan` dùng `Pipeline.process_document` sẵn có. `git diff sr_agent/` = **0 file** (mù chủ đề được giữ mạnh hơn cả v1.0).
+> 2. **Manifest chỉ là đường tùy chọn** (`--plan` → người duyệt/sửa → `--from-plan`), không phải bước bắt buộc — chế độ mặc định là một lệnh chạy thẳng.
+> 3. Phát hiện dialect khi đọc adapter: `ArxivFetcher.search` tự tiền tố `all:` → template arXiv trong profile chỉ là cụm từ, không phải query đầy đủ (đã ghi chú trong profile).
+>
+> Việc còn lại có thể giao Antygravity: mở rộng profile (nhiều template/nguồn khám phá), UI curation manifest trong Streamlit.
+
 > **Quyết định D29**: tác tử thực thi Antygravity đảm nhận toàn bộ coding. Tài liệu này là bản đặc tả giao việc — copy nguyên văn cho Antygravity.
 > **Người duyệt nghiệm thu**: chủ dự án (con người). **Kiến trúc nền**: xem `docs/HANDOVER.md`.
 
