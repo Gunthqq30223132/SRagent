@@ -155,9 +155,10 @@ def run_extraction_batch(store: StagingStore, limit: int) -> int:
                         logger.warning(f"Verification failed for {uid} field {field}. Quote not in section {section}.")
                         store.log_event(uid, "EXTRACT_UNVERIFIED", field)
                 else:
-                    # No quote (e.g., false or null value), default to verified if value matches expected empty
-                    if value.lower() in ("false", "null", "none", "[]", ""):
-                        verified = 1
+                    if not value or value.lower() in ("false", "null", "none", "[]", ""):
+                        verified = 2
+                    else:
+                        verified = 0
                         
                 store.add_extraction(uid, field, value, quote, section, verified)
                 

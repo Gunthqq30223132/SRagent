@@ -105,11 +105,17 @@ with queue_tab:
             extractions = store.extractions(doc.uid, verified_only=False)
             if extractions:
                 verified_count = sum(1 for e in extractions if e["verified"] == 1)
-                total_count = len(extractions)
-                score = verified_count / total_count if total_count > 0 else 0.0
-                with st.expander(f"Minh chứng trích xuất (Grounding Score: {score:.2f})", expanded=True):
+                denom = sum(1 for e in extractions if e["verified"] in (0, 1))
+                score = verified_count / denom if denom > 0 else None
+                score_str = f"{score:.2f}" if score is not None else "N/A"
+                with st.expander(f"Minh chứng trích xuất (Grounding Score: {score_str})", expanded=True):
                     for e in extractions:
-                        status = "✅ Khớp" if e["verified"] == 1 else "❌ Bị hủy (không khớp)"
+                        if e["verified"] == 1:
+                            status = "✅ Khớp"
+                        elif e["verified"] == 2:
+                            status = "⚪ Không thể kiểm chứng"
+                        else:
+                            status = "❌ Bị hủy (không khớp)"
                         st.markdown(f"**{e['field']}**: `{e['value']}` ({status})")
                         st.markdown(f"&nbsp;&nbsp;&nbsp;&nbsp;*Quote*: \"{e['quote']}\" (in `{e['section']}`)")
 
