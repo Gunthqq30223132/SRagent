@@ -28,6 +28,11 @@ class HealthSnapshot:
     status_counts: dict[str, int] = field(default_factory=dict)
     last_run: sqlite3.Row | None = None
     hours_since_last_run: float | None = None
+    screen_kappa_recent: float | None = None
+    screen_kappa_docs_count: int = 0
+    screen_escalated_count: int = 0
+    grounding_avg_24h: float | None = None
+    extraction_docs_count_24h: int = 0
 
 
 def _cutoff(hours: int) -> str:
@@ -82,4 +87,60 @@ def snapshot(store: StagingStore) -> HealthSnapshot:
         snap.hours_since_last_run = (
             datetime.now(timezone.utc) - started
         ).total_seconds() / 3600
+
+    # M6: screening & extraction health metrics
+    snap.screen_escalated_count = len(store.get_escalated_uids())
+
+    all_verdicts = conn.execute(
+        """SELECT uid, agent, verdict FROM screening 
+           WHERE agent IN ('screener_a', 'screener_b') AND verdict IN ('include', 'exclude')"""
+    ).fetchall()
+    grouped = {}
+    for r in all_verdicts:
+        grouped.setdefault(r["uid"], {})[r["agent"]] = r["verdict"]
+    pairs = [
+        (grouped[u]["screener_a"], grouped[u]["screener_b"])
+        for u in grouped
+        if "screener_a" in grouped[u] and "screener_b" in grouped[u]
+    ]
+    snap.screen_kappa_recent = _compute_cohen_kappa(pairs)
+    snap.screen_kappa_docs_count = len(pairs)
+
+    day_ago = _cutoff(24)
+    ext_rows = conn.execute(
+        "SELECT uid, verified FROM extraction WHERE created_at > ?", (day_ago,)
+    ).fetchall()
+    ext_grouped = {}
+    for r in ext_rows:
+        ext_grouped.setdefault(r["uid"], []).append(r["verified"])
+    
+    scores = []
+    for uid, verifieds in ext_grouped.items():
+        if verifieds:
+            scores.append(sum(verifieds) / len(verifieds))
+    snap.grounding_avg_24h = sum(scores) / len(scores) if scores else None
+    snap.extraction_docs_count_24h = len(ext_grouped)
+
     return snap
+
+
+def _compute_cohen_kappa(verdicts: list[tuple[str, str]]) -> float | None:
+    N = len(verdicts)
+    if N < 2:
+        return None
+    
+    n_11 = sum(1 for a, b in verdicts if a == "include" and b == "include")
+    n_12 = sum(1 for a, b in verdicts if a == "include" and b == "exclude")
+    n_21 = sum(1 for a, b in verdicts if a == "exclude" and b == "include")
+    n_22 = sum(1 for a, b in verdicts if a == "exclude" and b == "exclude")
+    
+    p_o = (n_11 + n_22) / N
+    p_inc_a = (n_11 + n_12) / N
+    p_inc_b = (n_11 + n_21) / N
+    p_exc_a = (n_21 + n_22) / N
+    p_exc_b = (n_12 + n_22) / N
+    
+    p_e = p_inc_a * p_inc_b + p_exc_a * p_exc_b
+    if abs(1.0 - p_e) < 1e-9:
+        return 1.0 if p_o == 1.0 else 0.0
+    return (p_o - p_e) / (1.0 - p_e)

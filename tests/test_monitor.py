@@ -254,9 +254,26 @@ class TestHeal:
         assert summary["bumped"] == 1
         assert store.dlq_entries()[0]["attempts"] == 2
 
+    @respx.mock
     def test_heal_enriches_when_ollama_recovers(self, store):
         queued_doc(store, "38111222")
         monkey_meta = TechnicalMetadata(has_code_repo=False)
+
+        respx.get("http://localhost:11434/api/tags").mock(return_value=httpx.Response(200, json={}))
+        respx.post("http://localhost:11434/api/chat").mock(side_effect=[
+            httpx.Response(200, json={
+                "message": {
+                    "role": "assistant",
+                    "content": "{\"has_code_repo\": false}"
+                }
+            }),
+            httpx.Response(200, json={
+                "message": {
+                    "role": "assistant",
+                    "content": "{\"critique_questions\": [{\"question\": \"Q1?\"}, {\"question\": \"Q2?\"}]}"
+                }
+            })
+        ])
 
         summary = heal(
             store, now=True,

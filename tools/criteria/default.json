@@ -1,0 +1,46 @@
+{
+  "ET1": {
+    "label_vi": "Sai Population",
+    "description_en": "The study population/domain does not match the target population specified in the protocol."
+  },
+  "ET2": {
+    "label_vi": "Không có Intervention",
+    "description_en": "The study does not investigate or focus on the specified intervention/technology, or only mentions it in passing."
+  },
+  "ET3": {
+    "label_vi": "Loại xuất bản ngoài phạm vi",
+    "description_en": "The study is an editorial, poster, thesis, workshop summary, or non-peer-reviewed publication."
+  },
+  "ET4": {
+    "label_vi": "Ngôn ngữ ngoài phạm vi",
+    "description_en": "The study is not published in any of the allowed languages (e.g. English)."
+  },
+  "ET5": {
+    "label_vi": "Ngoài phạm vi năm công bố",
+    "description_en": "The publication year of the study falls outside the range specified in the protocol."
+  },
+  "ET6": {
+    "label_vi": "Bản trùng/bản cũ",
+    "description_en": "The paper is a semantic duplicate or an older version of an already included study."
+  },
+  "ET7": {
+    "label_vi": "Loại nghiên cứu không khớp",
+    "description_en": "The study type (e.g., primary study vs secondary study) does not match the protocol requirements."
+  },
+  "EF1": {
+    "label_vi": "Không có thực nghiệm/metrics",
+    "description_en": "The full text does not report any empirical evaluation, experimental results, or quantitative metrics."
+  },
+  "EF2": {
+    "label_vi": "Không báo cáo outcome quan tâm",
+    "description_en": "The study reports experiments but does not measure the specific outcomes or metrics of interest."
+  },
+  "EF3": {
+    "label_vi": "Full-text không truy cập được",
+    "description_en": "The full text of the article could not be retrieved."
+  },
+  "EF4": {
+    "label_vi": "Trùng lặp dữ liệu (salami slicing)",
+    "description_en": "The study uses the same dataset and experimental setup as another included study from the same authors without new insights."
+  }
+}
