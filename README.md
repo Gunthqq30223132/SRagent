@@ -91,6 +91,13 @@ make plan TERMS="agent computer interface"          # in đường dẫn manifes
 
 Manifest có provenance (ID nào đến từ query nào) và mảng `rejected` — ID không khớp `ID_PATTERNS` bị chặn tại biên, kể cả khi file bị sửa tay.
 
+## Tầng guard cho luồng cloud (D31)
+
+Hai chốt chặn tất định tại `tools/guard/` cho mọi luồng dữ liệu chạm cloud (thiết kế đầy đủ: `docs/specs/D31-orchestration-cloud-hybrid.md`):
+
+- **Numeric Firewall V24** (`tools/guard/firewall.py`): bóc mọi hằng số kỹ thuật trong đầu ra LLM (độ phức tạp O(…), cổng, %, đơn vị, version) và đối chiếu **nguyên văn byte-exact** với kho nguồn — sai một ký tự số là từ chối toàn bộ (fail-closed, cấm fuzzy/cosine).
+- **Outbound Interceptor** (`tools/guard/outbound.py`): linter tiền-xuất chặn API key, đường dẫn lộ username, IP nội bộ, email/SĐT/CCCD (NĐ 13/2023/NĐ-CP) trước khi payload rời máy. `assert_sanitized()` fail-closed; `redact()` che chủ động opt-in; audit local không chứa secret. CLI: `python tools/guard/outbound.py <file>` (exit 0/1).
+
 ## Lịch chạy hằng ngày: launchd, không phải cron
 
 Trên macOS, **cron không chạy khi máy ngủ/gập nắp** — với MacBook Air thì job 7h sáng gần như không bao giờ nổ. Dùng launchd LaunchAgent: máy ngủ qua giờ hẹn thì job **tự chạy bù ngay khi thức dậy**.
