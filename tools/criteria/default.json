@@ -28,19 +28,19 @@
     "description_en": "The study type (e.g., primary study vs secondary study) does not match the protocol requirements."
   },
   "EF1": {
-    "label_vi": "Không có thực nghiệm/metrics",
-    "description_en": "The full text does not report any empirical evaluation, experimental results, or quantitative metrics."
+    "label_vi": "Không có đánh giá thực nghiệm",
+    "description_en": "no empirical evaluation while protocol requires measurable outcome"
   },
   "EF2": {
-    "label_vi": "Không báo cáo outcome quan tâm",
-    "description_en": "The study reports experiments but does not measure the specific outcomes or metrics of interest."
+    "label_vi": "Outcome không được báo cáo",
+    "description_en": "experiments exist but the protocol outcome is not measured/reported"
   },
   "EF3": {
     "label_vi": "Full-text không truy cập được",
     "description_en": "The full text of the article could not be retrieved."
   },
   "EF4": {
-    "label_vi": "Trùng lặp dữ liệu (salami slicing)",
-    "description_en": "The study uses the same dataset and experimental setup as another included study from the same authors without new insights."
+    "label_vi": "Trùng dữ liệu (salami slicing)",
+    "description_en": "same authors + same experiments already in the included set"
   }
 }
