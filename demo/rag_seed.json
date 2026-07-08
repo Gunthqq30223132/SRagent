@@ -1,0 +1,145 @@
+{
+  "_meta": {
+    "purpose": "Bộ seed offline cho demo/rag_demo.py — chạy thử SR-Agent với chủ đề RAG khi môi trường không truy cập được arXiv/IEEE API.",
+    "provenance": "10 bài arXiv là bài THẬT, metadata tái dựng từ kiến thức model (cutoff 01/2026): arXiv ID/tựa đề/tác giả chính xác ở mức tốt nhất có thể nhưng CẦN XÁC MINH bằng live run (`make run QUERY=\"retrieval augmented generation\"`) trên máy có mạng. Abstract là bản tóm lược đại diện, KHÔNG phải nguyên văn.",
+    "synthetic_records": "Các bản ghi có `_synthetic: true` là kịch bản dựng chủ ý để demo D34: 1 bản trùng mờ (arxiv:2312.10998) và 2 bản IEEE (document ID giả lập, IEEE thật cần IEEE_API_KEY)."
+  },
+  "papers": [
+    {
+      "source": "arxiv",
+      "source_id": "arxiv:2005.11401",
+      "authority_tier": 2,
+      "title": "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks",
+      "authors": ["Patrick Lewis", "Ethan Perez", "Aleksandra Piktus", "Sebastian Riedel"],
+      "published_date": "2020-05-22T00:00:00+00:00",
+      "url": "https://arxiv.org/abs/2005.11401",
+      "abstract": "Large pre-trained language models store factual knowledge in their parameters but cannot easily expand or revise their memory, and they hallucinate on knowledge-intensive tasks. We explore retrieval-augmented generation (RAG), a general-purpose fine-tuning recipe that combines a parametric seq2seq generator with a non-parametric memory: a dense vector index of Wikipedia accessed by a neural retriever. We compare formulations that condition on the same retrieved passages for the whole sequence versus per token. RAG models set the state of the art on open-domain question answering and generate more specific, diverse and factual language than parametric-only baselines, establishing retrieval as a first-class component of generation systems."
+    },
+    {
+      "source": "arxiv",
+      "source_id": "arxiv:2310.11511",
+      "authority_tier": 2,
+      "title": "Self-RAG: Learning to Retrieve, Generate, and Critique through Self-Reflection",
+      "authors": ["Akari Asai", "Zeqiu Wu", "Yizhong Wang", "Hannaneh Hajishirzi"],
+      "published_date": "2023-10-17T00:00:00+00:00",
+      "url": "https://arxiv.org/abs/2310.11511",
+      "abstract": "Retrieval-augmented generation reduces factual errors but retrieving a fixed number of passages indiscriminately can hurt quality when retrieval is unnecessary or off-topic. We introduce Self-Reflective Retrieval-Augmented Generation (Self-RAG), which trains a single language model to decide when to retrieve on demand, and to critique its own generations using special reflection tokens that assess relevance, support, and utility. Reflection tokens make the model controllable at inference time, allowing behavior to be tailored to task requirements. Experiments on open-domain QA, reasoning, fact verification and long-form generation show Self-RAG significantly outperforms ChatGPT and retrieval-augmented LLaMA2-chat, improving factuality and citation accuracy. Code and trained models are available at https://github.com/AkariAsai/self-rag."
+    },
+    {
+      "source": "arxiv",
+      "source_id": "arxiv:2401.15884",
+      "authority_tier": 2,
+      "title": "Corrective Retrieval Augmented Generation",
+      "authors": ["Shi-Qi Yan", "Jia-Chen Gu", "Yun Zhu", "Zhen-Hua Ling"],
+      "published_date": "2024-01-29T00:00:00+00:00",
+      "url": "https://arxiv.org/abs/2401.15884",
+      "abstract": "RAG systems fail silently when retrieval returns irrelevant documents: the generator grounds its answer in wrong evidence. We propose Corrective Retrieval Augmented Generation (CRAG), which adds a lightweight retrieval evaluator that estimates the quality of retrieved documents and triggers one of three actions: use the documents as-is, refine them by decompose-then-recompose filtering, or fall back to web search when the corpus cannot answer. CRAG is plug-and-play with existing RAG pipelines. Experiments across four datasets covering short- and long-form generation show consistent gains over standard RAG and Self-RAG baselines. Code is released at https://github.com/HuskyInSalt/CRAG."
+    },
+    {
+      "source": "arxiv",
+      "source_id": "arxiv:2404.16130",
+      "authority_tier": 2,
+      "title": "From Local to Global: A Graph RAG Approach to Query-Focused Summarization",
+      "authors": ["Darren Edge", "Ha Trinh", "Newman Cheng", "Jonathan Larson"],
+      "published_date": "2024-04-24T00:00:00+00:00",
+      "url": "https://arxiv.org/abs/2404.16130",
+      "abstract": "Vector RAG answers local questions about specific facts but fails on global sensemaking questions such as 'what are the main themes of this corpus?', because no single chunk contains the answer. GraphRAG builds an entity knowledge graph from source documents with an LLM, detects hierarchical communities of related entities, and pre-generates community summaries. At query time, partial answers from relevant community summaries are map-reduced into a final global answer. On corpora in the one-million-token range, GraphRAG substantially improves comprehensiveness and diversity of answers over naive vector RAG. An open-source implementation is available at https://github.com/microsoft/graphrag."
+    },
+    {
+      "source": "arxiv",
+      "source_id": "arxiv:2401.18059",
+      "authority_tier": 2,
+      "title": "RAPTOR: Recursive Abstractive Processing for Tree-Organized Retrieval",
+      "authors": ["Parth Sarthi", "Salman Abdullah", "Aditi Tuli", "Christopher D. Manning"],
+      "published_date": "2024-01-31T00:00:00+00:00",
+      "url": "https://arxiv.org/abs/2401.18059",
+      "abstract": "Retrieving contiguous short chunks limits RAG to local context and loses holistic document understanding. RAPTOR recursively embeds, clusters, and summarizes chunks of text, building a tree with progressively higher-level abstractions from the leaves up. At inference time the model retrieves from any level of the tree, integrating information across lengthy documents at different scales of abstraction. Controlled experiments show retrieval from the recursive tree beats flat chunk retrieval on several tasks; coupling RAPTOR retrieval with GPT-4 improves accuracy on the QuALITY benchmark by 20 percentage points, setting a new state of the art on question answering over long documents. Code is available at https://github.com/parthsarthi03/raptor."
+    },
+    {
+      "source": "arxiv",
+      "source_id": "arxiv:2212.10496",
+      "authority_tier": 2,
+      "title": "Precise Zero-Shot Dense Retrieval without Relevance Labels",
+      "authors": ["Luyu Gao", "Xueguang Ma", "Jimmy Lin", "Jamie Callan"],
+      "published_date": "2022-12-20T00:00:00+00:00",
+      "url": "https://arxiv.org/abs/2212.10496",
+      "abstract": "Dense retrieval needs relevance-labeled training data that rarely exists for new domains. We propose Hypothetical Document Embeddings (HyDE): given a query, an instruction-following language model first writes a hypothetical document that would answer it; an unsupervised contrastive encoder (Contriever) then embeds this document, and real documents closest to it in embedding space are retrieved. The hypothetical document is allowed to contain factual errors — the encoder's bottleneck filters them out, grounding the search in the real corpus. HyDE significantly outperforms the unsupervised dense retriever across tasks (web search, QA, fact verification) and languages, and is competitive with fine-tuned retrievers, becoming a standard query-expansion building block in modern RAG stacks. Code at https://github.com/texttron/hyde."
+    },
+    {
+      "source": "arxiv",
+      "source_id": "arxiv:2301.12652",
+      "authority_tier": 2,
+      "title": "REPLUG: Retrieval-Augmented Black-Box Language Models",
+      "authors": ["Weijia Shi", "Sewon Min", "Michihiro Yasunaga", "Wen-tau Yih"],
+      "published_date": "2023-01-30T00:00:00+00:00",
+      "url": "https://arxiv.org/abs/2301.12652",
+      "abstract": "Prior retrieval-augmented LMs require access to model internals to fuse retrieved passages, which is impossible for black-box APIs. REPLUG treats the language model as a frozen black box and prepends retrieved documents to the input, ensembling output probabilities across documents. The retriever can further be tuned with supervision from the LM itself: passages that lower the LM's perplexity on ground truth are treated as positives. REPLUG with the tuned retriever improves GPT-3 language modeling by 6.3% and Codex on five-shot MMLU by 5.1%, demonstrating that retrieval augmentation composes with any generator without retraining it."
+    },
+    {
+      "source": "arxiv",
+      "source_id": "arxiv:2208.03299",
+      "authority_tier": 2,
+      "title": "Atlas: Few-shot Learning with Retrieval Augmented Language Models",
+      "authors": ["Gautier Izacard", "Patrick Lewis", "Maria Lomeli", "Edouard Grave"],
+      "published_date": "2022-08-05T00:00:00+00:00",
+      "url": "https://arxiv.org/abs/2208.03299",
+      "abstract": "Do language models need massive parameter counts to store knowledge, or can retrieval substitute for parameters? Atlas is a retrieval-augmented seq2seq model (Contriever retriever + T5-family reader) carefully pre-trained end-to-end so that the retriever learns from the language modeling objective without document-level annotations. With only 11B parameters, Atlas reaches 42% accuracy on Natural Questions using just 64 training examples, outperforming a 540B-parameter model while being 50x smaller. The index is updateable at test time, enabling knowledge refresh without retraining. Atlas established the efficiency argument for retrieval augmentation: knowledge in the index, reasoning in the parameters. Code and models at https://github.com/facebookresearch/atlas."
+    },
+    {
+      "source": "arxiv",
+      "source_id": "arxiv:2312.10997",
+      "authority_tier": 2,
+      "title": "Retrieval-Augmented Generation for Large Language Models: A Survey",
+      "authors": ["Yunfan Gao", "Yun Xiong", "Xinyu Gao", "Haofen Wang"],
+      "published_date": "2023-12-18T00:00:00+00:00",
+      "url": "https://arxiv.org/abs/2312.10997",
+      "abstract": "This survey systematizes the RAG landscape for large language models into three evolving paradigms: Naive RAG (index-retrieve-generate), Advanced RAG (pre-retrieval query optimization such as rewriting and expansion; post-retrieval reranking and compression), and Modular RAG (interchangeable retrieval, memory, routing and fusion modules composed into task-specific pipelines). It dissects the three technical pillars — retrieval, generation, augmentation — reviews evaluation frameworks and benchmarks for faithfulness and answer relevance, and maps open challenges including robustness to noisy retrieval, hybrid dense-sparse search, and the trade-off against long-context models. The paper serves as the reference taxonomy used by most subsequent RAG research."
+    },
+    {
+      "source": "arxiv",
+      "source_id": "arxiv:2501.09136",
+      "authority_tier": 2,
+      "title": "Agentic Retrieval-Augmented Generation: A Survey on Agentic RAG",
+      "authors": ["Aditi Singh", "Abul Ehtesham", "Saket Kumar", "Tala Talaei Khoei"],
+      "published_date": "2025-01-15T00:00:00+00:00",
+      "url": "https://arxiv.org/abs/2501.09136",
+      "abstract": "Static retrieve-then-generate pipelines struggle with multi-step information needs. Agentic RAG embeds autonomous agents into the RAG loop: agents plan sub-queries, choose among tools and heterogeneous knowledge sources, reflect on intermediate evidence, and iterate retrieval until the information need is satisfied. This survey taxonomizes agentic RAG architectures — single-agent routers, multi-agent systems with specialized retrievers, and graph-augmented planners — and analyzes design patterns for reflection, planning, tool use and multi-agent collaboration. It reviews applications across question answering, code, and scientific literature workflows, and open challenges in cost, latency, and evaluation of multi-step grounded reasoning."
+    },
+    {
+      "_synthetic": true,
+      "_note": "Bản trùng mờ CHỦ Ý của arxiv:2312.10997 (title lệch nhẹ, ID giả lập) — demo D34 tầng 2 (fuzzy title).",
+      "source": "arxiv",
+      "source_id": "arxiv:2312.10998",
+      "authority_tier": 2,
+      "title": "Retrieval Augmented Generation for Large Language Models -- A Survey",
+      "authors": ["Yunfan Gao", "Yun Xiong"],
+      "published_date": "2023-12-19T00:00:00+00:00",
+      "url": "https://arxiv.org/abs/2312.10998",
+      "abstract": "This survey reviews retrieval-augmented generation paradigms for large language models, covering naive, advanced and modular RAG, the retrieval-generation-augmentation pillars, evaluation methodology, and future directions for grounded generation systems."
+    },
+    {
+      "_synthetic": true,
+      "_note": "Kịch bản dựng: 'bản journal' của survey 2312.10997 — demo D34 tầng 3 (IEEE tier 1 SUPERSEDES arXiv tier 2, merge alternate_uids). Document ID giả lập.",
+      "source": "ieee",
+      "source_id": "10651234",
+      "authority_tier": 1,
+      "title": "Retrieval-Augmented Generation for Large Language Models: A Survey",
+      "authors": ["Yunfan Gao", "Yun Xiong", "Xinyu Gao", "Haofen Wang"],
+      "published_date": "2024-11-10T00:00:00+00:00",
+      "url": "https://ieeexplore.ieee.org/document/10651234",
+      "abstract": "This article systematizes retrieval-augmented generation (RAG) for large language models into three paradigms — Naive, Advanced, and Modular RAG — and dissects the retrieval, generation, and augmentation pillars that underpin them. Compared with the preprint version, this journal edition extends the taxonomy with hybrid dense-sparse retrieval, retrieval necessity prediction, and a consolidated benchmark suite for faithfulness, answer relevance, and context precision. We analyze the interplay between RAG and long-context models, and outline a research roadmap covering noise robustness, multi-hop reasoning over retrieved evidence, and cost-aware pipeline design. A curated companion repository of surveyed methods and datasets is maintained at https://github.com/Tongji-KGLLM/RAG-Survey."
+    },
+    {
+      "_synthetic": true,
+      "_note": "Bản ghi minh họa nguồn IEEE tier 1 (document ID giả lập, nội dung đại diện cho nhánh đánh giá/benchmark RAG).",
+      "source": "ieee",
+      "source_id": "10787654",
+      "authority_tier": 1,
+      "title": "Benchmarking Retrieval-Augmented Generation Systems: Metrics, Datasets, and Pitfalls",
+      "authors": ["M. Chen", "L. Nguyen", "S. Patel", "R. Okafor"],
+      "published_date": "2025-03-05T00:00:00+00:00",
+      "url": "https://ieeexplore.ieee.org/document/10787654",
+      "abstract": "Evaluating RAG systems requires disentangling retrieval quality from generation quality, yet common leaderboards conflate the two. This article consolidates the evaluation landscape for retrieval-augmented generation: component metrics (recall@k, context precision), end-to-end metrics (faithfulness, answer relevance, citation accuracy), and LLM-as-judge protocols with their bias caveats. We benchmark twelve open RAG pipelines across knowledge-intensive QA, multi-hop reasoning, and domain-specific corpora, quantifying how chunking granularity, reranking, and retrieval necessity prediction shift results. We document five recurring pitfalls, including judge contamination and dataset leakage from pre-training corpora. All harness code is released at https://github.com/rag-bench/harness with datasets mirrored on huggingface.co/datasets/rag-bench, enabling reproducible comparison of future systems."
+    }
+  ]
+}

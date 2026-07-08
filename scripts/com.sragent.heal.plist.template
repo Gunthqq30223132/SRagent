@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Heal daemon: mỗi 15 phút probe hạ tầng (mạng nguồn + Ollama); hạ tầng hồi
+  phục thì tự retry DLQ / chạy lại standing query / enrich (cửa sổ đêm),
+  và phát tin "đã hồi phục" cho máy trạng thái alert.
+  RunAtLoad=true: chạy ngay khi máy thức dậy — bắt sự kiện hồi phục sớm nhất.
+  launchd không chạy chồng instance cùng Label nên heal dài không tự đè nhau.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.sragent.heal</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>{{REPO_DIR}}/.venv/bin/python</string>
+        <string>-m</string>
+        <string>sr_agent.pipeline</string>
+        <string>heal</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>{{REPO_DIR}}</string>
+
+    <key>StartInterval</key>
+    <integer>900</integer>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>{{REPO_DIR}}/staging/heal.log</string>
+    <key>StandardErrorPath</key>
+    <string>{{REPO_DIR}}/staging/heal.log</string>
+</dict>
+</plist>

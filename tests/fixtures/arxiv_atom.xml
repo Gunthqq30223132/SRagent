@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>ArXiv Query Results</title>
+  <entry>
+    <id>http://arxiv.org/abs/2401.12345v2</id>
+    <title>Efficient  Transformer Inference on Edge Devices:
+      A Systematic Evaluation</title>
+    <summary>Deploying transformer models on resource-constrained edge devices
+      remains challenging. We evaluate quantization strategies. Code at
+      https://github.com/example/edge-transformers.</summary>
+    <published>2024-01-20T10:00:00Z</published>
+    <link href="http://arxiv.org/abs/2401.12345v2" rel="alternate" type="text/html"/>
+    <author><name>Alice Nguyen</name></author>
+    <author><name>Bob Tran</name></author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2503.00042v1</id>
+    <title>Sparse Mixture-of-Experts Routing under Memory Constraints</title>
+    <summary>We study expert routing for MoE models under strict memory budgets,
+      evaluated on MMLU and GSM8K benchmarks with 50,000 samples.</summary>
+    <published>2025-03-01T08:30:00Z</published>
+    <link href="http://arxiv.org/abs/2503.00042v1" rel="alternate" type="text/html"/>
+    <author><name>David Pham</name></author>
+  </entry>
+</feed>

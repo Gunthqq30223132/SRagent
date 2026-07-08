@@ -1,0 +1,30 @@
+{
+  "total_records": 2,
+  "articles": [
+    {
+      "article_number": "38111222",
+      "title": "Efficient Transformer Inference on Edge Devices: A Systematic Evaluation",
+      "abstract": "Deploying transformer models on resource-constrained edge devices remains challenging. We present a systematic evaluation of quantization and pruning strategies across 12 architectures. Our benchmark suite covers GLUE and SQuAD, with all code available at https://github.com/example/edge-transformers. Experiments on 10,000 samples show up to 3.2x speedup with under 1% accuracy loss. We acknowledge that our evaluation is limited to encoder-only models.",
+      "publication_year": "2025",
+      "html_url": "https://ieeexplore.ieee.org/document/38111222",
+      "authors": {
+        "authors": [
+          {"full_name": "Alice Nguyen"},
+          {"full_name": "Bob Tran"}
+        ]
+      }
+    },
+    {
+      "article_number": "37000111",
+      "title": "A Survey of Graph Neural Network Acceleration Techniques",
+      "abstract": "Graph neural networks have become central to relational learning. This survey reviews acceleration techniques spanning sampling, quantization, and hardware co-design, categorizing 85 papers published between 2019 and 2024.",
+      "publication_year": "2019",
+      "html_url": "https://ieeexplore.ieee.org/document/37000111",
+      "authors": {
+        "authors": [
+          {"full_name": "Carol Le"}
+        ]
+      }
+    }
+  ]
+}
