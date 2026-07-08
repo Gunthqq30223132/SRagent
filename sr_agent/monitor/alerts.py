@@ -111,6 +111,16 @@ def desired_alerts(snap: HealthSnapshot, *, ollama_up: bool | None) -> dict[str,
             f"{snap.dlq_permanent} bản ghi chạm trần retry (5 lần) — cần xem tay: "
             f"python -m sr_agent.pipeline status."
         )
+    if snap.screen_kappa_recent is not None and snap.screen_kappa_recent < 0.6 and snap.screen_kappa_docs_count >= 5:
+        desired["SCREEN_DISAGREEMENT"] = (
+            f"Bất đồng screening cao: Cohen's κ gần nhất là {snap.screen_kappa_recent:.2f} (< 0.6) "
+            f"trên {snap.screen_kappa_docs_count} tài liệu. Kiểm tra lại độ rõ ràng của protocol."
+        )
+    if snap.grounding_avg_24h is not None and snap.grounding_avg_24h < 0.8 and snap.extraction_docs_count_24h >= 5:
+        desired["EXTRACT_UNGROUNDED"] = (
+            f"Grounding score trích xuất thấp: trung bình 24h qua là {snap.grounding_avg_24h:.2f} (< 0.8) "
+            f"trên {snap.extraction_docs_count_24h} tài liệu. Kiểm tra lại chất lượng LLM."
+        )
     return desired
 
 

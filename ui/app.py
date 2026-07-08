@@ -56,8 +56,10 @@ with queue_tab:
 
         with left:
             st.subheader(f"Hàng đợi ({len(queue)}/{WIP_LIMIT})")
+            escalated_uids = store.get_escalated_uids()
             labels = [
                 f"{'⚠️ ' if d.tech_meta is None else ''}"
+                f"{'🔶 ' if d.uid in escalated_uids else ''}"
                 f"{d.rubric.total if d.rubric else '—'} · {d.title[:60]}"
                 for d in queue
             ]
@@ -67,6 +69,8 @@ with queue_tab:
 
         with right:
             st.subheader(doc.title)
+            if doc.uid in escalated_uids:
+                st.warning("🔶 **Screening bất đồng — cần người phân xử**")
             if doc.tech_meta is None:
                 st.warning(
                     "⚠️ **Chưa phân tích LLM** — bản ghi này được xử lý heuristic-only "
@@ -97,6 +101,23 @@ with queue_tab:
                     st.markdown(f"- Dataset: {tm.dataset_specification or 'không nêu'}")
                     st.markdown(f"- Benchmarks: {', '.join(tm.evaluated_benchmarks) or 'không nêu'}")
                     st.markdown(f"- Hạn chế tác giả thừa nhận: {tm.declared_limitations or 'không nêu'}")
+
+            extractions = store.extractions(doc.uid, verified_only=False)
+            if extractions:
+                verified_count = sum(1 for e in extractions if e["verified"] == 1)
+                denom = sum(1 for e in extractions if e["verified"] in (0, 1))
+                score = verified_count / denom if denom > 0 else None
+                score_str = f"{score:.2f}" if score is not None else "N/A"
+                with st.expander(f"Minh chứng trích xuất (Grounding Score: {score_str})", expanded=True):
+                    for e in extractions:
+                        if e["verified"] == 1:
+                            status = "✅ Khớp"
+                        elif e["verified"] == 2:
+                            status = "⚪ Không thể kiểm chứng"
+                        else:
+                            status = "❌ Bị hủy (không khớp)"
+                        st.markdown(f"**{e['field']}**: `{e['value']}` ({status})")
+                        st.markdown(f"&nbsp;&nbsp;&nbsp;&nbsp;*Quote*: \"{e['quote']}\" (in `{e['section']}`)")
 
             if doc.abstract:
                 with st.expander("Abstract"):
@@ -145,6 +166,20 @@ with health_tab:
         f"{snap.hours_since_last_run:.0f}h trước"
         if snap.hours_since_last_run is not None else "chưa có",
     )
+
+    # M6: Screening and extraction metrics row
+    c5, c6, c7, c8 = st.columns(4)
+    kappa_val = f"{snap.screen_kappa_recent:.2f}" if snap.screen_kappa_recent is not None else "N/A"
+    c5.metric("Cohen's κ (gần nhất)", kappa_val)
+    stats = store.screening_stats(hours=24)
+    c6.metric("Screening đồng thuận (24h)", stats.get("agreement", 0))
+    c7.metric("Bất đồng đã phân xử (24h)", stats.get("disagreement_resolved", 0))
+    c8.metric("Chờ người phân xử", snap.screen_escalated_count)
+
+    c9, c10, = st.columns(2)
+    grounding_val = f"{snap.grounding_avg_24h * 100:.1f}%" if snap.grounding_avg_24h is not None else "N/A"
+    c9.metric("Grounding Avg (24h)", grounding_val)
+    c10.metric("Tài liệu trích xuất (24h)", snap.extraction_docs_count_24h)
 
     desired = alerts_mod.desired_alerts(snap, ollama_up=ollama_up)
     stored_open = alerts_mod.open_alerts(store)

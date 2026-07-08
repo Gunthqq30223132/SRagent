@@ -71,6 +71,30 @@ CREATE TABLE IF NOT EXISTS alerts (
     first_seen    TEXT NOT NULL,
     last_notified TEXT
 );
+
+-- M6: Systematic Review sidecar tables
+CREATE TABLE IF NOT EXISTS screening (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    uid TEXT NOT NULL,
+    agent TEXT NOT NULL,
+    model TEXT NOT NULL,
+    verdict TEXT NOT NULL,
+    criterion_id TEXT,
+    evidence_quote TEXT,
+    confidence TEXT,
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS extraction (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    uid TEXT NOT NULL,
+    field TEXT NOT NULL,
+    value TEXT NOT NULL,
+    quote TEXT NOT NULL,
+    section TEXT NOT NULL,
+    verified INTEGER NOT NULL,
+    created_at TEXT NOT NULL
+);
 """
 
 
@@ -297,3 +321,107 @@ class StagingStore:
             (uid, event_type, detail, _now()),
         )
         self.conn.commit()
+
+    # --- M6 screening & extraction sidecar methods --------------------------------
+
+    def add_screen_verdict(
+        self,
+        uid: str,
+        agent: str,
+        model: str,
+        verdict: str,
+        criterion_id: str | None = None,
+        evidence_quote: str | None = None,
+        confidence: str | None = None,
+    ) -> None:
+        self.conn.execute(
+            """INSERT INTO screening
+               (uid, agent, model, verdict, criterion_id, evidence_quote, confidence, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (uid, agent, model, verdict, criterion_id, evidence_quote, confidence, _now()),
+        )
+        self.conn.commit()
+
+    def screen_verdicts(self, uid: str) -> list[sqlite3.Row]:
+        return self.conn.execute(
+            "SELECT * FROM screening WHERE uid = ? ORDER BY created_at", (uid,)
+        ).fetchall()
+
+    def add_extraction(
+        self,
+        uid: str,
+        field: str,
+        value: str,
+        quote: str,
+        section: str,
+        verified: int,
+    ) -> None:
+        self.conn.execute(
+            """INSERT INTO extraction
+               (uid, field, value, quote, section, verified, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            (uid, field, value, quote, section, verified, _now()),
+        )
+        self.conn.commit()
+
+    def extractions(self, uid: str, verified_only: bool = True) -> list[sqlite3.Row]:
+        sql = "SELECT * FROM extraction WHERE uid = ?"
+        params = [uid]
+        if verified_only:
+            sql += " AND verified = 1"
+        return self.conn.execute(sql + " ORDER BY created_at", params).fetchall()
+
+    def screening_stats(self, hours: int = 24) -> dict:
+        cutoff = (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
+        rows = self.conn.execute(
+            "SELECT uid, agent, verdict, confidence FROM screening WHERE created_at > ?",
+            (cutoff,)
+        ).fetchall()
+        
+        by_uid = {}
+        for r in rows:
+            by_uid.setdefault(r["uid"], {})[r["agent"]] = {
+                "verdict": r["verdict"],
+                "confidence": r["confidence"]
+            }
+        
+        agreement_count = 0
+        disagreement_resolved = 0
+        escalated_count = 0
+        
+        for uid, agents in by_uid.items():
+            a = agents.get("screener_a")
+            b = agents.get("screener_b")
+            tb = agents.get("tiebreaker")
+            
+            if not a or not b:
+                continue
+            
+            if a["verdict"] == "invalid" or b["verdict"] == "invalid":
+                escalated_count += 1
+                continue
+                
+            if a["verdict"] == b["verdict"]:
+                agreement_count += 1
+            else:
+                if tb:
+                    if tb["verdict"] != "invalid" and tb["confidence"] == "high":
+                        disagreement_resolved += 1
+                    else:
+                        escalated_count += 1
+                else:
+                    escalated_count += 1
+                    
+        return {
+            "agreement": agreement_count,
+            "disagreement_resolved": disagreement_resolved,
+            "escalated": escalated_count
+        }
+
+    def get_escalated_uids(self) -> set[str]:
+        rows = self.conn.execute(
+            """SELECT DISTINCT d.uid FROM documents d
+               JOIN events e ON d.uid = e.uid
+               WHERE d.status = 'queued' AND e.event_type = 'SCREEN_ESCALATED'"""
+        ).fetchall()
+        return {r["uid"] for r in rows}
