@@ -35,3 +35,7 @@ jobs:
       - name: Run M6 Gate Verification
         run: |
           bash scripts/gate_m6.sh
+
+      - name: Run D32 Gate Verification
+        run: |
+          bash scripts/gate_d32.sh
