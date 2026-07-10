@@ -77,32 +77,34 @@ def generate_prisma_report(store: StagingStore) -> str:
         exclusion_reasons[cid] = r["n"]
         
     # 3. Eligibility (full-text)
-    # Assessed for eligibility: documents that passed screening (agreement on include, or resolved by tiebreaker)
-    # For Phase M6a: any screened document with verdict='include'
-    # For future: we can check documents that passed screening.
-    # Let's count uids that are not excluded by screening and did not fail rubric
-    eligible = screened - excluded
+    # Assessed for eligibility: count event ELIG_INCLUDED + ELIG_EXCLUDED
+    eligible = conn.execute(
+        "SELECT COUNT(DISTINCT uid) n FROM events WHERE event_type IN ('ELIG_INCLUDED', 'ELIG_EXCLUDED')"
+    ).fetchone()["n"]
     
-    # Excluded at eligibility (full-text): e.g. EF1..EF4.
-    # In Phase M6a, this is 0 since we haven't done full-text eligibility screening.
-    full_text_excluded = 0
+    # Excluded at eligibility (full-text): count event ELIG_EXCLUDED
+    full_text_excluded = conn.execute(
+        "SELECT COUNT(DISTINCT uid) n FROM events WHERE event_type = 'ELIG_EXCLUDED'"
+    ).fetchone()["n"]
+    
+    # Excluded-with-reasons group by criterion in detail of ELIG_EXCLUDED
     full_text_reasons = {}
-    
+    for r in conn.execute(
+        "SELECT detail, COUNT(DISTINCT uid) n FROM events WHERE event_type = 'ELIG_EXCLUDED' GROUP BY detail"
+    ):
+        cid = r["detail"] or "Unknown"
+        full_text_reasons[cid] = r["n"]
+        
     # 4. Included
     # Included: status = APPROVED or APPROVED_LOCAL
     included = conn.execute(
         "SELECT COUNT(*) n FROM documents WHERE status IN ('approved', 'approved_local')"
     ).fetchone()["n"]
     
-    # Abstract-only: count of queued/approved documents that do not have full_text in payload
-    abstract_only = 0
-    for row in conn.execute("SELECT payload FROM documents WHERE status IN ('queued', 'approved', 'approved_local')"):
-        try:
-            doc = Document.model_validate_json(row["payload"])
-            if not doc.full_text or not doc.full_text.strip():
-                abstract_only += 1
-        except Exception:
-            pass
+    # Abstract-only: count of ELIG_ABSTRACT_ONLY events
+    abstract_only = conn.execute(
+        "SELECT COUNT(DISTINCT uid) n FROM events WHERE event_type = 'ELIG_ABSTRACT_ONLY'"
+    ).fetchone()["n"]
             
     # Format report
     report_lines = [
