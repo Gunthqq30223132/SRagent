@@ -15,7 +15,7 @@ fi
 # --- D1: Test suite compliance + guard nguyên trạng ---
 echo "--- D1: Pytest compliance + guard suites ---"
 if $PYTHON_CMD -m pytest tests/test_compliance_layer_a.py tests/test_compliance_kb.py \
-    tests/test_compliance_agents.py tests/test_guards.py -q; then
+    tests/test_compliance_agents.py tests/test_compliance_scenarios.py tests/test_guards.py -q; then
     echo "[PASS] Compliance + guard test suites"
 else
     echo "[FAIL] Compliance + guard test suites"
@@ -60,7 +60,8 @@ fi
 
 # --- D4: assert/test ratio trên các file test compliance ---
 echo "--- D4: assert-to-test ratio on compliance test files ---"
-for file in tests/test_compliance_layer_a.py tests/test_compliance_kb.py tests/test_compliance_agents.py; do
+for file in tests/test_compliance_layer_a.py tests/test_compliance_kb.py \
+    tests/test_compliance_agents.py tests/test_compliance_scenarios.py; do
     if [ -f "$file" ]; then
         test_count=$(grep -c "def test_" "$file" || true)
         assert_count=$(grep -c "assert " "$file" || true)
