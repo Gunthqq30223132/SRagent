@@ -38,11 +38,13 @@ Chạy độc lập trên HEAD `96ef666` của nhánh design: `293 passed in 42.
 macOS vs Linux. Khả năng: (a) máy Mac có file test thừa chưa commit, (b) đếm nhầm/khai theo
 trí nhớ. Cần executor dán **nguyên văn dòng cuối pytest**.
 
-### 3.2 Tên model `gemma4:e4b` không tồn tại
-Registry Ollama không có model này; dòng model thật của dự án là `gemma3n:e4b`. Nhiều khả
-năng là lỗi chép tay, nhưng theo luật giao nhận thì đây đúng loại chi tiết phải dán nguyên
-văn `ollama list` thay vì gõ lại. Nếu screener B thực tế trỏ tới tag không tồn tại thì mọi
-verdict phía B là void → tự nó giải thích được κ = 0.00 (§4.1, giả thuyết c).
+### 3.2 Tên model `gemma4:e4b` — ĐÍNH CHÍNH 2026-07-11 (sau M7.2-CHẨN-ĐOÁN)
+Nhận định ban đầu ("executor chép sai tên model") **sai**: `gemma4:e4b` là default nằm
+trong chính code — `tools/screen_run.py:258`, do commit `b34df50` đưa vào từ 2026-07-07.
+Thêm nữa, code có guard: tag không có trong `ollama list` ⇒ `single_model_mode` ⇒ κ = None
+(không phải 0.00) kèm event `SCREEN_SINGLE_MODEL`. Việc run trả κ = 0.00 là bằng chứng
+gián tiếp tag này CÓ trên máy Mac và screener B chạy model riêng thật. Vẫn nợ `ollama list`
+nguyên văn để đóng hẳn. Phân tích đầy đủ: `docs/specs/M7.2-screening-calibration.md` §1.2.
 
 ### 3.3 Số học PRISMA không tự khớp giữa các giai đoạn
 - GĐ2 khai `queued=18` nhưng PRISMA khai `Screened: 12` — 6 tài liệu không được giải trình.
