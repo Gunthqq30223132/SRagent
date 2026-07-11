@@ -1,0 +1,53 @@
+{
+  "topic_vi": "tổng hợp công nghệ RAG: cơ chế, đánh giá, tích hợp hệ thống",
+  "population": {
+    "concept": "Retrieval-Augmented Generation",
+    "synonyms": [
+      "Retrieval-Augmented Generation",
+      "RAG",
+      "Retrieval Augmented Generation",
+      "Retrieval-Augmented LLM"
+    ],
+    "required": true
+  },
+  "intervention": {
+    "concept": "Evaluation and Integration",
+    "synonyms": [
+      "evaluation",
+      "assessment",
+      "metrics",
+      "integration",
+      "pipeline",
+      "framework"
+    ],
+    "required": true
+  },
+  "comparison": null,
+  "outcome": {
+    "concept": "Mechanisms and Benchmarking",
+    "synonyms": [
+      "benchmark",
+      "mechanism",
+      "hybrid search",
+      "chunking",
+      "vector database"
+    ],
+    "required": true
+  },
+  "year_range": null,
+  "languages": [
+    "en"
+  ],
+  "study_types_excluded": [
+    "Review article",
+    "News report"
+  ],
+  "exclusion_criteria": [
+    "ET1",
+    "ET2",
+    "ET3",
+    "ET4",
+    "ET5",
+    "ET7"
+  ]
+}
