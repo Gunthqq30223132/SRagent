@@ -397,6 +397,61 @@ class TestScreenerBIndependence:
         assert '"verdict": "exclude"' not in messages_text  # B does not see A's output verdict
 
 
+class TestModelAConfig:
+    """M7.2 Phase 2R: SR_SCREEN_MODEL_A tách screener A khỏi OLLAMA_MODEL toàn cục."""
+
+    def _seed_doc(self, store):
+        doc = make_doc("ieee", "38111222", "Title 2", 1)
+        doc.status = DocStatus.QUEUED
+        doc.abstract = "RAG and LLM systems are here."
+        store.upsert(doc)
+
+    def _include_response(self):
+        return httpx.Response(200, json={
+            "message": {"role": "assistant", "content": json.dumps({
+                "verdict": "include", "relevance_quote": "RAG and LLM systems",
+                "confidence": "high"
+            })}
+        })
+
+    @respx.mock
+    def test_env_model_a_is_used_and_recorded(self, store, protocol, criteria, monkeypatch):
+        monkeypatch.setenv("SR_SCREEN_MODEL_A", "custom-a:1b")
+        monkeypatch.setenv("SR_SCREEN_MODEL_B", "gemma4:e4b")
+        self._seed_doc(store)
+        respx.get(f"{OLLAMA}/api/tags").mock(return_value=httpx.Response(200, json={
+            "models": [{"name": "custom-a:1b"}, {"name": "gemma4:e4b"}]
+        }))
+        respx.post(f"{OLLAMA}/api/chat").mock(return_value=self._include_response())
+
+        from tools.screen_run import run_screening_batch
+        run_screening_batch(store, protocol, criteria, limit=1)
+
+        models = {r["agent"]: r["model"] for r in store.screen_verdicts("ieee:38111222")}
+        assert models["screener_a"] == "custom-a:1b"     # ghi đúng model từng row
+        assert models["screener_b"] == "gemma4:e4b"
+
+    @respx.mock
+    def test_missing_model_a_falls_back_loudly(self, store, protocol, criteria, monkeypatch):
+        monkeypatch.setenv("SR_SCREEN_MODEL_A", "khong-ton-tai:9b")
+        monkeypatch.setenv("SR_SCREEN_MODEL_B", "gemma4:e4b")
+        self._seed_doc(store)
+        respx.get(f"{OLLAMA}/api/tags").mock(return_value=httpx.Response(200, json={
+            "models": [{"name": "gemma4:e4b"}]             # thiếu model A tùy biến
+        }))
+        respx.post(f"{OLLAMA}/api/chat").mock(return_value=self._include_response())
+
+        from tools.screen_run import run_screening_batch
+        run_screening_batch(store, protocol, criteria, limit=1)
+
+        models = {r["agent"]: r["model"] for r in store.screen_verdicts("ieee:38111222")}
+        assert models["screener_a"] == OLLAMA_MODEL        # quay về mặc định, không chết lặng
+        events = [r["event_type"] for r in store.conn.execute(
+            "SELECT event_type FROM events WHERE uid = 'screening:batch'"
+        ).fetchall()]
+        assert "SCREEN_MODEL_A_FALLBACK" in events         # và phải ỒN ÀO
+
+
 class TestQuoteCopyDiscipline:
     """M7.2 Phase 1b: luật chép quote cơ học phải có mặt trong CẢ BA prompt.
 
