@@ -81,25 +81,28 @@ class TestScreeningA:
         doc.abstract = "This is an abstract about RAG and LLM."
         store.upsert(doc)
         
-        # Mock Ollama outputting include
+        # Mock Ollama outputting include — M7.2: include cũng phải kèm relevance_quote verbatim
         dummy_verdict = {
             "verdict": "include",
+            "relevance_quote": "about RAG and LLM",
             "confidence": "high"
         }
         respx.get(f"{OLLAMA}/api/tags").mock(return_value=httpx.Response(200, json={}))
         respx.post(f"{OLLAMA}/api/chat").mock(return_value=httpx.Response(200, json={
             "message": {"role": "assistant", "content": json.dumps(dummy_verdict)}
         }))
-        
+
         count = run_screening_a(store, protocol, criteria, limit=1)
         assert count == 1
-        
+
         # Verify db verdict
         verdicts = store.screen_verdicts("ieee:38111222")
         assert len(verdicts) == 1
         assert verdicts[0]["verdict"] == "include"
         assert verdicts[0]["agent"] == "screener_a"
         assert verdicts[0]["confidence"] == "high"
+        # relevance_quote được lưu vào cột evidence_quote (không đổi schema DB)
+        assert verdicts[0]["evidence_quote"] == "about RAG and LLM"
 
     @respx.mock
     def test_screening_a_exclude_valid_verdict(self, store, protocol, criteria):
@@ -216,6 +219,7 @@ class TestConsensusAndTiebreaker:
 
         dummy_verdict = {
             "verdict": "include",
+            "relevance_quote": "RAG and LLM systems",
             "confidence": "high"
         }
         respx.get(f"{OLLAMA}/api/tags").mock(return_value=httpx.Response(200, json={}))
@@ -248,10 +252,11 @@ class TestConsensusAndTiebreaker:
                     "evidence_quote": "Wrong population details", "confidence": "high"
                 })}
             }),
-            # Screener B
+            # Screener B — include hợp lệ (M7.2: phải kèm relevance_quote verbatim)
             httpx.Response(200, json={
                 "message": {"role": "assistant", "content": json.dumps({
-                    "verdict": "include", "confidence": "high"
+                    "verdict": "include", "relevance_quote": "Wrong population details",
+                    "confidence": "high"
                 })}
             }),
             # Tiebreaker
@@ -288,16 +293,18 @@ class TestConsensusAndTiebreaker:
                     "evidence_quote": "Wrong population details", "confidence": "high"
                 })}
             }),
-            # Screener B
+            # Screener B — include hợp lệ
             httpx.Response(200, json={
                 "message": {"role": "assistant", "content": json.dumps({
-                    "verdict": "include", "confidence": "high"
+                    "verdict": "include", "relevance_quote": "Wrong population details",
+                    "confidence": "high"
                 })}
             }),
-            # Tiebreaker (low confidence)
+            # Tiebreaker (low confidence, quote hợp lệ — escalate vì confidence chứ không vì invalid)
             httpx.Response(200, json={
                 "message": {"role": "assistant", "content": json.dumps({
-                    "verdict": "include", "confidence": "low"
+                    "verdict": "include", "relevance_quote": "Wrong population details",
+                    "confidence": "low"
                 })}
             })
         ])
@@ -388,4 +395,107 @@ class TestScreenerBIndependence:
         assert "screener_a" not in messages_text
         assert json.dumps(a_verdict_dict) not in messages_text
         assert '"verdict": "exclude"' not in messages_text  # B does not see A's output verdict
+
+
+class TestSymmetricEvidenceTax:
+    """M7.2 §2.1: include cũng phải trả phí kiểm chứng — không còn verdict miễn phí.
+
+    Trước hiệu chuẩn, include không cần gì trong khi exclude phải qua verify_quote ⇒
+    model nhỏ thoái hóa 100% include (κ = 0, First Light 2026-07-11)."""
+
+    @respx.mock
+    def test_include_without_relevance_quote_is_invalid(self, store, protocol, criteria):
+        doc = make_doc("ieee", "38111222", "Title RAG LLM", 1)
+        doc.status = DocStatus.QUEUED
+        doc.abstract = "This is an abstract about RAG and LLM."
+        store.upsert(doc)
+
+        dummy_verdict = {"verdict": "include", "confidence": "high"}   # thiếu relevance_quote
+        respx.get(f"{OLLAMA}/api/tags").mock(return_value=httpx.Response(200, json={}))
+        respx.post(f"{OLLAMA}/api/chat").mock(return_value=httpx.Response(200, json={
+            "message": {"role": "assistant", "content": json.dumps(dummy_verdict)}
+        }))
+
+        count = run_screening_a(store, protocol, criteria, limit=1)
+        assert count == 1
+        verdicts = store.screen_verdicts("ieee:38111222")
+        assert verdicts[0]["verdict"] == "invalid"   # include miễn phí không còn tồn tại
+
+    @respx.mock
+    def test_include_with_hallucinated_relevance_quote_is_invalid(self, store, protocol, criteria):
+        doc = make_doc("ieee", "38111222", "Title RAG LLM", 1)
+        doc.status = DocStatus.QUEUED
+        doc.abstract = "This is an abstract about RAG and LLM."
+        store.upsert(doc)
+
+        dummy_verdict = {
+            "verdict": "include",
+            "relevance_quote": "totally fabricated sentence not in the text",
+            "confidence": "high"
+        }
+        respx.get(f"{OLLAMA}/api/tags").mock(return_value=httpx.Response(200, json={}))
+        respx.post(f"{OLLAMA}/api/chat").mock(return_value=httpx.Response(200, json={
+            "message": {"role": "assistant", "content": json.dumps(dummy_verdict)}
+        }))
+
+        count = run_screening_a(store, protocol, criteria, limit=1)
+        assert count == 1
+        verdicts = store.screen_verdicts("ieee:38111222")
+        assert verdicts[0]["verdict"] == "invalid"   # quote bịa = void, không phải "sửa lại cho khớp"
+
+
+class TestDegenerateGuard:
+    """M7.2 §3 Phase 1.3: screener vote một chiều 100% trên batch đủ lớn ⇒ SCREEN_DEGENERATE."""
+
+    def _seed_docs(self, store, n):
+        for i in range(n):
+            doc = make_doc("ieee", f"381113{i:02d}", f"Title {i}", 1)
+            doc.status = DocStatus.QUEUED
+            doc.abstract = "RAG and LLM systems are here."
+            store.upsert(doc)
+
+    def _mock_all_include(self):
+        respx.get(f"{OLLAMA}/api/tags").mock(return_value=httpx.Response(200, json={
+            "models": [{"name": "gemma4:e4b"}]
+        }))
+        respx.post(f"{OLLAMA}/api/chat").mock(return_value=httpx.Response(200, json={
+            "message": {"role": "assistant", "content": json.dumps({
+                "verdict": "include", "relevance_quote": "RAG and LLM systems",
+                "confidence": "high"
+            })}
+        }))
+
+    @respx.mock
+    def test_all_include_batch_fires_degenerate_for_both_screeners(self, store, protocol, criteria, monkeypatch):
+        monkeypatch.setenv("SR_SCREEN_MODEL_B", "gemma4:e4b")
+        self._seed_docs(store, 10)
+        self._mock_all_include()
+
+        from tools.screen_run import run_screening_batch
+        res = run_screening_batch(store, protocol, criteria, limit=10)
+
+        assert res["processed"] == 10
+        assert res["include_rate_a"] == 1.0 and res["include_rate_b"] == 1.0
+        assert res["invalid_rate_a"] == 0.0 and res["invalid_rate_b"] == 0.0
+        assert res["kappa"] == 1.0            # đồng thuận tuyệt đối include: p_o = p_e = 1
+
+        events = [r["event_type"] for r in store.conn.execute(
+            "SELECT event_type FROM events WHERE uid = 'screening:batch'"
+        ).fetchall()]
+        assert events.count("SCREEN_DEGENERATE") == 2   # cả A lẫn B đều một chiều
+
+    @respx.mock
+    def test_small_batch_does_not_fire_degenerate(self, store, protocol, criteria, monkeypatch):
+        monkeypatch.setenv("SR_SCREEN_MODEL_B", "gemma4:e4b")
+        self._seed_docs(store, 2)             # dưới ngưỡng DEGENERATE_MIN_VALID
+        self._mock_all_include()
+
+        from tools.screen_run import run_screening_batch
+        res = run_screening_batch(store, protocol, criteria, limit=2)
+
+        assert res["processed"] == 2
+        events = [r["event_type"] for r in store.conn.execute(
+            "SELECT event_type FROM events WHERE uid = 'screening:batch'"
+        ).fetchall()]
+        assert "SCREEN_DEGENERATE" not in events   # mẫu quá nhỏ, κ/rate chưa có nghĩa
 
