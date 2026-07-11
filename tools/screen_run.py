@@ -83,6 +83,19 @@ def verify_quote(source_text: str, quote: str) -> bool:
 
 # --- Prompt Builders ------------------------------------------------------------------
 
+# M7.2 Phase 1b: kỷ luật chép quote — Phase 2 đo được screener A invalid 50.6% vì lý do
+# CƠ HỌC (chèn '...', sửa ký tự LaTeX \, $) chứ không phải nhận thức. Luật chép được nêu
+# tường minh trong CẢ BA prompt; verifier giữ nguyên — nới verifier là nới firewall.
+QUOTE_COPY_RULES = (
+    "Quote copying rules (apply to BOTH 'evidence_quote' and 'relevance_quote'):\n"
+    "- Copy ONE contiguous span character-for-character from the Title/Abstract.\n"
+    "- NEVER shorten with '...' or '…', never paraphrase, never merge two sentences.\n"
+    "- NEVER add, remove or alter characters — backslashes (\\), '$', '{', '}' and other "
+    "LaTeX markup must be copied exactly as written in the text.\n"
+    "- Prefer a SHORT span (5-20 words) that contains the decisive evidence; a short exact "
+    "quote is always better than a long modified one.\n"
+)
+
 def build_screener_a_prompts(doc_title: str, doc_abstract: str, protocol: ReviewProtocol, criteria: dict) -> tuple[str, str]:
     # Thiên-giữ prompt context (burden of proof on exclusion)
     criteria_lines = []
@@ -103,11 +116,14 @@ def build_screener_a_prompts(doc_title: str, doc_abstract: str, protocol: Review
         "Decision Rule (Burden of Proof is on Exclusion):\n"
         "1. Start with the assumption that the study should be INCLUDED.\n"
         "2. EXCLUDE only if you find clear, explicit evidence in the Title/Abstract that one of the exclusion criteria applies.\n"
-        "3. If you EXCLUDE, you must specify the EXACT 'criterion_id' (e.g. ET1) and a 'evidence_quote' that is a word-for-word verbatim quote from the text.\n"
+        "3. If you EXCLUDE, you must specify 'criterion_id' — EXACTLY one of the codes listed "
+        "in the Exclusion Criteria above (e.g. ET1) — and an 'evidence_quote' that is a "
+        "word-for-word verbatim quote from the text. Both fields are mandatory for EXCLUDE.\n"
         "4. If you INCLUDE, you must provide a 'relevance_quote': a word-for-word verbatim quote "
         "from the Title/Abstract showing the study matches the Target Population or the Target "
         "Intervention; 'criterion_id' and 'evidence_quote' must be null/None.\n"
-        "5. Output must strictly adhere to the ScreenVerdict JSON schema."
+        "5. Output must strictly adhere to the ScreenVerdict JSON schema.\n\n"
+        + QUOTE_COPY_RULES
     )
     
     user_prompt = (
@@ -142,10 +158,11 @@ def build_screener_b_prompts(doc_title: str, doc_abstract: str, protocol: Review
         "matches BOTH the Target Population AND the Target Intervention.\n"
         "3. If you INCLUDE, you must provide a 'relevance_quote': a word-for-word verbatim quote "
         "from the text demonstrating that match.\n"
-        "4. If you EXCLUDE, you must specify the EXACT 'criterion_id' from the checklist that fits "
-        "best (e.g. ET1 for wrong population, ET2 for missing intervention) and an 'evidence_quote' "
-        "that is a word-for-word verbatim quote from the text.\n"
-        "5. Output must strictly adhere to the ScreenVerdict JSON schema."
+        "4. If you EXCLUDE, you must specify 'criterion_id' — EXACTLY one of the codes listed in "
+        "the checklist above (e.g. ET1 for wrong population, ET2 for missing intervention) — and "
+        "an 'evidence_quote' that is a word-for-word verbatim quote from the text.\n"
+        "5. Output must strictly adhere to the ScreenVerdict JSON schema.\n\n"
+        + QUOTE_COPY_RULES
     )
     
     user_prompt = (
@@ -179,7 +196,8 @@ def build_tiebreaker_prompts(doc_title: str, doc_abstract: str, protocol: Review
         "2. Make the final decision. If you choose to EXCLUDE, you must provide a valid 'criterion_id' and verbatim 'evidence_quote' from the text. "
         "If you choose to INCLUDE, you must provide a 'relevance_quote': a word-for-word verbatim quote from the text showing the study matches the protocol.\n"
         "3. If the decision is highly ambiguous and you cannot be certain, you may set 'confidence' to 'low'. Otherwise set 'confidence' to 'high'.\n"
-        "4. Output must strictly match the ScreenVerdict JSON schema."
+        "4. Output must strictly match the ScreenVerdict JSON schema.\n\n"
+        + QUOTE_COPY_RULES
     )
     
     user_prompt = (

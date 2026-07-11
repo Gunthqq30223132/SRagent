@@ -397,6 +397,38 @@ class TestScreenerBIndependence:
         assert '"verdict": "exclude"' not in messages_text  # B does not see A's output verdict
 
 
+class TestQuoteCopyDiscipline:
+    """M7.2 Phase 1b: luật chép quote cơ học phải có mặt trong CẢ BA prompt.
+
+    Phase 2 đo được screener A invalid 50.6% do chèn '...' và sửa ký tự LaTeX —
+    lỗi kỷ luật chép, chữa ở prompt; verifier giữ nguyên (nới verifier = nới firewall)."""
+
+    def test_all_three_prompts_carry_quote_copy_rules(self, protocol, criteria):
+        from tools.screen_run import (
+            QUOTE_COPY_RULES,
+            build_screener_a_prompts,
+            build_screener_b_prompts,
+            build_tiebreaker_prompts,
+        )
+
+        sys_a, _ = build_screener_a_prompts("T", "A", protocol, criteria)
+        sys_b, _ = build_screener_b_prompts("T", "A", protocol, criteria)
+        sys_tb, _ = build_tiebreaker_prompts("T", "A", protocol, criteria, "v1", "v2")
+
+        for sys_prompt in (sys_a, sys_b, sys_tb):
+            assert QUOTE_COPY_RULES in sys_prompt
+            assert "character-for-character" in sys_prompt
+            assert "NEVER shorten with '...'" in sys_prompt
+
+    def test_exclude_prompts_pin_criterion_id_to_listed_codes(self, protocol, criteria):
+        from tools.screen_run import build_screener_a_prompts, build_screener_b_prompts
+
+        sys_a, _ = build_screener_a_prompts("T", "A", protocol, criteria)
+        sys_b, _ = build_screener_b_prompts("T", "A", protocol, criteria)
+        for sys_prompt in (sys_a, sys_b):
+            assert "EXACTLY one of the codes listed" in sys_prompt
+
+
 class TestSymmetricEvidenceTax:
     """M7.2 §2.1: include cũng phải trả phí kiểm chứng — không còn verdict miễn phí.
 
