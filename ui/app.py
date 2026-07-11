@@ -22,12 +22,11 @@ from sr_agent.store.staging import StagingStore
 st.set_page_config(page_title="SR-Agent QC Queue", layout="wide")
 
 
-@st.cache_resource
-def get_store() -> StagingStore:
-    return StagingStore()
-
-
-store = get_store()
+# KHÔNG cache store: Streamlit chạy lại script trên thread khác nhau ở mỗi rerun,
+# mà sqlite3 cấm dùng connection chéo thread (ProgrammingError — lộ ra ở cú Approve
+# thật đầu tiên, 2026-07-11). Mở connection mới theo từng rerun: rẻ (SQLite local),
+# đúng thread theo cấu trúc, mọi rerun/cửa sổ tự cô lập qua file lock của SQLite.
+store = StagingStore()
 publisher = NotionPublisher()
 
 st.title("SR-Agent — Quality Control Queue")
