@@ -11,6 +11,7 @@ setup:              ## tạo venv + cài deps + khởi tạo .env (không ghi đ
 	uv venv .venv
 	uv pip install -p $(PY) -e ".[ui,dev]"
 	cp -n .env.example .env || true
+	git config core.hooksPath .githooks || true
 	@echo "-> Điền IEEE_API_KEY / NOTION_TOKEN / NOTION_PARENT_PAGE_ID vào .env rồi chạy: make doctor"
 
 doctor:             ## kiểm tra tiền vận hành (env, Ollama, storage)

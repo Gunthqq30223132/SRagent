@@ -1,0 +1,11 @@
+#!/bin/sh
+# Git pre-commit hook to enforce safety rules on all staged files.
+# Targets macOS Sequoia, BSD-compatible, POSIX sh.
+
+set -e
+
+# Get the directory of the hook script
+HOOK_DIR="$(dirname "$0")"
+
+# Execute pre-commit-checker.py with the list of staged files piped to stdin
+git diff --cached --name-only --diff-filter=ACM | python3 "${HOOK_DIR}/pre-commit-checker.py"
