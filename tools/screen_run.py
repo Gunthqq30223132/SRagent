@@ -250,10 +250,20 @@ def invoke_screener_agent(client, system_prompt: str, user_prompt: str, source_t
         return "invalid", None, None, "low"
 
 
+def _screen_model_a() -> str:
+    """Model của screener A — tách khỏi OLLAMA_MODEL toàn cục (M7.2 Phase 2R).
+
+    Trước đây model_a ghim cứng OLLAMA_MODEL: muốn đổi screener A là phải đổi model
+    của TOÀN pipeline (parser/enrich đi theo). Env riêng cho phép hiệu chuẩn cặp
+    screener độc lập với phần còn lại của hệ."""
+    return os.getenv("SR_SCREEN_MODEL_A") or OLLAMA_MODEL
+
+
 def run_screening_a(store: StagingStore, protocol: ReviewProtocol, criteria: dict, limit: int) -> int:
     from sr_agent.parser.ollama_client import OllamaClient
-    
-    client = OllamaClient()
+
+    model_a = _screen_model_a()
+    client = OllamaClient(model=model_a)
     if not client.is_available():
         logger.error("Ollama is not available. Cannot run LLM screening.")
         return 0
@@ -287,7 +297,7 @@ def run_screening_a(store: StagingStore, protocol: ReviewProtocol, criteria: dic
         )
         
         verdict, crit_id, quote, conf = invoke_screener_agent(client, system_prompt, user_prompt, source_text, protocol)
-        store.add_screen_verdict(uid, "screener_a", OLLAMA_MODEL, verdict, crit_id, quote, conf)
+        store.add_screen_verdict(uid, "screener_a", model_a, verdict, crit_id, quote, conf)
         store.log_event(uid, "SCREENED", f"agent=screener_a, verdict={verdict}, criterion={crit_id or ''}")
         screened_count += 1
     return screened_count
@@ -312,18 +322,28 @@ def run_screening_batch(store: StagingStore, protocol: ReviewProtocol, criteria:
     from sr_agent.parser.ollama_client import OllamaClient
     
     started_at = datetime.now(timezone.utc).isoformat()
-    model_a = OLLAMA_MODEL
+    model_a = _screen_model_a()
     model_b = os.getenv("SR_SCREEN_MODEL_B", "gemma4:e4b")
-    
+
     client_a = OllamaClient(model=model_a)
     client_b = OllamaClient(model=model_b)
-    
+
     if not client_a.is_available():
         logger.error("Ollama is not available. Cannot run multi-agent screening.")
         return {"processed": 0, "kappa": None}
 
-    # T1: check if model_b is in list_models()
     available_models = client_a.list_models()
+
+    # Guard cho model A tùy biến: tag không tồn tại ⇒ quay về OLLAMA_MODEL ỒN ÀO
+    # (event + warning) thay vì để mọi verdict A chết lặng lẽ thành invalid.
+    if model_a != OLLAMA_MODEL and model_a not in available_models:
+        store.log_event("screening:batch", "SCREEN_MODEL_A_FALLBACK",
+                        f"model_a={model_a} không có trong ollama tags — screener_a quay về {OLLAMA_MODEL}")
+        print(f"WARNING: model_a={model_a} is not available in Ollama tags. Falling back to {OLLAMA_MODEL}.")
+        model_a = OLLAMA_MODEL
+        client_a = OllamaClient(model=model_a)
+
+    # T1: check if model_b is in list_models()
     single_model_mode = False
     if model_b not in available_models:
         single_model_mode = True
