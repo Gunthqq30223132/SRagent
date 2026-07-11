@@ -1,6 +1,13 @@
 """Screening Tool (PRISMA Multi-Agent title/abstract screening).
 
 Orchestrates agent-based screening for systematic reviews.
+
+Hiệu chuẩn M7.2 (docs/specs/M7.2-screening-calibration.md):
+- Thuế bằng chứng ĐỐI XỨNG: include lẫn exclude đều phải kèm quote verbatim qua được
+  verify_quote — không tồn tại verdict miễn phí (bài học κ=0, First Light 2026-07-11);
+- Cặp screener ĐỐI KHÁNG: A xuất phát từ giả định giữ, B từ giả định loại — hai góc
+  nhìn thật, không phải hai cách diễn đạt của cùng một thiên kiến;
+- Guard thoái hóa: vote một chiều 100% trên batch đủ lớn ⇒ event SCREEN_DEGENERATE.
 """
 
 from __future__ import annotations
@@ -37,7 +44,13 @@ class ScreenVerdict(BaseModel):
     verdict: Literal["include", "exclude"]
     criterion_id: str | None = None      # BẮT BUỘC khi exclude — một mã ET1..ET7
     evidence_quote: str | None = None    # BẮT BUỘC khi exclude — verbatim từ title/abstract
+    relevance_quote: str | None = None   # BẮT BUỘC khi include — verbatim chứng minh khớp protocol
     confidence: Literal["high", "low"]
+
+
+# M7.2 §3 Phase 1: guard thoái hóa — screener vote một chiều 100% trên batch đủ lớn
+# là trạng thái bệnh (κ = 0 kinh điển), phải tự phát event thay vì đợi người soi κ.
+DEGENERATE_MIN_VALID = 10
 
 
 # --- Verifier (D5) -------------------------------------------------------------------
@@ -91,7 +104,9 @@ def build_screener_a_prompts(doc_title: str, doc_abstract: str, protocol: Review
         "1. Start with the assumption that the study should be INCLUDED.\n"
         "2. EXCLUDE only if you find clear, explicit evidence in the Title/Abstract that one of the exclusion criteria applies.\n"
         "3. If you EXCLUDE, you must specify the EXACT 'criterion_id' (e.g. ET1) and a 'evidence_quote' that is a word-for-word verbatim quote from the text.\n"
-        "4. If you INCLUDE, 'criterion_id' and 'evidence_quote' must be null/None.\n"
+        "4. If you INCLUDE, you must provide a 'relevance_quote': a word-for-word verbatim quote "
+        "from the Title/Abstract showing the study matches the Target Population or the Target "
+        "Intervention; 'criterion_id' and 'evidence_quote' must be null/None.\n"
         "5. Output must strictly adhere to the ScreenVerdict JSON schema."
     )
     
@@ -103,15 +118,17 @@ def build_screener_a_prompts(doc_title: str, doc_abstract: str, protocol: Review
 
 
 def build_screener_b_prompts(doc_title: str, doc_abstract: str, protocol: ReviewProtocol, criteria: dict) -> tuple[str, str]:
-    # Thiên-loại prompt context (checklist-based)
+    # Đối kháng thật với screener A (M7.2 §2.2): A xuất phát từ giả định GIỮ, B xuất phát
+    # từ giả định LOẠI. Framing checklist cũ vẫn kết luận "NONE apply → INCLUDE" nên cả
+    # cặp đều thiên-giữ — model nhỏ thoái hóa 100% include (First Light 2026-07-11).
     criteria_lines = []
     for cid in protocol.exclusion_criteria:
         if cid in criteria:
             criteria_lines.append(f"- {cid}: {criteria[cid]['label_vi']} ({criteria[cid]['description_en']})")
             
     system_prompt = (
-        "You are an academic screening agent (screener_b) conducting a systematic literature review. "
-        "Your task is to decide whether a study should be INCLUDED or EXCLUDED by checking each exclusion criterion sequentially. "
+        "You are a skeptical academic screening agent (screener_b) conducting a systematic literature review. "
+        "Your task is to decide whether a study should be INCLUDED or EXCLUDED based on its Title and Abstract. "
         "Review Protocol:\n"
         f"- Target Population: {protocol.population.concept} (Synonyms: {', '.join(protocol.population.synonyms)})\n"
         f"- Target Intervention: {protocol.intervention.concept} (Synonyms: {', '.join(protocol.intervention.synonyms)})\n"
@@ -119,14 +136,16 @@ def build_screener_b_prompts(doc_title: str, doc_abstract: str, protocol: Review
         f"- Year Range: {protocol.year_range if protocol.year_range else 'Any'}\n\n"
         "Exclusion Criteria Checklist:\n"
         + "\n".join(criteria_lines) + "\n\n"
-        "Decision Checklist (Burden of Proof is on Exclusion Checklist):\n"
-        "Check each exclusion criterion in the checklist against the Title and Abstract:\n"
-        "1. Does ET1 apply? If yes, exclude immediately and quote evidence.\n"
-        "2. Does ET2 apply? If yes, exclude immediately and quote evidence.\n"
-        "3. Repeat for all criteria.\n"
-        "4. If and only if NONE of the exclusion criteria apply, you must output INCLUDE.\n"
-        "5. If you EXCLUDE, you must specify the EXACT 'criterion_id' and a verbatim 'evidence_quote'.\n"
-        "6. Output must strictly adhere to the ScreenVerdict JSON schema."
+        "Decision Rule (Burden of Proof is on Inclusion):\n"
+        "1. Start with the assumption that the study is IRRELEVANT and should be EXCLUDED.\n"
+        "2. INCLUDE only if you find clear, explicit evidence in the Title/Abstract that the study "
+        "matches BOTH the Target Population AND the Target Intervention.\n"
+        "3. If you INCLUDE, you must provide a 'relevance_quote': a word-for-word verbatim quote "
+        "from the text demonstrating that match.\n"
+        "4. If you EXCLUDE, you must specify the EXACT 'criterion_id' from the checklist that fits "
+        "best (e.g. ET1 for wrong population, ET2 for missing intervention) and an 'evidence_quote' "
+        "that is a word-for-word verbatim quote from the text.\n"
+        "5. Output must strictly adhere to the ScreenVerdict JSON schema."
     )
     
     user_prompt = (
@@ -157,7 +176,8 @@ def build_tiebreaker_prompts(doc_title: str, doc_abstract: str, protocol: Review
         f"- Screener 2: {v2_desc}\n\n"
         "Instructions:\n"
         "1. Review the Title and Abstract carefully.\n"
-        "2. Make the final decision. If you choose to EXCLUDE, you must provide a valid 'criterion_id' and verbatim 'evidence_quote' from the text.\n"
+        "2. Make the final decision. If you choose to EXCLUDE, you must provide a valid 'criterion_id' and verbatim 'evidence_quote' from the text. "
+        "If you choose to INCLUDE, you must provide a 'relevance_quote': a word-for-word verbatim quote from the text showing the study matches the protocol.\n"
         "3. If the decision is highly ambiguous and you cannot be certain, you may set 'confidence' to 'low'. Otherwise set 'confidence' to 'high'.\n"
         "4. Output must strictly match the ScreenVerdict JSON schema."
     )
@@ -192,9 +212,16 @@ def invoke_screener_agent(client, system_prompt: str, user_prompt: str, source_t
             elif not verify_quote(source_text, evidence_quote):
                 is_valid = False
         else:
+            # Thuế bằng chứng đối xứng (M7.2 §2.1): include cũng phải trả phí kiểm chứng
+            # như exclude — thiếu quote hoặc quote bịa ⇒ invalid ⇒ tiebreaker (bảo thủ,
+            # không bao giờ tự lật thành exclude). Trước đây include miễn phí tuyệt đối
+            # nên model nhỏ thoái hóa 100% include (κ = 0, First Light 2026-07-11).
+            relevance_quote = verdict_data.relevance_quote
+            if not relevance_quote or not verify_quote(source_text, relevance_quote):
+                is_valid = False
             criterion_id = None
-            evidence_quote = None
-            
+            evidence_quote = relevance_quote   # lưu chung cột evidence_quote — không đổi schema DB
+
         if not is_valid:
             return "invalid", criterion_id, evidence_quote, confidence
         return verdict, criterion_id, evidence_quote, confidence
@@ -249,6 +276,19 @@ def run_screening_a(store: StagingStore, protocol: ReviewProtocol, criteria: dic
 
 
 # --- Main Logic ----------------------------------------------------------------------
+
+def _batch_rates(verdicts: list[str]) -> tuple[float | None, float | None, int]:
+    """(include_rate trên verdict hợp lệ, invalid_rate trên toàn bộ, số verdict hợp lệ).
+
+    include_rate = None khi không có verdict hợp lệ nào — không bịa số từ tập rỗng.
+    """
+    if not verdicts:
+        return None, None, 0
+    valid = [v for v in verdicts if v in ("include", "exclude")]
+    invalid_rate = (len(verdicts) - len(valid)) / len(verdicts)
+    include_rate = (sum(1 for v in valid if v == "include") / len(valid)) if valid else None
+    return include_rate, invalid_rate, len(valid)
+
 
 def run_screening_batch(store: StagingStore, protocol: ReviewProtocol, criteria: dict, limit: int) -> dict:
     from sr_agent.parser.ollama_client import OllamaClient
@@ -308,8 +348,10 @@ def run_screening_batch(store: StagingStore, protocol: ReviewProtocol, criteria:
         
     screened_count = 0
     batch_verdicts = []
+    verdicts_a_all: list[str] = []       # mọi verdict A trong batch (kể cả invalid) — cho guard thoái hóa
+    verdicts_b_all: list[str] = []
     escalated_count = 0
-    
+
     try:
         for uid in to_screen[:limit]:
             doc = store.get(uid)
@@ -354,6 +396,8 @@ def run_screening_batch(store: StagingStore, protocol: ReviewProtocol, criteria:
                 store.add_screen_verdict(uid, "screener_b", active_client_b.model, verdict_b, crit_b, quote_b, conf_b)
                 store.log_event(uid, "SCREENED", f"agent=screener_b, verdict={verdict_b}, criterion={crit_b or ''}")
 
+            verdicts_a_all.append(verdict_a)
+            verdicts_b_all.append(verdict_b)
             if verdict_a in ("include", "exclude") and verdict_b in ("include", "exclude"):
                 batch_verdicts.append((verdict_a, verdict_b))
 
@@ -390,27 +434,51 @@ def run_screening_batch(store: StagingStore, protocol: ReviewProtocol, criteria:
         kappa = None
     else:
         kappa = compute_cohen_kappa(batch_verdicts)
-        
+
+    # Guard thoái hóa (M7.2 §3 Phase 1): screener vote một chiều 100%/0% trên batch
+    # đủ lớn ⇒ không đóng góp thông tin phân biệt (κ = 0 kinh điển) — phát event ngay,
+    # không đợi người soi κ. Fail-loud, không chặn batch: kết quả vẫn ghi, người quyết.
+    include_rate_a, invalid_rate_a, valid_a = _batch_rates(verdicts_a_all)
+    include_rate_b, invalid_rate_b, valid_b = _batch_rates(verdicts_b_all)
+    for agent_name, rate, valid_n in (
+        ("screener_a", include_rate_a, valid_a),
+        ("screener_b", include_rate_b, valid_b),
+    ):
+        if valid_n >= DEGENERATE_MIN_VALID and rate in (0.0, 1.0):
+            store.log_event(
+                "screening:batch", "SCREEN_DEGENERATE",
+                f"agent={agent_name} include_rate={rate:.0%} trên {valid_n} verdict hợp lệ "
+                "— screener vote một chiều, không đóng góp thông tin phân biệt",
+            )
+
     report_data = {
         "processed": screened_count,
         "kappa": kappa,
         "kappa_docs": len(batch_verdicts),
         "single_model_mode": single_model_mode,
-        "escalated": escalated_count
+        "escalated": escalated_count,
+        "include_rate_a": include_rate_a,
+        "include_rate_b": include_rate_b,
+        "invalid_rate_a": invalid_rate_a,
+        "invalid_rate_b": invalid_rate_b,
     }
     if single_model_mode:
         report_data["kappa_reason"] = "single_model"
-        
+
     store.record_run(
         query=f"screening:{protocol.topic_vi}",
         started_at=started_at,
         report_json=json.dumps(report_data)
     )
-    
+
     res = {
         "processed": screened_count,
         "kappa": kappa,
-        "single_model_mode": single_model_mode
+        "single_model_mode": single_model_mode,
+        "include_rate_a": include_rate_a,
+        "include_rate_b": include_rate_b,
+        "invalid_rate_a": invalid_rate_a,
+        "invalid_rate_b": invalid_rate_b,
     }
     if single_model_mode:
         res["kappa_reason"] = "single_model"

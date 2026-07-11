@@ -137,9 +137,9 @@ class TestM6HotfixInvariants:
             nonlocal call_count
             call_count += 1
             if call_count == 1:
-                return httpx.Response(200, json={"message": {"role": "assistant", "content": json.dumps({"verdict": "include", "confidence": "high"})}})
+                return httpx.Response(200, json={"message": {"role": "assistant", "content": json.dumps({"verdict": "include", "relevance_quote": "We evaluate on benchmarks", "confidence": "high"})}})
             elif call_count == 2:
-                return httpx.Response(200, json={"message": {"role": "assistant", "content": json.dumps({"verdict": "include", "confidence": "high"})}})
+                return httpx.Response(200, json={"message": {"role": "assistant", "content": json.dumps({"verdict": "include", "relevance_quote": "We evaluate on benchmarks", "confidence": "high"})}})
             else:
                 raise httpx.ConnectError("Connection refused")
 
@@ -179,18 +179,18 @@ class TestM6HotfixInvariants:
         # Batch 2 (doc3 and doc4): Screener A and B disagree (include, exclude / exclude, include) -> kappa = -1.0
         respx.post(f"{OLLAMA}/api/chat").mock(side_effect=[
             # Doc 1
-            httpx.Response(200, json={"message": {"role": "assistant", "content": json.dumps({"verdict": "include", "confidence": "high"})}}),
-            httpx.Response(200, json={"message": {"role": "assistant", "content": json.dumps({"verdict": "include", "confidence": "high"})}}),
+            httpx.Response(200, json={"message": {"role": "assistant", "content": json.dumps({"verdict": "include", "relevance_quote": "We evaluate on benchmarks", "confidence": "high"})}}),
+            httpx.Response(200, json={"message": {"role": "assistant", "content": json.dumps({"verdict": "include", "relevance_quote": "We evaluate on benchmarks", "confidence": "high"})}}),
             # Doc 2
-            httpx.Response(200, json={"message": {"role": "assistant", "content": json.dumps({"verdict": "include", "confidence": "high"})}}),
-            httpx.Response(200, json={"message": {"role": "assistant", "content": json.dumps({"verdict": "include", "confidence": "high"})}}),
+            httpx.Response(200, json={"message": {"role": "assistant", "content": json.dumps({"verdict": "include", "relevance_quote": "We evaluate on benchmarks", "confidence": "high"})}}),
+            httpx.Response(200, json={"message": {"role": "assistant", "content": json.dumps({"verdict": "include", "relevance_quote": "We evaluate on benchmarks", "confidence": "high"})}}),
             # Doc 3 (screener_a = include, screener_b = exclude) -> tiebreaker (exclude)
-            httpx.Response(200, json={"message": {"role": "assistant", "content": json.dumps({"verdict": "include", "confidence": "high"})}}),
+            httpx.Response(200, json={"message": {"role": "assistant", "content": json.dumps({"verdict": "include", "relevance_quote": "We evaluate on benchmarks", "confidence": "high"})}}),
             httpx.Response(200, json={"message": {"role": "assistant", "content": json.dumps({"verdict": "exclude", "criterion_id": "ET1", "evidence_quote": "Title 3", "confidence": "high"})}}),
             httpx.Response(200, json={"message": {"role": "assistant", "content": json.dumps({"verdict": "exclude", "criterion_id": "ET1", "evidence_quote": "Title 3", "confidence": "high"})}}),
             # Doc 4 (screener_a = exclude, screener_b = include) -> tiebreaker (exclude)
             httpx.Response(200, json={"message": {"role": "assistant", "content": json.dumps({"verdict": "exclude", "criterion_id": "ET1", "evidence_quote": "Title 4", "confidence": "high"})}}),
-            httpx.Response(200, json={"message": {"role": "assistant", "content": json.dumps({"verdict": "include", "confidence": "high"})}}),
+            httpx.Response(200, json={"message": {"role": "assistant", "content": json.dumps({"verdict": "include", "relevance_quote": "We evaluate on benchmarks", "confidence": "high"})}}),
             httpx.Response(200, json={"message": {"role": "assistant", "content": json.dumps({"verdict": "exclude", "criterion_id": "ET1", "evidence_quote": "Title 4", "confidence": "high"})}}),
         ])
 
