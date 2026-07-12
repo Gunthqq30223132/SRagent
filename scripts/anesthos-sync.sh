@@ -90,12 +90,25 @@ else
   echo "ℹ️ ~/.omniroute directory does not exist. Skipping backup."
 fi
 
+# Setup REPO_DIR
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
 # AI chat history Git backup
 history_dir="$HOME/.claude/profiles/anesthos"
 target_remote="git$(printf '\x40')github.com:gunthqq30223132/AnesthOS-AI-History.git"
 
 if [ -d "$history_dir" ]; then
   echo "Checking AI chat history repository..."
+  
+  # Ensure gitignore is set up in history directory
+  cat << 'EOF' > "$history_dir/.gitignore"
+settings.json
+settings.local.json
+opencode.json
+*.local
+EOF
+
   if ! git -C "$history_dir" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     echo "Initializing git repository in $history_dir..."
     git -C "$history_dir" init
@@ -108,35 +121,56 @@ if [ -d "$history_dir" ]; then
     git -C "$history_dir" remote set-url origin "$target_remote"
   fi
 
-  # Add files and check if commit is needed
-  git -C "$history_dir" add -A
-  # Check if there are changes to commit (staged changes)
-  if ! git -C "$history_dir" diff --cached --quiet; then
-    echo "Committing AI chat history..."
-    if ! git -C "$history_dir" commit --no-verify -m "Backup chat history: $(date '+%Y-%m-%d %H:%M:%S')"; then
-      echo "⚠️ Failed to commit AI chat history. Proceeding anyway..."
-    fi
-  else
-    echo "No new chat history changes to commit."
-  fi
+  # Untrack machine-specific configs if they were accidentally tracked
+  git -C "$history_dir" rm --cached settings.json settings.local.json opencode.json 2>/dev/null || true
 
   # Ensure the active branch is named main
   git -C "$history_dir" branch -M main 2>/dev/null || true
 
-  # Push to remote, handle errors gracefully
-  echo "Pushing AI chat history to GitHub..."
-  if ! git -C "$history_dir" push -u origin main; then
-    echo "⚠️ Failed to push AI chat history to remote. Skipping push gracefully."
-  else
-    echo "✅ AI chat history successfully pushed to GitHub."
+  if [ "$MODE" = "push" ]; then
+    echo "Running secret scanner on AI history files..."
+    python3 "$REPO_DIR/tools/guard/redact_history.py"
+
+    # Add files and check if commit is needed
+    git -C "$history_dir" add -A
+    # Check if there are changes to commit (staged changes)
+    if ! git -C "$history_dir" diff --cached --quiet; then
+      echo "Committing AI chat history..."
+      if ! git -C "$history_dir" commit --no-verify -m "Backup chat history: $(date '+%Y-%m-%d %H:%M:%S')"; then
+        echo "⚠️ Failed to commit AI chat history. Proceeding anyway..."
+      fi
+    else
+      echo "No new chat history changes to commit."
+    fi
+
+    # Push to remote, handle errors gracefully
+    echo "Pushing AI chat history to GitHub..."
+    if ! git -C "$history_dir" push -u origin main; then
+      echo "⚠️ Failed to push AI chat history to remote. Skipping push gracefully."
+    else
+      echo "✅ AI chat history successfully pushed to GitHub."
+    fi
+
+  elif [ "$MODE" = "pull" ]; then
+    echo "Backing up local database files before pulling..."
+    find "$history_dir" -type f \( -name "*.db" -o -name "*.sqlite" \) | while read -r db_file; do
+      if [ -f "$db_file" ]; then
+        echo "Backing up local database: $db_file -> ${db_file}.local"
+        mv "$db_file" "${db_file}.local"
+      fi
+    done
+
+    echo "Pulling AI chat history from remote..."
+    if ! git -C "$history_dir" pull origin main; then
+      echo "⚠️ Failed to pull AI chat history from remote. Skipping pull gracefully."
+    fi
+
+    echo "Merging local backup database files..."
+    python3 "$REPO_DIR/scripts/merge_history.py"
   fi
 else
   echo "ℹ️ AI chat history directory $history_dir does not exist. Skipping history backup."
 fi
-
-# Source code sync
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 echo "Navigating to repository root: $REPO_DIR..."
 cd "$REPO_DIR"

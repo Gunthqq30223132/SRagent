@@ -152,10 +152,72 @@ def setup_claude_profile():
     print(f"[+] Wrote settings.local.json: {local_settings_path}")
     print("[+] Claude Code profile configuration complete.")
 
+def setup_opencode_config():
+    opencode_dir = os.path.expanduser("~/.config/opencode")
+    opencode_path = os.path.join(opencode_dir, "opencode.json")
+    print(f"[*] Configuring OpenCode configuration at: {opencode_path}")
+    os.makedirs(opencode_dir, exist_ok=True)
+    
+    if os.path.exists(opencode_path):
+        try:
+            with open(opencode_path, "r", encoding="utf-8") as f:
+                config = json.load(f)
+        except Exception:
+            config = {}
+    else:
+        config = {}
+        
+    changed = False
+    if "$schema" not in config:
+        config["$schema"] = "https://opencode.ai/config.json"
+        changed = True
+        
+    if "provider" not in config:
+        config["provider"] = {}
+        changed = True
+        
+    provider = config["provider"]
+    if "9router" not in provider:
+        provider["9router"] = {}
+        changed = True
+        
+    router = provider["9router"]
+    if "npm" not in router:
+        router["npm"] = "@ai-sdk/openai-compatible"
+        changed = True
+        
+    if "options" not in router:
+        router["options"] = {}
+        changed = True
+        
+    options = router["options"]
+    if "baseURL" not in options:
+        options["baseURL"] = "http://127.0.0.1:20128/v1"
+        changed = True
+    if "apiKey" not in options:
+        options["apiKey"] = "sk-faf1396b6e07c367-gr1o31-f6762b4a"
+        changed = True
+        
+    if "models" not in router:
+        router["models"] = {}
+        changed = True
+        
+    if "model" not in config:
+        config["model"] = "9router/ag/gemini-3.1-pro-high"
+        changed = True
+        
+    if changed:
+        with open(opencode_path, "w", encoding="utf-8") as f:
+            json.dump(config, f, indent=2)
+        print(f"[+] Initialized/updated opencode.json: {opencode_path}")
+    else:
+        print("[+] opencode.json is already valid.")
+
 if __name__ == "__main__":
     try:
         setup_omniroute_db()
         setup_claude_profile()
+        setup_opencode_config()
         print("[*] All configurations successfully written.")
     except Exception as e:
         print(f"[!] Error: {e}")

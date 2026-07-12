@@ -9,6 +9,9 @@ Tab 2: health snapshot + alert đang mở — dashboard tối giản, không ser
 
 from __future__ import annotations
 
+import os
+import json
+import tempfile
 import streamlit as st
 
 from sr_agent.config import TTL_HOURS, WIP_LIMIT
@@ -28,6 +31,64 @@ st.set_page_config(page_title="SR-Agent QC Queue", layout="wide")
 # đúng thread theo cấu trúc, mọi rerun/cửa sổ tự cô lập qua file lock của SQLite.
 store = StagingStore()
 publisher = NotionPublisher()
+
+# --- OpenCode UI Model Switching (Requirement 1) ---
+def load_opencode_config() -> dict | None:
+    path = os.path.expanduser("~/.config/opencode/opencode.json")
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+def save_opencode_config_atomic(config: dict) -> None:
+    path = os.path.expanduser("~/.config/opencode/opencode.json")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    dir_name = os.path.dirname(path)
+    fd, temp_path = tempfile.mkstemp(dir=dir_name)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(config, f, indent=2)
+        os.replace(temp_path, path)
+    except Exception as e:
+        if os.path.exists(temp_path):
+            os.unlink(temp_path)
+        raise e
+
+opencode_config = load_opencode_config()
+if opencode_config:
+    provider = opencode_config.get("provider", {})
+    router = provider.get("9router", {})
+    models_dict = router.get("models", {})
+    available_models = sorted(list(models_dict.keys()))
+    
+    current_model_full = opencode_config.get("model", "")
+    current_model = current_model_full.replace("9router/", "", 1) if current_model_full.startswith("9router/") else current_model_full
+    
+    st.sidebar.title("OpenCode Model Switcher")
+    if available_models:
+        default_idx = 0
+        if current_model in available_models:
+            default_idx = available_models.index(current_model)
+        selected_model = st.sidebar.selectbox(
+            "Active Model",
+            options=available_models,
+            index=default_idx
+        )
+        if selected_model != current_model:
+            opencode_config["model"] = f"9router/{selected_model}"
+            try:
+                save_opencode_config_atomic(opencode_config)
+                st.sidebar.success(f"Switched model to: {selected_model}")
+                st.rerun()
+            except Exception as e:
+                st.sidebar.error(f"Error saving config: {e}")
+    else:
+        st.sidebar.warning("No models found under provider.9router.models in opencode.json")
+else:
+    st.sidebar.error("opencode.json not found or invalid.")
 
 st.title("SR-Agent — Quality Control Queue")
 st.caption(

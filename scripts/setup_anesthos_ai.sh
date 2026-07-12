@@ -55,6 +55,26 @@ else
     exit 1
 fi
 
+# 4. Verify OpenCode configuration
+echo "[*] Verifying OpenCode configuration..."
+OPENCODE_CONFIG="$HOME/.config/opencode/opencode.json"
+if [ -f "$OPENCODE_CONFIG" ]; then
+    echo "[PASS] OpenCode configuration exists at $OPENCODE_CONFIG"
+else
+    echo "[FAIL] OpenCode configuration not found!"
+    exit 1
+fi
+
+# 5. Verify Claude Code profile
+echo "[*] Verifying Claude Code profile..."
+CLAUDE_PROFILE_DIR="$HOME/.claude/profiles/anesthos"
+if [ -f "$CLAUDE_PROFILE_DIR/settings.json" ]; then
+    echo "[PASS] Claude Code profile settings.json exists at $CLAUDE_PROFILE_DIR/settings.json"
+else
+    echo "[FAIL] Claude Code profile settings.json not found!"
+    exit 1
+fi
+
 echo "=========================================================="
 echo "Configuration & Verification Completed Successfully!"
 echo "=========================================================="
