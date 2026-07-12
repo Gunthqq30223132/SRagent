@@ -65,7 +65,12 @@ class TestM6HotfixInvariants:
         }))
 
         os.environ["SR_SCREEN_MODEL_B"] = "gemma4:e4b"
-        res = run_screening_batch(store, protocol, criteria, limit=1)
+        old_model_a = os.environ.pop("SR_SCREEN_MODEL_A", None)
+        try:
+            res = run_screening_batch(store, protocol, criteria, limit=1)
+        finally:
+            if old_model_a is not None:
+                os.environ["SR_SCREEN_MODEL_A"] = old_model_a
 
         # Verify output summary
         assert res["single_model_mode"] is True
