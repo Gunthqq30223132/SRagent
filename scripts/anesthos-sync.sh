@@ -163,16 +163,30 @@ elif [ "$MODE" = "push" ]; then
       staged_jsonl=$(git -C "$history_dir" diff --cached --name-only | grep -E '\.jsonl$' || true)
       if [ -n "$staged_jsonl" ]; then
         echo "Checking AI history logs for PII or secrets..."
+        scanner_path="$REPO_DIR/scripts/scan-history-secrets.py"
         checker_path="$REPO_DIR/.githooks/pre-commit-checker.py"
-        if [ -f "$checker_path" ]; then
+
+        scan_failed=0
+        if [ -f "$scanner_path" ]; then
+          if ! python3 "$scanner_path" "$history_dir"; then
+            scan_failed=1
+          fi
+        elif [ -f "$checker_path" ]; then
           checker_errs=$(echo "$staged_jsonl" | (cd "$history_dir" && python3 "$checker_path" 2>&1) || true)
           if echo "$checker_errs" | grep -q "COMMIT BLOCKED"; then
-            echo "⚠️ Safety check failed on history logs. Commits blocked:" >&2
+            scan_failed=1
             echo "$checker_errs" >&2
-            exit 1
           fi
         fi
+
+        if [ "$scan_failed" -eq 1 ]; then
+          echo "⚠️ Safety check failed on history logs. Push blocked." >&2
+          echo "   Run: python3 $scanner_path --fix $history_dir" >&2
+          echo "   to redact detected patterns (backup created automatically)." >&2
+          exit 1
+        fi
       fi
+
 
       echo "Committing AI chat history..."
       if ! git -C "$history_dir" commit --no-verify -m "Backup chat history: $(date '+%Y-%m-%d %H:%M:%S')"; then
