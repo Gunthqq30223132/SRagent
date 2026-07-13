@@ -6,10 +6,24 @@ from sr_agent.ingest.router import SourceRouter
 
 @pytest.fixture
 def router():
-    return SourceRouter(fetchers={"ieee": object(), "arxiv": object()})
+    return SourceRouter(fetchers={
+        "ieee": object(), "arxiv": object(), "europepmc": object(),
+    })
 
 
 def test_classify_ieee(router):
+    assert router.classify("38111222") == ("ieee", "38111222")
+
+
+def test_classify_europepmc_variants(router):
+    assert router.classify("europepmc:MED:38111222") == (
+        "europepmc", "europepmc:MED:38111222")
+    assert router.classify("MED/38111222") == ("europepmc", "europepmc:MED:38111222")
+    assert router.classify("PMC9000111") == ("europepmc", "europepmc:PMC:9000111")
+
+
+def test_bare_8_digits_stays_ieee_not_europepmc(router):
+    # Bảo vệ tính tất định: PMID số trần KHÔNG được EPMC nuốt mất khỏi ieee.
     assert router.classify("38111222") == ("ieee", "38111222")
 
 
