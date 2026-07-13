@@ -14,3 +14,8 @@ def ieee_search_json() -> dict:
 @pytest.fixture
 def arxiv_atom_xml() -> str:
     return (FIXTURES / "arxiv_atom.xml").read_text()
+
+
+@pytest.fixture
+def europepmc_search_json() -> dict:
+    return json.loads((FIXTURES / "europepmc_search.json").read_text())

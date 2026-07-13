@@ -1,0 +1,53 @@
+{
+  "version": "6.9",
+  "hitCount": 4,
+  "resultList": {
+    "result": [
+      {
+        "source": "MED",
+        "id": "38111222",
+        "pmid": "38111222",
+        "doi": "10.1016/j.example.2025.01.001",
+        "title": "Dexmedetomidine  versus   propofol for procedural sedation:\n a randomized trial.",
+        "authorString": "Nguyen A, Tran B, Le C.",
+        "authorList": {
+          "author": [
+            {"fullName": "Nguyen A"},
+            {"fullName": "Tran B"},
+            {"fullName": "Le C"}
+          ]
+        },
+        "abstractText": "Background:  We compared\ndexmedetomidine and propofol for adult procedural sedation.",
+        "firstPublicationDate": "2025-03-15",
+        "pubYear": "2025",
+        "isOpenAccess": "Y"
+      },
+      {
+        "source": "PMC",
+        "id": "9000111",
+        "pmcid": "PMC9000111",
+        "title": "Perioperative fluid management: a systematic review.",
+        "authorString": "Pham D, Vo E.",
+        "abstractText": "This review synthesizes evidence on restrictive fluid strategies.",
+        "pubYear": "2024",
+        "isOpenAccess": "Y"
+      },
+      {
+        "source": "PPR",
+        "id": "456789",
+        "title": "A preprint on sugammadex reversal kinetics.",
+        "authorString": "Hoang F.",
+        "abstractText": "Preprint, not yet peer reviewed.",
+        "firstPublicationDate": "2026-01-10",
+        "pubYear": "2026"
+      },
+      {
+        "source": "AGR",
+        "id": "77",
+        "title": "Out-of-scope agricultural record that must be skipped.",
+        "authorString": "Ignored G.",
+        "pubYear": "2020"
+      }
+    ]
+  }
+}

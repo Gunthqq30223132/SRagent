@@ -157,8 +157,8 @@ def normalize_title(title: str) -> str:
 class Document(BaseModel):
     """Bản ghi chuẩn hóa duy nhất chảy xuyên suốt pipeline."""
 
-    uid: str  # "ieee:12345678" | "arxiv:2401.12345" — computed từ source+source_id
-    source: Literal["ieee", "arxiv"]
+    uid: str  # "ieee:12345678" | "arxiv:2401.12345" | "europepmc:MED:12345678"
+    source: Literal["ieee", "arxiv", "europepmc"]
     source_id: str
     authority_tier: int = Field(ge=1)
     alternate_uids: list[str] = []  # bản trùng bị merge (giữ vết, không vứt)
