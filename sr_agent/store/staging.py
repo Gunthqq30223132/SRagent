@@ -108,8 +108,21 @@ class StagingStore:
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.conn = sqlite3.connect(self.db_path)
         self.conn.row_factory = sqlite3.Row
+        self._apply_pragmas()
         self.conn.executescript(_SCHEMA)
         self.conn.commit()
+
+    def _apply_pragmas(self) -> None:
+        """WAL + busy_timeout: cho phép ingest/orchestrator (ghi) và UI duyệt
+        (đọc) truy cập cùng file DB đồng thời mà không 'database is locked'.
+
+        journal_mode bền vững theo file (set một lần, mọi connection sau kế
+        thừa); busy_timeout theo từng connection nên phải set mỗi lần mở. DB
+        ':memory:' không hỗ trợ WAL và tự trả 'memory' — không lỗi, chấp nhận.
+        """
+        self.conn.execute("PRAGMA journal_mode=WAL")
+        self.conn.execute("PRAGMA busy_timeout=30000")  # 30s: khớp backoff MAX_RETRIES
+        self.conn.execute("PRAGMA synchronous=NORMAL")  # an toàn dưới WAL, nhanh hơn FULL
 
     def close(self) -> None:
         self.conn.close()

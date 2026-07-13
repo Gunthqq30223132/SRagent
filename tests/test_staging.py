@@ -16,6 +16,34 @@ def make_doc(pmid: str, score: float | None = None, status=DocStatus.QUEUED):
     )
 
 
+def test_wal_and_busy_timeout_active(tmp_path):
+    # File-based DB PHẢI ở WAL để ingest (ghi) và UI duyệt (đọc) đồng thời.
+    with StagingStore(tmp_path / "t.db") as store:
+        mode = store.conn.execute("PRAGMA journal_mode").fetchone()[0]
+        assert mode.lower() == "wal"
+        timeout = store.conn.execute("PRAGMA busy_timeout").fetchone()[0]
+        assert timeout == 30000
+
+
+def test_wal_survives_reopen(tmp_path):
+    # journal_mode bền vững theo file: mở lại vẫn WAL.
+    db = tmp_path / "t.db"
+    with StagingStore(db):
+        pass
+    with StagingStore(db) as store2:
+        mode = store2.conn.execute("PRAGMA journal_mode").fetchone()[0]
+        assert mode.lower() == "wal"
+
+
+def test_concurrent_read_while_open_write_connection(tmp_path):
+    # Dưới WAL, một reader thứ hai đọc được trong khi connection ghi còn mở.
+    db = tmp_path / "t.db"
+    with StagingStore(db) as writer:
+        writer.upsert(make_doc("11111111", 80))
+        with StagingStore(db) as reader:
+            assert reader.exists("ieee:11111111")
+
+
 def test_upsert_get_roundtrip(tmp_path):
     with StagingStore(tmp_path / "t.db") as store:
         doc = make_doc("11111111", 80)
