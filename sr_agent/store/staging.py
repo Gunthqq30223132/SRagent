@@ -95,6 +95,19 @@ CREATE TABLE IF NOT EXISTS extraction (
     verified INTEGER NOT NULL,
     created_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS rob_assessment (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    uid         TEXT NOT NULL,
+    agent       TEXT NOT NULL,
+    model       TEXT NOT NULL,
+    study_type  TEXT NOT NULL,
+    domain      TEXT NOT NULL,
+    verdict     TEXT NOT NULL,
+    quote       TEXT,
+    created_at  TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_rob_assessment_uid ON rob_assessment(uid);
 """
 
 
@@ -438,3 +451,26 @@ class StagingStore:
                WHERE d.status = 'queued' AND e.event_type = 'SCREEN_ESCALATED'"""
         ).fetchall()
         return {r["uid"] for r in rows}
+
+    def add_rob_assessment(
+        self,
+        uid: str,
+        agent: str,
+        model: str,
+        study_type: str,
+        domain: str,
+        verdict: str,
+        quote: str | None = None,
+    ) -> None:
+        self.conn.execute(
+            """INSERT INTO rob_assessment
+               (uid, agent, model, study_type, domain, verdict, quote, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (uid, agent, model, study_type, domain, verdict, quote, _now()),
+        )
+        self.conn.commit()
+
+    def get_rob_assessments(self, uid: str) -> list[sqlite3.Row]:
+        return self.conn.execute(
+            "SELECT * FROM rob_assessment WHERE uid = ? ORDER BY created_at", (uid,)
+        ).fetchall()
