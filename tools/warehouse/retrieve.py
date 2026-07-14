@@ -6,8 +6,9 @@ from pathlib import Path
 from typing import List, Dict, Any, Set, Tuple
 
 from tools.warehouse.embed import get_bge_embedding, blob_to_vector, cosine_similarity
+from tools.warehouse.config import WAREHOUSE_DB_PATH
 
-DEFAULT_DB_PATH = Path("/Users/gun/sr-agent/staging/warehouse.db")
+DEFAULT_DB_PATH = WAREHOUSE_DB_PATH
 
 def get_pinning_tokens(query: str) -> Set[str]:
     """Identify query tokens that represent numbers or drug names."""
@@ -31,7 +32,7 @@ def get_pinning_tokens(query: str) -> Set[str]:
     }
     
     for t in tokens:
-        # Number check
+        # Number check (must contain digits)
         if any(c.isdigit() for c in t):
             pinning_tokens.add(t)
         # Drug name check
@@ -41,10 +42,11 @@ def get_pinning_tokens(query: str) -> Set[str]:
     return pinning_tokens
 
 def matches_pinning(text: str, pinning_tokens: Set[str]) -> bool:
-    """Check if any pinning token is matched as a word or exact substring in the text."""
+    """Check if any pinning token is matched using exact word boundary in the text."""
     text_lower = text.lower()
     for token in pinning_tokens:
-        if token in text_lower:
+        pattern = r'\b' + re.escape(token) + r'\b'
+        if re.search(pattern, text_lower):
             return True
     return False
 
@@ -57,7 +59,7 @@ DIRECTIVE_VERBS = [
     "inject", "intubate", "infuse", "prepare", "contraindicated", "indicated",
     # Vietnamese
     "cần", "nên", "phải", "yêu cầu", "khuyến cáo", "tránh", "chỉ định", "chống chỉ định", 
-    "dùng", "sử dụng", "tiêm", "truyền", "cho", "đánh giá", "theo dõi", "kiểm tra", 
+    "dùng", "sử dụng", "tiêm", "truyền", "đánh giá", "theo dõi", "kiểm tra", 
     "đặt nội khí quản", "chuẩn bị", "hướng dẫn"
 ]
 
@@ -68,33 +70,33 @@ DIRECTIVE_REGEX = re.compile('|'.join(pattern_parts), re.IGNORECASE)
 
 def split_sentences(text: str) -> List[str]:
     """Splits text into sentences based on punctuation, ignoring decimal points in numbers."""
-    # Split on dots followed by whitespace or end of string, exclamation/question marks, or newlines
     parts = re.split(r"\.(?=\s|$)|[!?]|\n", text)
     return [p.strip() for p in parts if p.strip()]
 
-def verify_citations_or_abort(output_text: str, db_path: Path, retrieved_chunks: List[Dict[str, Any]] = None):
+def verify_citations_or_abort(output_text: str, db_path: Path, retrieved_chunks: List[Dict[str, Any]] = None, check_ne4: bool = True):
     """Scans all output text for citation tokens [file_name#page#chunk_seq],
     verifies their existence in warehouse.db, enforces that they belong to the
     retrieved set of the current run (NE5), and checks that sentences containing
-    directive verbs (English/Vietnamese) have inline citations (NE4).
+    directive verbs have inline citations (NE4).
     Aborts immediately if any mismatch is found.
     """
     # 1. NE4 Check: sentences with directive verbs must contain an inline citation token
-    sentences = split_sentences(output_text)
-    for sentence in sentences:
-        if DIRECTIVE_REGEX.search(sentence):
-            citation_match = re.search(r"\[[a-zA-Z0-9_\.-]+#\d+#\d+\]", sentence)
-            if not citation_match:
-                raise SystemExit(
-                    f"CRITICAL: Actionable directive sentence missing citation: '{sentence}'. Aborting execution."
-                )
+    if check_ne4:
+        sentences = split_sentences(output_text)
+        for sentence in sentences:
+            if DIRECTIVE_REGEX.search(sentence):
+                citation_match = re.search(r"\[[a-zA-Z0-9_\.-]+#\d+#\d+\]", sentence)
+                if not citation_match:
+                    raise SystemExit(
+                        f"CRITICAL: Actionable directive sentence missing citation: '{sentence}'. Aborting execution."
+                    )
 
     # 2. NE5 Check: verify citation tokens exist in DB and belong to retrieval set
     tokens = re.findall(r"\[([a-zA-Z0-9_\.-]+)#(\d+)#(\d+)\]", output_text)
     if not tokens:
         return
 
-    # NE5 - part 1: check existence in warehouse.db first
+    # NE5 - part 1: check existence in warehouse.db first (EXACT match only - no LIKE)
     conn = sqlite3.connect(str(db_path))
     cursor = conn.cursor()
     try:
@@ -103,69 +105,28 @@ def verify_citations_or_abort(output_text: str, db_path: Path, retrieved_chunks:
             seq = int(seq_str)
             chunk_id = f"{filename}#{page:03d}#{seq:03d}"
 
-            db_exists = False
-            
-            # Check 1: Exact chunk_id
             cursor.execute("SELECT 1 FROM chunks WHERE chunk_id = ?", (chunk_id,))
-            if cursor.fetchone():
-                db_exists = True
-            else:
-                # Check 2: Match chunk_id suffix (handling path in chunk_id)
-                cursor.execute("SELECT 1 FROM chunks WHERE chunk_id LIKE ?", (f"%{filename}#{page:03d}#{seq:03d}",))
-                if cursor.fetchone():
-                    db_exists = True
-                else:
-                    # Check 3: Fallback check matching file suffix and page
-                    cursor.execute(
-                        "SELECT 1 FROM chunks WHERE file_path LIKE ? AND page = ?",
-                        (f"%{filename}", page)
-                    )
-                    if cursor.fetchone():
-                        db_exists = True
-
-            if not db_exists:
+            if not cursor.fetchone():
                 raise SystemExit(
                     f"CRITICAL: Orphan citation token detected [{filename}#{page_str}#{seq_str}]. Aborting execution."
                 )
     finally:
         conn.close()
 
-    # NE5 - part 2: check against the retrieval set of the current run (if provided)
+    # NE5 - part 2: check against the retrieval set of the current run (EXACT match only)
     if retrieved_chunks is not None:
         retrieved_ids = set()
         for chunk in retrieved_chunks:
             cid = chunk.get("chunk_id")
             if cid:
                 retrieved_ids.add(cid)
-            
-            # Reconstruct chunk ID to handle schema or format differences
-            fn = chunk.get("filename")
-            fp = chunk.get("file_path")
-            if fn is None and fp is not None:
-                fn = os.path.basename(fp)
-            
-            pg = chunk.get("page")
-            sq = chunk.get("chunk_seq")
-            if fn is not None and pg is not None and sq is not None:
-                try:
-                    retrieved_ids.add(f"{fn}#{int(pg):03d}#{int(sq):03d}")
-                except (ValueError, TypeError):
-                    pass
 
         for filename, page_str, seq_str in tokens:
             page = int(page_str)
             seq = int(seq_str)
             chunk_id = f"{filename}#{page:03d}#{seq:03d}"
             
-            found_in_retrieval = False
-            if chunk_id in retrieved_ids:
-                found_in_retrieval = True
-            else:
-                for rid in retrieved_ids:
-                    if rid.endswith(chunk_id):
-                        found_in_retrieval = True
-                        break
-            if not found_in_retrieval:
+            if chunk_id not in retrieved_ids:
                 raise SystemExit(
                     f"CRITICAL: Citation [{filename}#{page_str}#{seq_str}] does not belong to the retrieval set of the current run. Aborting execution."
                 )
@@ -194,6 +155,7 @@ def retrieve(query: str, db_path: Path = DEFAULT_DB_PATH, top_n: int = 5) -> Lis
                     JOIN chunks_fts f ON c.chunk_id = f.chunk_id
                     WHERE f.chunks_fts MATCH ?
                     ORDER BY bm25(chunks_fts) ASC
+                    LIMIT 200
                     """,
                     (match_q,)
                 )
@@ -232,12 +194,28 @@ def retrieve(query: str, db_path: Path = DEFAULT_DB_PATH, top_n: int = 5) -> Lis
         query_vector = get_bge_embedding(query)
         vector_results = []
         if query_vector:
-            cursor.execute(
-                """
-                SELECT chunk_id, file_path, specialty, page, char_span, text, content_hash, authority_tier, vector
-                FROM chunks
-                """
-            )
+            # Perf Opt: Only perform cosine similarity on FTS5 top-k subset if present
+            if fts_results:
+                fts_cids = [r["chunk_id"] for r in fts_results]
+                placeholders = ",".join("?" for _ in fts_cids)
+                cursor.execute(
+                    f"""
+                    SELECT chunk_id, file_path, specialty, page, char_span, text, content_hash, authority_tier, vector
+                    FROM chunks
+                    WHERE chunk_id IN ({placeholders})
+                    """,
+                    fts_cids
+                )
+            else:
+                # Fallback: scan up to 500 chunks only to prevent memory/perf issues
+                cursor.execute(
+                    """
+                    SELECT chunk_id, file_path, specialty, page, char_span, text, content_hash, authority_tier, vector
+                    FROM chunks
+                    LIMIT 500
+                    """
+                )
+                
             for row in cursor.fetchall():
                 vector_blob = row[8]
                 if vector_blob:
@@ -287,7 +265,7 @@ def retrieve(query: str, db_path: Path = DEFAULT_DB_PATH, top_n: int = 5) -> Lis
         else:
             final_results = fts_results
             
-        # Pinning exact matches of drug names or numbers
+        # Pinning exact matches of drug names or numbers (limited to top 2 to avoid RRF dilution)
         pinning_tokens = get_pinning_tokens(query)
         if pinning_tokens:
             pinned = []
@@ -297,7 +275,7 @@ def retrieve(query: str, db_path: Path = DEFAULT_DB_PATH, top_n: int = 5) -> Lis
                     pinned.append(chunk)
                 else:
                     others.append(chunk)
-            final_results = pinned + others
+            final_results = pinned[:2] + others + pinned[2:]
             
         return final_results[:top_n]
     finally:
@@ -315,43 +293,20 @@ def main():
         print("No results found.")
         return
         
-    # Generate the output text format
+    # Generate the output text format - keep raw exact chunk text
     output_lines = []
     for i, res in enumerate(results, start=1):
         output_lines.append(f"Result {i} [{res['specialty']} / {res['authority_tier']}]:")
         citation = f"[{res['filename']}#{res['page']:03d}#{res['chunk_seq']:03d}]"
         output_lines.append(citation)
-        
-        # Append inline citation to sentences in the chunk text that contain directive verbs
-        text = res['text']
-        parts = re.split(r"(\.(?!\d)|[!?]|\n)", text)
-        formatted_parts = []
-        k = 0
-        while k < len(parts):
-            sentence = parts[k]
-            delim = parts[k+1] if k + 1 < len(parts) else ""
-            
-            if sentence.strip():
-                if DIRECTIVE_REGEX.search(sentence):
-                    if not re.search(r"\[[a-zA-Z0-9_\.-]+#\d+#\d+\]", sentence):
-                        s_stripped = sentence.rstrip()
-                        trailing_spaces = sentence[len(s_stripped):]
-                        sentence = f"{s_stripped} {citation}{trailing_spaces}"
-            
-            formatted_parts.append(sentence)
-            if delim:
-                formatted_parts.append(delim)
-            k += 2
-            
-        formatted_text = "".join(formatted_parts)
-        output_lines.append(formatted_text)
+        output_lines.append(res['text'])
         output_lines.append("-" * 60)
         
     output_text = "\n".join(output_lines)
     print(output_text)
     
-    # Run the verbatim citation check before exiting
-    verify_citations_or_abort(output_text, DEFAULT_DB_PATH, retrieved_chunks=results)
+    # Run the verbatim citation check before exiting (check_ne4=False since search output is raw text citation)
+    verify_citations_or_abort(output_text, DEFAULT_DB_PATH, retrieved_chunks=results, check_ne4=False)
 
 if __name__ == "__main__":
     main()

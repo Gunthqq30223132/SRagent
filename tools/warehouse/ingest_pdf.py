@@ -9,9 +9,15 @@ import re
 from pathlib import Path
 from typing import List, Tuple, Optional
 
-from tools.warehouse.embed import get_bge_embedding, vector_to_blob
+from tools.warehouse.embed import get_bge_embeddings_batch, vector_to_blob
+from tools.warehouse.config import (
+    WAREHOUSE_DB_PATH,
+    CORPUS_BASE_PATH,
+    SPECIALTY_MAPPING,
+    AUTHORITY_TIER_MAPPING
+)
 
-DEFAULT_DB_PATH = Path("/Users/gun/sr-agent/staging/warehouse.db")
+DEFAULT_DB_PATH = WAREHOUSE_DB_PATH
 
 # Token pattern for boundary check: digits (with optional decimal point) or letters
 token_pattern = re.compile(r'\b\d+(?:\.\d+)?\b|\w+')
@@ -30,63 +36,17 @@ def determine_specialty_refined(path: str, filename: str) -> str:
     path_norm = clean_and_normalize(path)
     file_norm = clean_and_normalize(filename)
     
-    # Check top levels and explicit paths
-    if clean_and_normalize('1. nội khoa') in path_norm or clean_and_normalize('nọi khoa') in path_norm or clean_and_normalize('nội khoa') in path_norm:
-        return 'Nội khoa'
-    elif clean_and_normalize('2. nhi khoa') in path_norm or clean_and_normalize('nhi khoa') in path_norm:
-        return 'Nhi khoa'
-    elif clean_and_normalize('16. sản - phụ khoa') in path_norm or clean_and_normalize('san - phu') in path_norm or clean_and_normalize('sản/phụ') in path_norm or clean_and_normalize('sản phụ khoa') in path_norm or clean_and_normalize('obstetric') in path_norm or clean_and_normalize('gynecology') in path_norm:
-        return 'Sản phụ khoa'
-    elif clean_and_normalize('7. ngoại khoa') in path_norm or clean_and_normalize('ngoai khoa') in path_norm or clean_and_normalize('ngoại khoa') in path_norm or clean_and_normalize('surgery') in path_norm or clean_and_normalize('surgical') in path_norm:
-        return 'Ngoại khoa'
-    elif clean_and_normalize('0. gây mê hồi sức - cấp cứu') in path_norm or clean_and_normalize('gây mê') in path_norm or clean_and_normalize('gây mê') in path_norm or clean_and_normalize('anesthesia') in path_norm or clean_and_normalize('anaesthesia') in path_norm or clean_and_normalize('anesthesiology') in path_norm or clean_and_normalize('icu') in path_norm or clean_and_normalize('critical care') in path_norm or clean_and_normalize('cấp cứu') in path_norm or clean_and_normalize('cấp cứu') in path_norm:
-        return 'Gây mê hồi sức - Cấp cứu'
-    elif clean_and_normalize('18 huyết học - miễn dịch') in path_norm or clean_and_normalize('huyet hoc') in path_norm or clean_and_normalize('huyết học') in path_norm or clean_and_normalize('hematology') in path_norm or clean_and_normalize('immunology') in path_norm:
-        return 'Huyết học - Miễn dịch'
-    elif clean_and_normalize('15. cận lâm sàng - hoá sinh') in path_norm or clean_and_normalize('hoa sinh') in path_norm or clean_and_normalize('hóa sinh') in path_norm or clean_and_normalize('biochemistry') in path_norm:
-        return 'Cận lâm sàng - Hóa sinh'
-    elif clean_and_normalize('5. sinh học - di truyền') in path_norm or clean_and_normalize('sinh hoc') in path_norm or clean_and_normalize('sinh học') in path_norm or clean_and_normalize('di truyền') in path_norm or clean_and_normalize('di truyền') in path_norm or clean_and_normalize('genetics') in path_norm or clean_and_normalize('biology') in path_norm:
-        return 'Sinh học - Di truyền'
-    elif clean_and_normalize('3. sinh lý - giải phẫu') in path_norm or clean_and_normalize('4. sách giải phẫu') in path_norm or clean_and_normalize('3. sinh lý') in path_norm or clean_and_normalize('sinh ly') in path_norm or clean_and_normalize('giải phẫu') in path_norm or clean_and_normalize('anatomy') in path_norm or clean_and_normalize('physiology') in path_norm:
-        return 'Sinh lý - Giải phẫu'
-    elif clean_and_normalize('6. dược lý - thủ thuật') in path_norm or clean_and_normalize('duoc ly') in path_norm or clean_and_normalize('dược lý') in path_norm or clean_and_normalize('pharmacology') in path_norm:
-        # Check subfolder Gây mê in Dược lý
-        if clean_and_normalize('gây mê') in path_norm or clean_and_normalize('anesthesia') in path_norm or clean_and_normalize('icu') in path_norm:
-            return 'Gây mê hồi sức - Cấp cứu'
-        return 'Dược lý - Thủ thuật'
-    elif clean_and_normalize('13. khám') in path_norm or clean_and_normalize('kham') in path_norm or clean_and_normalize('clinical exam') in path_norm:
-        return 'Khám lâm sàng'
-    elif clean_and_normalize('5. luật khám chữa bệnh') in path_norm or clean_and_normalize('8. quy chế bệnh viện') in path_norm or clean_and_normalize('luật') in path_norm or clean_and_normalize('quy chế') in path_norm or clean_and_normalize('regulation') in path_norm:
-        return 'Pháp luật y tế & Quy chế'
-
-    # Token-based check for subfolders like in 0. PLAN ÔN THI or SLIDE SÂU LƯỜI HAM HỌC
-    path_words = get_words(path_norm)
-    file_words = get_words(file_norm)
-    all_words = set(path_words + file_words)
-    
-    # Match specific words exactly to avoid sub-string matching like nhi in nhiễm
-    if clean_and_normalize('nhi') in all_words:
-        return 'Nhi khoa'
-    elif clean_and_normalize('nội') in all_words or clean_and_normalize('nội') in path_norm or clean_and_normalize('nôi') in path_norm:
-        return 'Nội khoa'
-    elif clean_and_normalize('ngoại') in all_words or clean_and_normalize('ngoại') in path_norm or clean_and_normalize('ngoai') in path_norm:
-        return 'Ngoại khoa'
-    elif clean_and_normalize('sản') in all_words or clean_and_normalize('sản') in path_norm or clean_and_normalize('san') in path_norm:
-        return 'Sản phụ khoa'
-    elif clean_and_normalize('sinh') in all_words and (clean_and_normalize('lý') in all_words or clean_and_normalize('ly') in all_words):
-        return 'Sinh lý - Giải phẫu'
-    elif clean_and_normalize('giải') in all_words and (clean_and_normalize('phẫu') in all_words or clean_and_normalize('phau') in all_words):
-        return 'Sinh lý - Giải phẫu'
-    elif clean_and_normalize('di') in all_words and (clean_and_normalize('truyền') in all_words or clean_and_normalize('truyen') in all_words):
-        return 'Sinh học - Di truyền'
-    elif clean_and_normalize('hóa') in all_words and (clean_and_normalize('sinh') in all_words):
-        return 'Cận lâm sàng - Hóa sinh'
-    elif clean_and_normalize('dược') in all_words or clean_and_normalize('duoc') in all_words:
-        return 'Dược lý - Thủ thuật'
-    elif clean_and_normalize('gmhs') in all_words or clean_and_normalize('icu') in all_words or clean_and_normalize('anesthesia') in all_words or clean_and_normalize('cap') in all_words and clean_and_normalize('cuu') in all_words:
-        return 'Gây mê hồi sức - Cấp cứu'
-        
-    # File in root or defaults
+    # Check folders map
+    for keyword, specialty in SPECIALTY_MAPPING["folders"]:
+        if clean_and_normalize(keyword) in path_norm:
+            return specialty
+            
+    # Regex word-boundary check for keywords (compound and single words)
+    for keyword, specialty in SPECIALTY_MAPPING["keywords"].items():
+        pattern = r'\b' + re.escape(clean_and_normalize(keyword)) + r'\b'
+        if re.search(pattern, path_norm) or re.search(pattern, file_norm):
+            return specialty
+            
     if clean_and_normalize('truyền nhiễm') in file_norm or clean_and_normalize('truyen nhiem') in file_norm:
         return 'Nội khoa'
         
@@ -97,31 +57,21 @@ def determine_authority_tier_refined(path: str, filename: str) -> str:
     file_norm = clean_and_normalize(filename)
     
     # Tier 3 Rules: Internal, Slides, Exams, Regulations, etc. (High priority check)
-    path_words = get_words(path_norm)
-    file_words = get_words(file_norm)
-    all_words = set(path_words + file_words)
-    
-    t3_keywords = ['slide', 'đề', 'plan', 'ôn thi', 'pretest', 'cbl', 'bài soạn', 'bảng chia', 'y lệnh', 'bệnh án', 'review', 'lượng giá', 'quy chế', 'kinh nghiệm']
-    if any(clean_and_normalize(k) in path_norm for k in t3_keywords):
+    if any(clean_and_normalize(k) in path_norm for k in AUTHORITY_TIER_MAPPING["t3_keywords"]):
         return 'T3'
-    t3_file_keywords = ['pretest', 'đề', 'cbl', 'lương giá', 'thi', 'chữa đề', 'slide', 'handout', 'bài giảng', 'bài báo cáo', 'phiên', 'phiếu gây mê', 'bệnh án', 'y lệnh', 'kinh nghiệm', 'câu hỏi']
-    if any(clean_and_normalize(k) in file_norm for k in t3_file_keywords):
+    if any(clean_and_normalize(k) in file_norm for k in AUTHORITY_TIER_MAPPING["t3_file_keywords"]):
         return 'T3'
         
     # Tier 1 Rules: Guidelines and Journals
-    t1_file_keywords = ['guideline', 'huong-dan', 'phac-do', 'phác đồ', 'hướng dẫn', 'quyết định', 'byt', 'bộ y tế', 'lancet', 'ssc', 'asa', 'aha', 'esc', 'acr']
-    if clean_and_normalize('uptodate') in file_norm or clean_and_normalize('uptodate') in path_norm:
+    if any(clean_and_normalize(k) in file_norm for k in AUTHORITY_TIER_MAPPING["t1_file_keywords"]):
         return 'T1'
-    if any(clean_and_normalize(k) in file_norm for k in t1_file_keywords):
-        return 'T1'
-    if any(clean_and_normalize(k) in path_norm for k in ['guidelines', 'hướng dẫn', 'phác đồ', 'phac-do', 'huong-dan', 'luật khám chữa bệnh']):
+    if any(clean_and_normalize(k) in path_norm for k in AUTHORITY_TIER_MAPPING["t1_folder_keywords"]):
         return 'T1'
         
     # Tier 2 Rules: Textbooks
-    t2_keywords = ['sách', 'sách', 'textbook', 'book', 'atlas', 'chestnut', 'miller', 'barash', 'guyton', 'marino', 'costanzo', 'zollinger', 'schwartz', 'hadzic', 'kaplan', 'morgan', 'hagberg', 'silbernagl', 'berne', 'stanton']
-    if any(clean_and_normalize(k) in path_norm for k in t2_keywords):
+    if any(clean_and_normalize(k) in path_norm for k in AUTHORITY_TIER_MAPPING["t2_folder_keywords"]):
         return 'T2'
-    if any(clean_and_normalize(k) in file_norm for k in ['chapter', 'section', 'part', 'tập', 'textbook', 'manual', 'handbook', 'atlas', 'guidelines in practice']):
+    if any(clean_and_normalize(k) in file_norm for k in AUTHORITY_TIER_MAPPING["t2_file_keywords"]):
         return 'T2'
         
     # Fallback to T2 since most remaining items in medical folders are textbooks/academic books
@@ -130,7 +80,7 @@ def determine_authority_tier_refined(path: str, filename: str) -> str:
 def get_path_parts(pdf_path: str) -> Tuple[str, str]:
     """Helper to extract relative parent path and filename relative to the corpus base."""
     abs_path = os.path.abspath(pdf_path)
-    corpus_base = "/Volumes/Gun SSD/1. STUDY"
+    corpus_base = str(CORPUS_BASE_PATH)
     if abs_path.startswith(corpus_base):
         rel_to_corpus = os.path.relpath(abs_path, corpus_base)
         parent_dir = os.path.dirname(rel_to_corpus)
@@ -156,7 +106,7 @@ def extract_text_from_pdf(pdf_path: str) -> str:
     mutool_path = shutil.which("mutool")
     if mutool_path:
         try:
-            res = subprocess.run([mutool_path, "draw", "-o", "-", pdf_path], capture_output=True, text=True, check=True)
+            res = subprocess.run([mutool_path, "draw", "-F", "txt", "-o", "-", pdf_path], capture_output=True, text=True, check=True)
             return res.stdout
         except subprocess.CalledProcessError:
             pass
@@ -295,35 +245,57 @@ def ingest_pdf(pdf_path: str, db_path: Path = DEFAULT_DB_PATH):
         cursor.execute("DELETE FROM chunks WHERE file_path = ?", (pdf_path_str,))
         cursor.execute("DELETE FROM indexed_files WHERE file_path = ?", (pdf_path_str,))
         
-        # Insert chunks
+        # Collect all chunk texts to compute embeddings in batch
+        all_chunks_to_insert = []
         for page_idx, page_text in enumerate(pages, start=1):
             if not page_text.strip():
                 continue
                 
             page_chunks = chunk_page(page_text)
             for chunk_seq, (start, end, chunk_txt) in enumerate(page_chunks):
-                chunk_id = f"{filename}#{page_idx:03d}#{chunk_seq:03d}"
-                char_span = f"{start}-{end}"
-                content_hash = hashlib.sha256(chunk_txt.encode("utf-8")).hexdigest()
+                all_chunks_to_insert.append({
+                    "page_idx": page_idx,
+                    "start": start,
+                    "end": end,
+                    "chunk_seq": chunk_seq,
+                    "text": chunk_txt
+                })
                 
-                # Fetch embedding
-                vector = get_bge_embedding(chunk_txt)
-                vector_blob = vector_to_blob(vector) if vector is not None else None
-                
-                cursor.execute(
-                    """
-                    INSERT INTO chunks (
-                        chunk_id, file_path, specialty, page, char_span, text, content_hash, authority_tier, vector
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """,
-                    (chunk_id, pdf_path_str, specialty, page_idx, char_span, chunk_txt, content_hash, authority_tier, vector_blob)
-                )
-                
-                cursor.execute(
-                    "INSERT INTO chunks_fts (chunk_id, text) VALUES (?, ?)",
-                    (chunk_id, chunk_txt)
-                )
-                
+        # Batch fetch embeddings
+        chunk_texts = [c["text"] for c in all_chunks_to_insert]
+        embeddings = get_bge_embeddings_batch(chunk_texts)
+        
+        # Insert chunks
+        # Use relative path hash + filename as chunk_id prefix to prevent Unique Constraint collisions (F8)
+        rel_path = os.path.join(parent_dir, filename)
+        path_hash = hashlib.sha256(rel_path.encode("utf-8")).hexdigest()[:8]
+        
+        for c, vector in zip(all_chunks_to_insert, embeddings):
+            page_idx = c["page_idx"]
+            start = c["start"]
+            end = c["end"]
+            chunk_seq = c["chunk_seq"]
+            chunk_txt = c["text"]
+            
+            chunk_id = f"{path_hash}_{filename}#{page_idx:03d}#{chunk_seq:03d}"
+            char_span = f"{start}-{end}"
+            content_hash = hashlib.sha256(chunk_txt.encode("utf-8")).hexdigest()
+            vector_blob = vector_to_blob(vector) if vector is not None else None
+            
+            cursor.execute(
+                """
+                INSERT INTO chunks (
+                    chunk_id, file_path, specialty, page, char_span, text, content_hash, authority_tier, vector
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (chunk_id, pdf_path_str, specialty, page_idx, char_span, chunk_txt, content_hash, authority_tier, vector_blob)
+            )
+            
+            cursor.execute(
+                "INSERT INTO chunks_fts (chunk_id, text) VALUES (?, ?)",
+                (chunk_id, chunk_txt)
+            )
+            
         # Update indexed_files hash
         cursor.execute(
             "INSERT OR REPLACE INTO indexed_files (file_path, file_hash) VALUES (?, ?)",

@@ -3,6 +3,7 @@ import struct
 import math
 import logging
 import httpx
+import time
 from typing import List, Optional
 
 logger = logging.getLogger(__name__)
@@ -32,37 +33,79 @@ def cosine_similarity(v1: List[float], v2: List[float]) -> float:
     return dot_product / (norm_v1 * norm_v2)
 
 def get_bge_embedding(text: str) -> Optional[List[float]]:
-    """Fetches bge-m3 embedding using Ollama API with fallback endpoints."""
-    ollama_base = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434").strip()
-    
-    # Try /api/embeddings endpoint first
-    embeddings_url = f"{ollama_base}/api/embeddings"
-    try:
-        response = httpx.post(
-            embeddings_url,
-            json={"model": "bge-m3", "prompt": text},
-            timeout=10.0
-        )
-        if response.status_code == 200:
-            embedding = response.json().get("embedding")
-            if embedding:
-                return embedding
-    except Exception as e:
-        logger.warning(f"Ollama /api/embeddings failed: {e}. Trying fallback /api/embed.")
-
-    # Fallback to /api/embed endpoint
-    embed_url = f"{ollama_base}/api/embed"
-    try:
-        response = httpx.post(
-            embed_url,
-            json={"model": "bge-m3", "input": text},
-            timeout=10.0
-        )
-        if response.status_code == 200:
-            embeddings = response.json().get("embeddings")
-            if embeddings and len(embeddings) > 0:
-                return embeddings[0]
-    except Exception as e:
-        logger.warning(f"Ollama fallback /api/embed failed: {e}.")
-        
+    """Fetches bge-m3 embedding using Ollama API with fallback endpoints and retries."""
+    results = get_bge_embeddings_batch([text])
+    if results and len(results) > 0:
+        return results[0]
     return None
+
+def get_bge_embeddings_batch(texts: List[str]) -> List[Optional[List[float]]]:
+    """Fetches bge-m3 embeddings in batch using Ollama API /api/embed with retries.
+    Falls back to single requests if batch endpoint fails.
+    """
+    if not texts:
+        return []
+        
+    ollama_base = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434").strip()
+    embed_url = f"{ollama_base}/api/embed"
+    embeddings_url = f"{ollama_base}/api/embeddings"
+    
+    max_retries = 3
+    
+    # 1. Try Batch /api/embed first with retries
+    for attempt in range(max_retries):
+        try:
+            response = httpx.post(
+                embed_url,
+                json={"model": "bge-m3", "input": texts},
+                timeout=30.0
+            )
+            if response.status_code == 200:
+                embeddings = response.json().get("embeddings")
+                if embeddings and len(embeddings) == len(texts):
+                    return embeddings
+        except Exception as e:
+            logger.warning(f"Ollama batch /api/embed attempt {attempt+1} failed: {e}")
+            if attempt < max_retries - 1:
+                time.sleep(2.0 ** attempt)
+                
+    # 2. Fallback: single requests for each text in batch
+    results = []
+    for text in texts:
+        vector = None
+        for attempt in range(max_retries):
+            # Try /api/embeddings
+            try:
+                response = httpx.post(
+                    embeddings_url,
+                    json={"model": "bge-m3", "prompt": text},
+                    timeout=15.0
+                )
+                if response.status_code == 200:
+                    embedding = response.json().get("embedding")
+                    if embedding:
+                        vector = embedding
+                        break
+            except Exception as e:
+                logger.warning(f"Ollama single /api/embeddings attempt {attempt+1} failed: {e}")
+                
+            # Try /api/embed single
+            try:
+                response = httpx.post(
+                    embed_url,
+                    json={"model": "bge-m3", "input": text},
+                    timeout=15.0
+                )
+                if response.status_code == 200:
+                    embeddings = response.json().get("embeddings")
+                    if embeddings and len(embeddings) > 0:
+                        vector = embeddings[0]
+                        break
+            except Exception as e:
+                logger.warning(f"Ollama single /api/embed attempt {attempt+1} failed: {e}")
+                
+            if attempt < max_retries - 1:
+                time.sleep(1.0)
+        results.append(vector)
+        
+    return results

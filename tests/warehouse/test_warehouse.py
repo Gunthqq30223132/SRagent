@@ -2,6 +2,7 @@ import os
 import sqlite3
 import struct
 import tempfile
+import hashlib
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
@@ -13,6 +14,7 @@ from tools.warehouse.embed import (
     blob_to_vector,
     cosine_similarity,
     get_bge_embedding,
+    get_bge_embeddings_batch,
 )
 from tools.warehouse.ingest_pdf import (
     clean_and_normalize,
@@ -35,10 +37,8 @@ from tools.warehouse.retrieve import (
 # ----------------- Tests for normalizations and classifiers -----------------
 
 def test_clean_and_normalize():
-    # Composed and decomposed characters in Vietnamese
     decomposed = "no\u0323\u0302i khoa"  # decomposed "nội khoa"
     composed = "nội khoa"
-    
     assert clean_and_normalize(decomposed) == clean_and_normalize(composed)
     assert clean_and_normalize("HElLo WoRLD") == "hello world"
 
@@ -50,7 +50,6 @@ def test_get_words():
     assert "sản" in words
 
 def test_determine_specialty_refined():
-    # Test top-level directory matching
     assert determine_specialty_refined("1. nọi khoa", "doc.pdf") == "Nội khoa"
     assert determine_specialty_refined("2. nhi khoa", "doc.pdf") == "Nhi khoa"
     assert determine_specialty_refined("16. sản - phụ khoa", "doc.pdf") == "Sản phụ khoa"
@@ -73,29 +72,24 @@ def test_determine_specialty_refined():
     assert determine_specialty_refined("random_path", "unknown.pdf") == "Tổng hợp / Ôn thi"
 
 def test_determine_authority_tier_refined():
-    # T3 (High priority)
     assert determine_authority_tier_refined("0. PLAN ÔN THI", "de_thi_nhi.pdf") == "T3"
     assert determine_authority_tier_refined("some_folder/slide", "lecture.pdf") == "T3"
     assert determine_authority_tier_refined("some_folder", "pretest_internal.pdf") == "T3"
 
-    # T1 (Guidelines)
     assert determine_authority_tier_refined("guidelines", "sepsis_2026.pdf") == "T1"
     assert determine_authority_tier_refined("some_folder", "phac-do-dieu-tri.pdf") == "T1"
     assert determine_authority_tier_refined("some_folder", "Tinea capitis_ Clinical features and diagnosis - UpToDate.pdf") == "T1"
 
-    # T2 (Textbooks)
     assert determine_authority_tier_refined("sách", "guyton_physiology.pdf") == "T2"
     assert determine_authority_tier_refined("some_folder", "chapter_1.pdf") == "T2"
     assert determine_authority_tier_refined("some_folder", "atlas_anatomy.pdf") == "T2"
-    assert determine_authority_tier_refined("some_folder", "normal_book.pdf") == "T2"  # fallback
+    assert determine_authority_tier_refined("some_folder", "normal_book.pdf") == "T2"
 
 def test_get_path_parts():
-    # Inside study corpus
     parent, filename = get_path_parts("/Volumes/Gun SSD/1. STUDY/1. NỘI KHOA/NẤM DA ĐẦU/file.pdf")
     assert parent == "1. NỘI KHOA/NẤM DA ĐẦU"
     assert filename == "file.pdf"
 
-    # Outside study corpus
     parent, filename = get_path_parts("/tmp/some_dir/file.pdf")
     assert parent == "/tmp/some_dir"
     assert filename == "file.pdf"
@@ -105,27 +99,17 @@ def test_get_path_parts():
 
 def test_adjust_boundary():
     text = "Liều fentanyl là 2.5mcg/kg cho gây mê."
-    # Token pattern matches '2.5', 'fentanyl', etc.
-    # index 18 is inside '2.5'
     idx = text.find("2.5") + 1
     assert text[idx] == "."
     
     adjusted = adjust_boundary(text, idx)
-    # The boundary should shift to the nearest whitespace boundary
-    # In this case, left whitespace boundary of '2.5' is before '2' (index 15)
-    # and right is after '2.5mcg/kg' (or after '2.5') depending on token boundary.
-    # Let's verify it shifts to a space/whitespace boundary.
     assert text[adjusted].isspace() or text[adjusted - 1].isspace() or adjusted == 0 or adjusted == len(text)
 
 def test_chunk_page():
-    # Create page text of length ~1500 characters
     page_text = "Word " * 300
     chunks = chunk_page(page_text)
-    
-    # Verify chunks exist
     assert len(chunks) > 1
     for start, end, chunk_txt in chunks:
-        # Check constraints
         assert 500 <= (end - start) <= 1000 or (start == 0 and end == len(page_text))
         assert len(chunk_txt) == end - start
 
@@ -135,7 +119,6 @@ def test_chunk_page():
 @patch("shutil.which")
 @patch("subprocess.run")
 def test_extract_text_from_pdf_pdftotext_success(mock_run, mock_which):
-    # pdftotext exists and succeeds
     mock_which.side_effect = lambda cmd: "/usr/bin/pdftotext" if cmd == "pdftotext" else None
     
     mock_res = MagicMock()
@@ -149,7 +132,6 @@ def test_extract_text_from_pdf_pdftotext_success(mock_run, mock_which):
 @patch("shutil.which")
 @patch("subprocess.run")
 def test_extract_text_from_pdf_mutool_fallback(mock_run, mock_which):
-    # pdftotext fails, mutool exists and succeeds
     mock_which.side_effect = lambda cmd: "/usr/bin/mutool" if cmd == "mutool" else None
     
     mock_res = MagicMock()
@@ -158,11 +140,10 @@ def test_extract_text_from_pdf_mutool_fallback(mock_run, mock_which):
     
     text = extract_text_from_pdf("mock.pdf")
     assert text == "page 1 text from mutool"
-    mock_run.assert_called_once_with(["/usr/bin/mutool", "draw", "-o", "-", "mock.pdf"], capture_output=True, text=True, check=True)
+    mock_run.assert_called_once_with(["/usr/bin/mutool", "draw", "-F", "txt", "-o", "-", "mock.pdf"], capture_output=True, text=True, check=True)
 
 @patch("shutil.which")
 def test_extract_text_from_pdf_fail_closed(mock_which):
-    # neither exists
     mock_which.return_value = None
     with pytest.raises(RuntimeError, match="Missing or failing system PDF extractor"):
         extract_text_from_pdf("mock.pdf")
@@ -191,37 +172,14 @@ def test_cosine_similarity():
     assert cosine_similarity(v1, [1.0, 2.0]) == 0.0
 
 @patch("httpx.post")
-def test_get_bge_embedding_primary_success(mock_post):
-    # Mocking standard embeddings endpoint
+def test_get_bge_embeddings_batch_success(mock_post):
     mock_res = MagicMock()
     mock_res.status_code = 200
-    mock_res.json.return_value = {"embedding": [0.1, 0.2, 0.3]}
+    mock_res.json.return_value = {"embeddings": [[0.1, 0.2], [0.3, 0.4]]}
     mock_post.return_value = mock_res
     
-    emb = get_bge_embedding("hello")
-    assert emb == [0.1, 0.2, 0.3]
-    mock_post.assert_called_once_with(
-        "http://localhost:11434/api/embeddings",
-        json={"model": "bge-m3", "prompt": "hello"},
-        timeout=10.0
-    )
-
-@patch("httpx.post")
-def test_get_bge_embedding_fallback_success(mock_post):
-    # First call throws error, second call (fallback) succeeds
-    mock_res_fallback = MagicMock()
-    mock_res_fallback.status_code = 200
-    mock_res_fallback.json.return_value = {"embeddings": [[0.4, 0.5, 0.6]]}
-    
-    def side_effect(url, **kwargs):
-        if "api/embeddings" in url:
-            raise httpx.RequestError("Primary URL failed")
-        return mock_res_fallback
-        
-    mock_post.side_effect = side_effect
-    
-    emb = get_bge_embedding("hello")
-    assert emb == [0.4, 0.5, 0.6]
+    embs = get_bge_embeddings_batch(["hello", "world"])
+    assert embs == [[0.1, 0.2], [0.3, 0.4]]
 
 
 # ----------------- Ingestion, Database state, and Incremental sync -----------------
@@ -236,22 +194,18 @@ def temp_db():
         db_path.unlink()
 
 @patch("tools.warehouse.ingest_pdf.extract_text_from_pdf")
-@patch("tools.warehouse.ingest_pdf.get_bge_embedding")
-def test_ingestion_and_incremental(mock_get_emb, mock_extract, temp_db):
-    # Mock text and embedding
+@patch("tools.warehouse.ingest_pdf.get_bge_embeddings_batch")
+def test_ingestion_and_incremental(mock_get_embs, mock_extract, temp_db):
     mock_extract.return_value = "Page 1 of the document.\x0cPage 2 of the document."
-    mock_get_emb.return_value = [0.1] * 1024
+    mock_get_embs.return_value = [[0.1] * 1024, [0.1] * 1024]
     
-    # Create a dummy physical PDF file
     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
         f.write(b"dummy pdf content")
         pdf_path = f.name
         
     try:
-        # 1. First Ingestion
         ingest_pdf(pdf_path, db_path=temp_db)
         
-        # Verify database populated
         conn = sqlite3.connect(str(temp_db))
         cursor = conn.cursor()
         
@@ -263,10 +217,8 @@ def test_ingestion_and_incremental(mock_get_emb, mock_extract, temp_db):
         cursor.execute("SELECT chunk_id, page, text, authority_tier FROM chunks")
         chunks = cursor.fetchall()
         assert len(chunks) == 2
-        # Verify page index (1-based)
         assert chunks[0][1] == 1
         assert chunks[1][1] == 2
-        # Default tier fallback since it's a temp pdf path
         assert chunks[0][3] == "T2"
         
         cursor.execute("SELECT chunk_id, text FROM chunks_fts")
@@ -275,14 +227,10 @@ def test_ingestion_and_incremental(mock_get_emb, mock_extract, temp_db):
         
         conn.close()
         
-        # Reset mocks
         mock_extract.reset_mock()
-        
-        # 2. Ingest again (Unchanged file) - Should skip extraction
         ingest_pdf(pdf_path, db_path=temp_db)
         mock_extract.assert_not_called()
         
-        # 3. Modify physical file and ingest again - Should update database
         with open(pdf_path, "wb") as f_mod:
             f_mod.write(b"modified pdf content")
             
@@ -300,33 +248,64 @@ def test_ingestion_and_incremental(mock_get_emb, mock_extract, temp_db):
     finally:
         os.unlink(pdf_path)
 
+@patch("tools.warehouse.ingest_pdf.extract_text_from_pdf")
+@patch("tools.warehouse.ingest_pdf.get_bge_embeddings_batch")
+def test_pk_collision_prevention(mock_get_embs, mock_extract, temp_db):
+    """Test that two files with the same basename but in different directories 
+    do not trigger database primary key collision (IntegrityError). (F8)
+    """
+    mock_extract.return_value = "Slide content"
+    mock_get_embs.return_value = [[0.1] * 1024]
+    
+    with tempfile.TemporaryDirectory() as dir1, tempfile.TemporaryDirectory() as dir2:
+        file1 = os.path.join(dir1, "Slide.pdf")
+        file2 = os.path.join(dir2, "Slide.pdf")
+        
+        with open(file1, "wb") as f1, open(file2, "wb") as f2:
+            f1.write(b"pdf 1")
+            f2.write(b"pdf 2")
+            
+        # Ingest both Slide.pdf files
+        try:
+            ingest_pdf(file1, db_path=temp_db)
+            ingest_pdf(file2, db_path=temp_db)
+        except sqlite3.IntegrityError as e:
+            pytest.fail(f"Unique constraint failed / IntegrityError triggered: {e}")
+            
+        # Verify both exist in DB
+        conn = sqlite3.connect(str(temp_db))
+        cursor = conn.cursor()
+        cursor.execute("SELECT chunk_id, file_path FROM chunks")
+        rows = cursor.fetchall()
+        assert len(rows) == 2
+        # Verify chunk IDs are unique and different due to prefix hash
+        assert rows[0][0] != rows[1][0]
+        conn.close()
+
 
 # ----------------- Retrieval, Pinning, and RRF calculations -----------------
 
 def test_pinning_logic():
-    # Test pinning tokens extraction
     assert "propofol" in get_pinning_tokens("Give propofol 2mg/kg")
     assert "2.5" in get_pinning_tokens("What is the dose 2.5?")
     assert "fentanyl" in get_pinning_tokens("Fentanyl infusion protocol")
     
-    # Test matching
-    tokens = get_pinning_tokens("propofol 1.5mg/kg")
+    # Exact word matching tests
+    tokens = get_pinning_tokens("propofol 1.5")
     assert matches_pinning("Propofol is an anesthetic agent.", tokens)
     assert matches_pinning("Liều dùng 1.5 mg.", tokens)
+    # Substring match "nhi" should NOT match word "nhiễm"
+    assert not matches_pinning("bệnh truyền nhiễm", {"nhi"})
     assert not matches_pinning("Ketamine is used for sedation.", tokens)
 
 @patch("tools.warehouse.retrieve.get_bge_embedding")
 def test_retrieval_and_rrf(mock_get_emb, temp_db):
-    # Initialize DB
     from tools.warehouse.ingest_pdf import init_db
     init_db(temp_db)
     
-    # Insert mock chunks
     conn = sqlite3.connect(str(temp_db))
     cursor = conn.cursor()
     
-    # Let's insert two chunks: one about fentanyl, one about propofol
-    # Store vectors
     v_fentanyl = [1.0, 0.0]
     v_propofol = [0.0, 1.0]
     
@@ -357,25 +336,20 @@ def test_retrieval_and_rrf(mock_get_emb, temp_db):
     conn.commit()
     conn.close()
     
-    # Case 1: Pure FTS5 retrieval (No embedding returns)
     mock_get_emb.return_value = None
     res = retrieve("fentanyl", db_path=temp_db)
     assert len(res) >= 1
     assert "Fentanyl" in res[0]["text"]
     
-    # Case 2: Hybrid search (Ollama running)
-    # Query vector is close to propofol [0.0, 1.0]
     mock_get_emb.return_value = [0.0, 1.0]
     res_hybrid = retrieve("induction", db_path=temp_db)
     assert len(res_hybrid) >= 1
-    # Check that propofol chunk is ranked high due to vector similarity
     assert "Propofol" in res_hybrid[0]["text"]
 
 
 # ----------------- Citation Check (NE4 & NE5) -----------------
 
 def test_citation_checks_ne4_ne5(temp_db):
-    # Initialize DB
     from tools.warehouse.ingest_pdf import init_db
     init_db(temp_db)
     
@@ -398,7 +372,6 @@ def test_citation_checks_ne4_ne5(temp_db):
     conn.commit()
     conn.close()
     
-    # Define a dummy retrieval set for current run context
     retrieved_chunks = [
         {
             "chunk_id": "sepsis_guideline.pdf#012#003",
@@ -412,32 +385,35 @@ def test_citation_checks_ne4_ne5(temp_db):
     ]
 
     # Case 1: Non-directive prose without citation (passes)
-    verify_citations_or_abort("The patient was admitted yesterday.", temp_db, retrieved_chunks=retrieved_chunks)
+    verify_citations_or_abort("The patient was admitted yesterday.", temp_db, retrieved_chunks=retrieved_chunks, check_ne4=True)
     
     # Case 2: English directive verb with valid citation (passes)
-    verify_citations_or_abort("We must administer the drug immediately [sepsis_guideline.pdf#012#003].", temp_db, retrieved_chunks=retrieved_chunks)
+    verify_citations_or_abort("We must administer the drug immediately [sepsis_guideline.pdf#012#003].", temp_db, retrieved_chunks=retrieved_chunks, check_ne4=True)
     
-    # Case 3: English directive verb without citation (aborts with SystemExit)
+    # Case 3: English directive verb without citation (aborts with SystemExit) (F5)
     with pytest.raises(SystemExit, match="Actionable directive sentence missing citation"):
-        verify_citations_or_abort("We must administer the drug immediately.", temp_db, retrieved_chunks=retrieved_chunks)
+        verify_citations_or_abort("We must administer the drug immediately.", temp_db, retrieved_chunks=retrieved_chunks, check_ne4=True)
         
     # Case 4: Vietnamese directive verb with valid citation (passes)
-    verify_citations_or_abort("Bác sĩ cần theo dõi sát [sepsis_guideline.pdf#012#003].", temp_db, retrieved_chunks=retrieved_chunks)
+    verify_citations_or_abort("Bác sĩ cần theo dõi sát [sepsis_guideline.pdf#012#003].", temp_db, retrieved_chunks=retrieved_chunks, check_ne4=True)
     
-    # Case 5: Vietnamese directive verb without citation (aborts with SystemExit)
+    # Case 5: Vietnamese directive verb without citation (aborts with SystemExit) (F5)
     with pytest.raises(SystemExit, match="Actionable directive sentence missing citation"):
-        verify_citations_or_abort("Bác sĩ cần theo dõi sát.", temp_db, retrieved_chunks=retrieved_chunks)
+        verify_citations_or_abort("Bác sĩ cần theo dõi sát.", temp_db, retrieved_chunks=retrieved_chunks, check_ne4=True)
+        
+    # Case 6: Test Vietnamese verb "cho" does NOT trigger NE4 (word boundary / generic word protection) (P2)
+    verify_citations_or_abort("Đây là thuốc cho trẻ em.", temp_db, retrieved_chunks=retrieved_chunks, check_ne4=True)
 
-    # Case 6: Citation exists in DB and is in the retrieval set (passes)
+    # Case 7: Citation exists in DB and is in the retrieval set (passes)
     valid_output = "According to [sepsis_guideline.pdf#012#003], treat immediately."
-    verify_citations_or_abort(valid_output, temp_db, retrieved_chunks=retrieved_chunks)
+    verify_citations_or_abort(valid_output, temp_db, retrieved_chunks=retrieved_chunks, check_ne4=True)
     
-    # Case 7: Invalid citation token (orphan token) not present in DB (aborts with SystemExit)
+    # Case 8: Invalid citation token (orphan token) not present in DB (aborts with SystemExit) (F5)
     invalid_output = "According to [fake_guideline.pdf#001#000], do something."
     with pytest.raises(SystemExit, match="Orphan citation token detected"):
-        verify_citations_or_abort(invalid_output, temp_db, retrieved_chunks=retrieved_chunks)
+        verify_citations_or_abort(invalid_output, temp_db, retrieved_chunks=retrieved_chunks, check_ne4=True)
         
-    # Case 8: Citation exists in DB but is NOT in the retrieval set of the current run (aborts with SystemExit)
+    # Case 9: Citation exists in DB but is NOT in the retrieval set of the current run (aborts with SystemExit) (F5)
     output_out_of_set = "According to [another_guideline.pdf#001#000], do something."
     with pytest.raises(SystemExit, match="does not belong to the retrieval set"):
-        verify_citations_or_abort(output_out_of_set, temp_db, retrieved_chunks=retrieved_chunks)
+        verify_citations_or_abort(output_out_of_set, temp_db, retrieved_chunks=retrieved_chunks, check_ne4=True)
