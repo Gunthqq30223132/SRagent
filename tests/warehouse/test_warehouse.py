@@ -86,7 +86,9 @@ def test_determine_authority_tier_refined():
     assert determine_authority_tier_refined("some_folder", "normal_book.pdf") == "T2"
 
 def test_get_path_parts():
-    parent, filename = get_path_parts("/Volumes/Gun SSD/1. STUDY/1. NỘI KHOA/NẤM DA ĐẦU/file.pdf")
+    from tools.warehouse.config import CORPUS_BASE_PATH
+    test_path = os.path.join(str(CORPUS_BASE_PATH), "1. NỘI KHOA/NẤM DA ĐẦU/file.pdf")
+    parent, filename = get_path_parts(test_path)
     assert parent == "1. NỘI KHOA/NẤM DA ĐẦU"
     assert filename == "file.pdf"
 
