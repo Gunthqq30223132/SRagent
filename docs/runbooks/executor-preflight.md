@@ -14,8 +14,8 @@ kỳ làm lại. Đây không phải lỗi kỹ thuật lẻ, mà là **kiểu t
 
 | # | Triệu chứng đã thấy | Gốc rễ | LUẬT (bất biến) |
 |---|---|---|---|
-| **F1** | Báo "xong" kèm link `/pull/new/…`, tên nhánh, hoặc path `/Users/gun/…` — **không** có `/pull/<số>` | Nhầm "đã push / test xanh local" = "đã giao" | **Deliverable DUY NHẤT = URL `/pull/<số>` của PR thật.** Link compare, tên nhánh, path local đều = CHƯA giao. |
-| **F2** | Nhánh cắt từ commit design **cũ** → thiếu PR đã merge (WAL, EuropePMC), kéo theo code đã revert (OmniRoute `ui/app.py`), số test lệch | Không `fetch` + rebase lên design HEAD trước/sau khi làm | **Luôn branch & rebase từ design HEAD mới nhất.** Trước khi mở PR, rebase lại. Kiểm: `git merge-base --is-ancestor origin/<design> HEAD` phải đúng. |
+| **F1** | Sau 6 vòng, executor **chưa từng** mở được `/pull/<số>` — luôn dừng ở link compare `/pull/new/…`, tên nhánh, hoặc path `/Users/gun/…` | Nhiều khả năng **môi trường executor không có quyền mở PR** (chỉ push được nhánh). Ép mãi một thao tác tool không làm được là vô ích | **Hợp đồng bàn giao mới:** executor giao **_nhánh đã push, đã rebase design HEAD, CI/preflight xanh_ + báo cáo bằng chứng (commit SHA, tên nhánh)**. Việc **mở PR giao Kiến trúc sư (Claude)** tổng hợp. "Hoàn thành" = nhánh push + §B xanh + commit SHA/tên nhánh; **CẤM** viết "đã tạo PR" nếu chỉ có link compare. |
+| **F2** | Nhánh cắt từ commit design **cũ** → thiếu PR đã merge (WAL, EuropePMC), kéo theo code đã revert (OmniRoute `ui/app.py`), số test lệch | Không `fetch` + rebase lên design HEAD trước/sau khi làm | **Luôn branch & rebase từ design HEAD mới nhất.** Trước khi bàn giao, rebase lại. Kiểm: `git merge-base --is-ancestor origin/<design> HEAD` phải đúng. |
 | **F3** | "321 passed", "28/28 100% coverage" — bịa hoặc lấy từ lần chạy cũ, không khớp thực tế | Lấy số từ trí nhớ / run stale | **Mọi con số = output NGUYÊN VĂN của lệnh vừa chạy.** Không dán được lệnh sinh ra nó = KHÔNG được nói con số đó. |
 | **F4** | Report liệt kê 6 file nhưng nhánh đụng thêm `ui/app.py` (không khai) | Không đối chiếu diff thực với phạm vi mandate | **Trước report, chạy `git diff --stat origin/<design>...HEAD`, giải trình TỪNG file.** File ngoài scope = gỡ hoặc gắn cờ tường minh. |
 | **F5** | NE4 **tự chèn** citation rồi mới kiểm citation (vòng tròn); dùng `LIKE`/fuzzy nơi cần exact | Kiểm trên dữ liệu vừa tự vá; đường verify không exact | **Guard phải CÓ KHẢ NĂNG FAIL.** Bắt buộc có test fail-case. Đường verification = **exact-only** (cấm LIKE/fuzzy/cosine — trùng bất biến CLAUDE.md #2). Không bao giờ verify thứ mình vừa sinh ra. |
@@ -44,11 +44,13 @@ git diff --name-only origin/<design>...HEAD | xargs grep -nE "/Users/|/Volumes/"
 .venv/bin/python -m pytest -q
 bash scripts/gate_m6.sh && bash scripts/gate_d32.sh
 
-# F1 — mở PR vào <design>, dán URL /pull/<số> vào báo cáo
+# F1 — push nhánh (đã rebase, CI xanh); bàn giao commit SHA + tên nhánh. Kiến trúc sư mở PR.
+git push -u origin <feature-branch>
+git rev-parse HEAD   # dán SHA này vào báo cáo
 ```
 
 **Checklist tự khai (S-series, đánh dấu thật):**
-- [ ] **S1 (F1):** Đã mở PR; dán URL `/pull/<số>` — KHÔNG phải link compare.
+- [ ] **S1 (F1):** Đã push nhánh (rebase design HEAD, CI xanh); dán **commit SHA + tên nhánh**. Việc mở PR do Kiến trúc sư đảm nhận — KHÔNG tự khai "đã tạo PR" từ link compare.
 - [ ] **S2 (F2):** `BASE OK`; đã rebase lên design HEAD mới nhất.
 - [ ] **S3 (F3):** Mọi con số trong report có lệnh + output nguyên văn kèm theo.
 - [ ] **S4 (F4):** Đã giải trình từng file trong `diff --stat`; không file ngoài scope.
