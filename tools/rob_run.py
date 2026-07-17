@@ -158,12 +158,15 @@ def compute_rob2_overall(d1: str, d2: str, d3: str, d4: str, d5: str, rule: str 
     domains = [d1, d2, d3, d4, d5]
     if "VOID" in domains:
         return "VOID"
-    if rule == "rob2_standard":
-        if "High" in domains:
-            return "High"
-        if "Some concerns" in domains:
-            return "Some concerns"
-        return "Low"
+    if rule != "rob2_standard":
+        raise ValueError(
+            f"overall_rule không nhận diện được: {rule!r}. "
+            "Bảo thủ bất đối xứng cấm mặc định 'Low' khi cấu hình sai."
+        )
+    if "High" in domains:
+        return "High"
+    if "Some concerns" in domains:
+        return "Some concerns"
     return "Low"
 
 

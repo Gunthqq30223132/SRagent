@@ -43,6 +43,13 @@ def test_compute_rob2_overall():
     assert compute_rob2_overall("VOID", "Low", "Low", "Low", "Low") == "VOID"
 
 
+def test_compute_rob2_overall_unknown_rule_fails_closed():
+    # Bảo thủ bất đối xứng: rule lạ phải raise, KHÔNG được âm thầm trả "Low"
+    # bất kể mọi domain thực tế là gì (kể cả toàn High).
+    with pytest.raises(ValueError):
+        compute_rob2_overall("High", "High", "High", "High", "High", rule="not_a_real_rule")
+
+
 def test_compute_minors_overall():
     # Test MINORS score summation
     scores_non_comparative = {f"item{i}": "2" for i in range(1, 9)}
