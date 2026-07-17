@@ -6,14 +6,22 @@ runner độc lập có `main(argv) -> int`; orchestrator này chỉ *xâu chu�
 đúng thứ tự và **DỪNG ở mỗi cổng người duyệt**.
 
 Bất biến cứng (CLAUDE.md):
-- **#6 Người duyệt là cổng bất biến.** Orchestrator KHÔNG BAO GIỜ tự chuyển
-  `QUEUED → APPROVED`. Cổng người chỉ được coi là "đã qua" khi orchestrator *đọc
-  thấy* trạng thái do người tạo ra (có doc APPROVED trong DB) — nó không bao giờ
-  *tạo ra* trạng thái đó. Không có đường code nào ở đây gọi `set_status(APPROVED)`.
+- **#6 Người duyệt là cổng bất biến.** Orchestrator KHÔNG BAO GIỜ tự tạo trạng
+  thái do người quyết định. Cổng người (`consensus_review`) chỉ được coi là "đã
+  qua" khi orchestrator *đọc thấy* trạng thái đó đã tồn tại — nó không bao giờ
+  *tạo ra* trạng thái đó.
 - **#3 Topic-blind.** File này chỉ biết "có N phase, phase nào là cổng người" —
   không mang ngữ nghĩa miền; ngữ nghĩa nằm trong protocol JSON mà runner con nạp.
 - Idempotent/resumable: mỗi runner con lọc theo DocStatus nên chạy lại an toàn;
   `--from <phase>` cho phép tiếp tục sau khi người đã duyệt.
+
+Ghi chú thiết kế (sửa sau lượt review đầu): `screen`/`eligibility`/`rob` đều lọc
+input theo `status='queued'` (xem `tools/screen_run.py`), KHÔNG theo `APPROVED`.
+`DocStatus.APPROVED` chỉ được set ở `sr_agent/publish/notion_page.py` — hành
+động "Approve" của `make ui` là xuất bản sang Notion (nhánh xuất bản đơn-tài-liệu
+độc lập, không thuộc tuyến SR), và nó CHUYỂN doc ra khỏi `queued`. Vì vậy tuyến
+SR không đặt cổng người giữa `ingest` và `screen` — cổng người của tuyến SR nằm
+ở cuối, `consensus_review`, trước khi tổng hợp bằng chứng (BS4).
 
 Đây là *khung* BS2: các phase `rob`/`consensus` được khai báo trong đồ thị nhưng
 tự nhận diện "chưa triển khai" (module chưa có) và dừng sạch — ranh giới hệ hiện tại.
@@ -77,7 +85,13 @@ def _has_approved(store: StagingStore) -> bool:
 
 
 def build_phases() -> list[Phase]:
-    """Đồ thị chuẩn của tuyến SR — nguồn sự thật duy nhất về thứ tự giai đoạn."""
+    """Đồ thị chuẩn của tuyến SR — nguồn sự thật duy nhất về thứ tự giai đoạn.
+
+    Không có cổng người giữa `ingest` và `screen`: cả hai lọc/ghi trên
+    `status='queued'` trực tiếp (screen/eligibility/rob không yêu cầu APPROVED —
+    xem docstring module). Cổng người của tuyến SR là `consensus_review`, cuối
+    tuyến, trước khi tổng hợp (BS4).
+    """
     return [
         Phase(
             name="ingest",
@@ -87,17 +101,9 @@ def build_phases() -> list[Phase]:
             build_args=lambda a: ["run", "--query", a.query, "--max-results", str(a.max_results)],
         ),
         Phase(
-            name="review",
-            kind=HUMAN_GATE,
-            desc="CON NGƯỜI duyệt hàng đợi QUEUED → APPROVED bằng `make ui`. "
-            "Orchestrator không tự duyệt (bất biến #6).",
-            satisfied=_has_approved,
-            resume_hint="screen",
-        ),
-        Phase(
             name="screen",
             kind=AUTO,
-            desc="Song thẩm A/B trên doc APPROVED (title/abstract).",
+            desc="Song thẩm A/B trên doc QUEUED (title/abstract).",
             runner_ref=("tools.screen_run", "main"),
             build_args=lambda a: ["--protocol", str(a.protocol), "--limit", str(a.limit)],
         ),
@@ -168,8 +174,12 @@ def cmd_status(store: StagingStore, phases: list[Phase]) -> int:
         print(f"  {status:>16}: {n}")
     if not counts:
         print("  (trống — chưa ingest)")
-    gate_ok = _has_approved(store)
-    print(f"\ncổng 'review' (có doc APPROVED?): {'✅ đã qua' if gate_ok else '⛔ chưa'}")
+    print()
+    for ph in phases:
+        if ph.kind != HUMAN_GATE:
+            continue
+        ok = bool(ph.satisfied and ph.satisfied(store))
+        print(f"cổng {ph.name!r}: {'✅ đã qua' if ok else '⛔ chưa'}")
     return 0
 
 

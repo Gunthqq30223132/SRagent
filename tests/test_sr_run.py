@@ -44,13 +44,16 @@ def test_phase_graph_shape_and_gates():
     phases = build_phases()
     names = [p.name for p in phases]
     assert names == [
-        "ingest", "review", "screen", "eligibility",
+        "ingest", "screen", "eligibility",
         "extract", "rob", "consensus_review", "consensus",
     ]
     gates = [p.name for p in phases if p.kind == HUMAN_GATE]
-    assert gates == ["review", "consensus_review"]
-    # ingest phải đứng TRƯỚC cổng review (không sàng lọc trước khi người duyệt).
-    assert names.index("ingest") < names.index("review") < names.index("screen")
+    # Không có cổng người giữa ingest và screen: cả hai lọc trực tiếp trên
+    # status='queued' (screen/eligibility/rob không yêu cầu APPROVED). Cổng
+    # người duy nhất của tuyến SR nằm ở cuối, trước tổng hợp (BS4).
+    assert gates == ["consensus_review"]
+    assert names.index("ingest") < names.index("screen")
+    assert names.index("rob") < names.index("consensus_review") < names.index("consensus")
 
 
 # --- bất biến cổng người -----------------------------------------------------
