@@ -157,7 +157,8 @@ def check_latex_comments(filepath, content):
 
 def check_secrets(filepath, content):
     SECRET_REGEXES = [
-        re.compile(r'\bsk-[a-zA-Z0-9]{24,}\b'),
+        re.compile(r'\bsk-[a-zA-Z0-9_-]{16,}\b'),
+        re.compile(r'\bBearer\s+[a-zA-Z0-9_\-\.]{16,}\b'),
         re.compile(r'\bAIzaSy[A-Za-z0-9_-]{33}\b'),
         re.compile(r'(?i)(?:secret|api)_?(?:key|token|secret)\s*[:=]\s*["\'\u201d\u201c][a-zA-Z0-9_\-\.\@\/]{8,}[\"\'\u201d\u201c]'),
         re.compile(r'(?i)[\"\'\u201d\u201c]\w*(?:secret|api)_?(?:key|token|secret)\w*[\"\'\u201d\u201c]\s*:\s*[\"\'\u201d\u201c][a-zA-Z0-9_\-\.\@\/]{8,}[\"\'\u201d\u201c]')
