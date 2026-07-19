@@ -24,6 +24,7 @@ from pydantic import BaseModel
 from sr_agent.config import NOTION_PARENT_PAGE_ID, NOTION_TOKEN
 from sr_agent.models.schemas import CanonicalRole, DocStatus, Document
 from sr_agent.store.staging import StagingStore
+from tools.guard.outbound import OutboundViolation, scan
 
 logger = logging.getLogger("sr_agent.notion")
 
@@ -216,6 +217,14 @@ class NotionPublisher:
             title_prop_name=title_prop_name,
             vi_abstract=vi_abstract
         )
+
+        payload_str = json.dumps(payload, ensure_ascii=False)
+        findings = scan(payload_str)
+        if findings:
+            rule_types = ", ".join(sorted({f.rule_id for f in findings}))
+            logger.error("Outbound interceptor chặn payload của %s: %s", doc.uid, rule_types)
+            store.log_event(doc.uid, "OUTBOUND_BLOCKED", rule_types)
+            raise OutboundViolation(findings)
 
         if self.dry_run:
             logger.warning("NOTION_TOKEN trống — DRY-RUN, in payload thay vì gọi API")
