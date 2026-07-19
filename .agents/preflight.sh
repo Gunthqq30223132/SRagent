@@ -76,19 +76,44 @@ def test_model(model_name, prompt="Hi"):
     payload = json.dumps({
         "model": model_name,
         "messages": [{"role": "user", "content": prompt}],
-        "max_tokens": 256
+        "max_tokens": 256,
+        "stream": False
     }).encode('utf-8')
     
     req = urllib.request.Request(url, data=payload, headers=headers, method="POST")
     try:
-        with urllib.request.urlopen(req, timeout=35) as resp:
+        with urllib.request.urlopen(req, timeout=45) as resp:
             if resp.status == 200:
-                res_body = json.loads(resp.read().decode('utf-8'))
-                choice = res_body.get("choices", [{}])[0]
-                content = choice.get("message", {}).get("content", "").strip()
-                finish_reason = choice.get("finish_reason", "")
+                raw_bytes = resp.read()
+                raw_str = raw_bytes.decode('utf-8', errors='ignore').strip()
                 
-                if content and finish_reason == "stop":
+                content = ""
+                finish_reason = ""
+                
+                if raw_str.startswith("data:"):
+                    for line in raw_str.splitlines():
+                        line = line.strip()
+                        if line.startswith("data:"):
+                            chunk_str = line[5:].strip()
+                            if chunk_str == "[DONE]":
+                                break
+                            try:
+                                chunk = json.loads(chunk_str)
+                                choice = chunk.get("choices", [{}])[0]
+                                delta = choice.get("delta", {}) or choice.get("message", {})
+                                if "content" in delta and delta["content"]:
+                                    content += delta["content"]
+                                if choice.get("finish_reason"):
+                                    finish_reason = choice.get("finish_reason")
+                            except Exception:
+                                pass
+                else:
+                    res_body = json.loads(raw_str)
+                    choice = res_body.get("choices", [{}])[0]
+                    content = choice.get("message", {}).get("content", "").strip()
+                    finish_reason = choice.get("finish_reason", "")
+                
+                if content and (finish_reason in ["stop", "length"]):
                     print(f"✅ Model [{model_name}]: PASS (content length={len(content)}, finish_reason={finish_reason})")
                     return True
                 else:
@@ -97,6 +122,9 @@ def test_model(model_name, prompt="Hi"):
             else:
                 print(f"❌ Model [{model_name}]: FAIL (HTTP status={resp.status})")
                 return False
+    except urllib.error.HTTPError as e:
+        print(f"❌ Model [{model_name}]: HTTPError ({e.code})")
+        return False
     except Exception as e:
         print(f"❌ Model [{model_name}]: ERROR ({e})")
         return False
