@@ -52,6 +52,32 @@ class ScreenVerdict(BaseModel):
 # là trạng thái bệnh (κ = 0 kinh điển), phải tự phát event thay vì đợi người soi κ.
 DEGENERATE_MIN_VALID = 10
 
+# FL-1 2026-07-19: κ=0.0000 lọt qua guard thoái hóa (guard chỉ nổ khi vote đúng
+# 100%/0%; batch prevalence cao làm κ sập mà không rater nào tuyệt đối một chiều —
+# kappa paradox). Sàn κ bắt phần còn lại: κ đo được dưới sàn trên batch đủ lớn
+# ⇒ song thẩm không đóng góp thông tin ⇒ fail-loud (event, không chặn batch).
+# Mốc 0.4 = ranh "moderate agreement" (Landis–Koch), dưới đó κ hiệu chuẩn
+# 0.9042 (M7.2) coi như mất hiệu lực trên batch này.
+KAPPA_FLOOR = 0.4
+
+
+def kappa_below_floor(kappa: float | None, n_docs: int) -> bool:
+    """κ đo được (không phải None/single-model) dưới sàn trên batch đủ lớn."""
+    return kappa is not None and n_docs >= DEGENERATE_MIN_VALID and kappa < KAPPA_FLOOR
+
+
+def flag_low_kappa(store, kappa, n_docs, include_rate_a, include_rate_b) -> bool:
+    """Phát event SCREEN_KAPPA_LOW nếu κ dưới sàn. Fail-loud, không chặn batch."""
+    if not kappa_below_floor(kappa, n_docs):
+        return False
+    store.log_event(
+        "screening:batch", "SCREEN_KAPPA_LOW",
+        f"κ={kappa:.4f} < sàn {KAPPA_FLOOR} trên {n_docs} doc "
+        f"(include_rate A={include_rate_a:.0%}, B={include_rate_b:.0%}) — "
+        "song thẩm mất hiệu lực trên batch này, cần người soi trước khi tin verdict",
+    )
+    return True
+
 
 # --- Verifier (D5) -------------------------------------------------------------------
 
@@ -488,6 +514,9 @@ def run_screening_batch(store: StagingStore, protocol: ReviewProtocol, criteria:
                 f"agent={agent_name} include_rate={rate:.0%} trên {valid_n} verdict hợp lệ "
                 "— screener vote một chiều, không đóng góp thông tin phân biệt",
             )
+
+    # Sàn κ (FL-1): bắt trường hợp κ sập mà không rater nào một chiều tuyệt đối.
+    flag_low_kappa(store, kappa, len(batch_verdicts), include_rate_a, include_rate_b)
 
     report_data = {
         "processed": screened_count,

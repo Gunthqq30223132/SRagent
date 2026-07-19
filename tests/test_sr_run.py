@@ -45,7 +45,7 @@ def test_phase_graph_shape_and_gates():
     names = [p.name for p in phases]
     assert names == [
         "ingest", "screen", "eligibility",
-        "extract", "rob", "consensus_review", "consensus",
+        "rob", "extract", "consensus_review", "consensus",
     ]
     gates = [p.name for p in phases if p.kind == HUMAN_GATE]
     # Không có cổng người giữa ingest và screen: cả hai lọc trực tiếp trên
@@ -53,7 +53,9 @@ def test_phase_graph_shape_and_gates():
     # người duy nhất của tuyến SR nằm ở cuối, trước tổng hợp (BS4).
     assert gates == ["consensus_review"]
     assert names.index("ingest") < names.index("screen")
-    assert names.index("rob") < names.index("consensus_review") < names.index("consensus")
+    # BS3 §0: RoB chấm độ tin cậy TRƯỚC khi extract trích/tin số liệu (FL-1).
+    assert names.index("eligibility") < names.index("rob") < names.index("extract")
+    assert names.index("extract") < names.index("consensus_review") < names.index("consensus")
 
 
 # --- bất biến cổng người -----------------------------------------------------

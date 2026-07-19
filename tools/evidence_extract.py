@@ -67,29 +67,34 @@ def get_section_text(doc: Document, section_name: str) -> str:
 
 # --- Main Logic ----------------------------------------------------------------------
 
+def pending_extraction_uids(store: StagingStore) -> list[str]:
+    """Doc đủ điều kiện extract: ELIG_INCLUDED và chưa có extraction.
+
+    Tiền điều kiện ELIG_INCLUDED là bắt buộc (bài học FL-1 2026-07-19: filter
+    'queued' trần khiến batch gặm doc tồn chưa qua sàng từ các run cũ, và
+    extract trên doc abstract-only sinh hàng loạt quote unverified vô ích).
+    Cùng khuôn tiền-điều-kiện-theo-event với rob_run (ELIG_INCLUDED) và
+    eligibility_run (SCREEN_INCLUDED).
+    """
+    rows = store.conn.execute(
+        """SELECT uid FROM documents
+           WHERE status = 'queued'
+             AND uid IN (SELECT uid FROM events WHERE event_type = 'ELIG_INCLUDED')
+             AND uid NOT IN (SELECT uid FROM extraction)"""
+    ).fetchall()
+    return [r["uid"] for r in rows]
+
+
 def run_extraction_batch(store: StagingStore, limit: int) -> int:
     from sr_agent.parser.ollama_client import OllamaClient
-    
+
     client = OllamaClient()
     if not client.is_available():
         logger.error("Ollama is not available. Cannot run evidence extraction.")
         return 0
-        
-    # Get all queued documents
-    rows = store.conn.execute(
-        "SELECT uid FROM documents WHERE status = 'queued'"
-    ).fetchall()
-    
-    to_extract = []
-    for r in rows:
-        uid = r["uid"]
-        # Check if already extracted
-        has_ext = store.conn.execute(
-            "SELECT 1 FROM extraction WHERE uid = ?", (uid,)
-        ).fetchone()
-        if not has_ext:
-            to_extract.append(uid)
-            
+
+    to_extract = pending_extraction_uids(store)
+
     if not to_extract:
         print("No documents require evidence extraction.")
         return 0
