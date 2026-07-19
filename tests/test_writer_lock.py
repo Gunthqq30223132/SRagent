@@ -89,3 +89,57 @@ class TestWriterLock:
 
         # Case 4: Lock held without current_pid specified -> writes disabled (True)
         assert is_write_disabled(other_holder) is True
+
+
+# --- Test đối kháng của PM (luật Oracle — audit R1 + defect late-binding) -------------
+
+
+class TestWriterLockHardening:
+    def test_stale_lock_over_age_ceiling_self_cleans(self, tmp_path):
+        """R1 (PID-reuse): PID 'sống' nhưng lock quá trần tuổi = xác đội lốt — phải tự dọn.
+
+        Dùng chính PID của test (chắc chắn sống) với started_at 7h trước:
+        nếu chỉ check os.kill thì lock này bất tử — hệ khóa chết vĩnh viễn.
+        """
+        from datetime import datetime, timedelta, timezone
+
+        lock_file = tmp_path / ".sr_writer.lock"
+        old_ts = (datetime.now(timezone.utc) - timedelta(hours=7)).isoformat()
+        lock_file.write_text(
+            f'{{"role": "zombie", "pid": {os.getpid()}, "started_at": "{old_ts}"}}',
+            encoding="utf-8",
+        )
+
+        assert holder(lock_file) is None
+        assert not lock_file.exists()
+        assert acquire("orchestrator", path=lock_file) is True
+        release(lock_file)
+
+    def test_fresh_alive_lock_is_not_cleaned(self, tmp_path):
+        """Chiều ngược của R1: lock tươi + PID sống KHÔNG được dọn oan."""
+        lock_file = tmp_path / ".sr_writer.lock"
+        assert acquire("orchestrator", path=lock_file) is True
+
+        info = holder(lock_file)
+        assert info is not None
+        assert info["role"] == "orchestrator"
+        assert lock_file.exists()
+        release(lock_file)
+
+    def test_default_path_is_late_bound(self, tmp_path):
+        """Defect fix: patch DEFAULT_LOCK_PATH phải có tác dụng thật.
+
+        Trước fix, default param bind lúc import ⇒ test sr_run ở trên xanh nhưng RỖNG
+        (assert trên file chưa bao giờ được tạo, còn code thật ghi vào staging/ thật).
+        """
+        lock_file = tmp_path / "patched.lock"
+        with patch("sr_agent.store.writer_lock.DEFAULT_LOCK_PATH", lock_file):
+            assert acquire("orchestrator") is True
+            assert lock_file.exists()
+
+            info = holder()
+            assert info is not None
+            assert info["pid"] == os.getpid()
+
+            release()
+            assert not lock_file.exists()

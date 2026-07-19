@@ -21,6 +21,7 @@ from sr_agent.monitor import probes
 from sr_agent.publish.notion_page import NotionPublisher
 from sr_agent.store.staging import StagingStore
 from sr_agent.store.writer_lock import holder
+from tools.guard.outbound import OutboundViolation
 
 
 def is_write_disabled(lock_info: dict | None, current_pid: int | None = None) -> bool:
@@ -160,19 +161,31 @@ with queue_tab:
             approve_col, reject_col = st.columns(2)
             with approve_col:
                 if st.button("✅ Approve → Notion", type="primary", use_container_width=True, disabled=disabled_writes):
-                    page_id = publisher.publish(doc, store)
-                    st.success(
-                        f"Đã publish trang {page_id}" if page_id
-                        else "DRY-RUN: payload đã in ra console, status = APPROVED_LOCAL"
-                    )
-                    st.rerun()
+                    # TOCTOU: trạng thái lock lúc render có thể đã ôi khi người bấm —
+                    # check lại ngay tại thời điểm ghi, không tin banner.
+                    if is_write_disabled(holder(), os.getpid()):
+                        st.error("🔒 Writer lock vừa bị tiến trình khác chiếm — thao tác bị hủy, tải lại trang.")
+                    else:
+                        try:
+                            page_id = publisher.publish(doc, store)
+                        except OutboundViolation as exc:
+                            st.error(f"⛔ Outbound Interceptor chặn publish: {exc}")
+                        else:
+                            st.success(
+                                f"Đã publish trang {page_id}" if page_id
+                                else "DRY-RUN: payload đã in ra console, status = APPROVED_LOCAL"
+                            )
+                            st.rerun()
             with reject_col:
                 reason = st.text_input("Lý do reject", placeholder="ví dụ: không liên quan đề tài")
                 if st.button("❌ Reject", use_container_width=True, disabled=disabled_writes):
-                    doc.status = DocStatus.REJECTED
-                    store.upsert(doc)
-                    store.log_event(doc.uid, "REJECTED", reason or "không ghi lý do")
-                    st.rerun()
+                    if is_write_disabled(holder(), os.getpid()):
+                        st.error("🔒 Writer lock vừa bị tiến trình khác chiếm — thao tác bị hủy, tải lại trang.")
+                    else:
+                        doc.status = DocStatus.REJECTED
+                        store.upsert(doc)
+                        store.log_event(doc.uid, "REJECTED", reason or "không ghi lý do")
+                        st.rerun()
 
 # --- Tab 2: sức khỏe hệ thống -----------------------------------------------------
 

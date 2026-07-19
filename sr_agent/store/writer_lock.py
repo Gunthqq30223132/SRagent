@@ -22,6 +22,11 @@ from typing import Any
 
 DEFAULT_LOCK_PATH = Path("staging/.sr_writer.lock")
 
+# Trần tuổi lock (chống PID-reuse): macOS có thể cấp lại PID cũ cho tiến trình khác,
+# khiến lock mồ côi trông như đang sống và hệ khóa chết vĩnh viễn. Batch thật dài
+# nhất tính bằng phút/doc — lock sống quá trần này chắc chắn là xác.
+MAX_LOCK_AGE_HOURS = 6
+
 
 def _is_pid_alive(pid: int) -> bool:
     try:
@@ -35,9 +40,15 @@ def _is_pid_alive(pid: int) -> bool:
         return False
 
 
-def holder(path: Path | str = DEFAULT_LOCK_PATH) -> dict[str, Any] | None:
+def _resolve(path: Path | str | None) -> Path:
+    # Late-binding: đọc DEFAULT_LOCK_PATH tại thời điểm GỌI, không phải lúc import —
+    # để test patch được default và mọi caller cùng nhìn một đường dẫn.
+    return Path(path) if path is not None else DEFAULT_LOCK_PATH
+
+
+def holder(path: Path | str | None = None) -> dict[str, Any] | None:
     """Đọc thông tin holder từ file lock. Tự dọn lock mồ côi nếu PID đã chết."""
-    lock_file = Path(path)
+    lock_file = _resolve(path)
     if not lock_file.exists():
         return None
 
@@ -57,10 +68,21 @@ def holder(path: Path | str = DEFAULT_LOCK_PATH) -> dict[str, Any] | None:
         lock_file.unlink(missing_ok=True)
         return None
 
+    # PID-reuse guard: PID "sống" nhưng lock quá trần tuổi = xác đội lốt.
+    try:
+        age = datetime.now(timezone.utc) - datetime.fromisoformat(started_at)
+        if age.total_seconds() > MAX_LOCK_AGE_HOURS * 3600:
+            lock_file.unlink(missing_ok=True)
+            return None
+    except ValueError:
+        # started_at không parse được — cùng họ file hỏng, dọn như trên
+        lock_file.unlink(missing_ok=True)
+        return None
+
     return {"role": role, "pid": pid, "started_at": started_at}
 
 
-def acquire(role: str, path: Path | str = DEFAULT_LOCK_PATH) -> bool:
+def acquire(role: str, path: Path | str | None = None) -> bool:
     """Tạo lock file atomically.
 
     Nếu lock file đã tồn tại:
@@ -68,7 +90,7 @@ def acquire(role: str, path: Path | str = DEFAULT_LOCK_PATH) -> bool:
       - Nếu holder() trả về None sau khi dọn, thử lại 1 lần nữa.
       - Ngược lại (có tiến trình sống đang giữ lock), trả về False.
     """
-    lock_file = Path(path)
+    lock_file = _resolve(path)
     lock_file.parent.mkdir(parents=True, exist_ok=True)
 
     def _try_create() -> bool:
@@ -95,7 +117,7 @@ def acquire(role: str, path: Path | str = DEFAULT_LOCK_PATH) -> bool:
     return False
 
 
-def release(path: Path | str = DEFAULT_LOCK_PATH) -> None:
+def release(path: Path | str | None = None) -> None:
     """Giải phóng lock file."""
-    lock_file = Path(path)
+    lock_file = _resolve(path)
     lock_file.unlink(missing_ok=True)
