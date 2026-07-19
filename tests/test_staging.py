@@ -91,6 +91,35 @@ def test_ttl_keeps_recent_records(tmp_path):
         assert store.purge_expired(ttl_hours=72) == []
 
 
+def test_ttl_never_purges_sr_corpus(tmp_path):
+    """Doc đã vào tuyến SR (có vết screening/extraction/rob) MIỄN TRỪ TTL.
+
+    Kịch bản sẹo: SR run kéo dài >72h (cổng người), stage máy không cập nhật
+    last_interaction_at, người mở UI → purge_expired chạy → corpus bị xóa
+    giữa run. Bị cấm vĩnh viễn bởi test này.
+    """
+    with StagingStore(tmp_path / "t.db") as store:
+        store.upsert(make_doc("11111111", 80, status=DocStatus.QUEUED))  # đã screen
+        store.upsert(make_doc("22222222", 80, status=DocStatus.QUEUED))  # đã extract
+        store.upsert(make_doc("33333333", 80, status=DocStatus.QUEUED))  # đã RoB
+        store.upsert(make_doc("44444444", 80, status=DocStatus.QUEUED))  # triage thuần
+
+        store.add_screen_verdict("ieee:11111111", "screener_a", "m", "include")
+        store.add_extraction("ieee:22222222", "population", "adults", "adults", "methods", 1)
+        store.add_rob_assessment("ieee:33333333", "rob_a", "m", "RCT", "d1_randomization", "Low")
+
+        old = (datetime.now(timezone.utc) - timedelta(hours=73)).isoformat()
+        store.conn.execute("UPDATE documents SET last_interaction_at = ?", (old,))
+        store.conn.commit()
+
+        purged = store.purge_expired(ttl_hours=72)
+        # CHỈ doc triage chưa vào tuyến SR bị purge; corpus SR còn nguyên
+        assert purged == ["ieee:44444444"]
+        assert store.exists("ieee:11111111")
+        assert store.exists("ieee:22222222")
+        assert store.exists("ieee:33333333")
+
+
 def test_dlq_isolation(tmp_path):
     with StagingStore(tmp_path / "t.db") as store:
         store.push_dlq("ieee:11111111", "RateLimited", "429", retry_eligible=True)
