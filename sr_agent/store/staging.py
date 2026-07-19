@@ -244,7 +244,13 @@ class StagingStore:
     # --- TTL -------------------------------------------------------------------
 
     def purge_expired(self, ttl_hours: int = TTL_HOURS) -> list[str]:
-        """Đánh EXPIRED + xóa bản ghi quá TTL không tương tác. Trả về uids đã purge."""
+        """Đánh EXPIRED + xóa bản ghi quá TTL không tương tác. Trả về uids đã purge.
+
+        MIỄN TRỪ tuyến SR: doc đã có vết trong screening/extraction/rob_assessment
+        thuộc corpus systematic-review đang chạy — các stage máy không cập nhật
+        last_interaction_at, và một SR run hợp lệ kéo dài quá TTL (cổng người,
+        escalation). TTL chỉ dọn hàng đợi triage đơn-tài-liệu chưa ai đụng tới.
+        """
         cutoff = (datetime.now(timezone.utc) - timedelta(hours=ttl_hours)).isoformat()
         terminal = (
             DocStatus.APPROVED.value,
@@ -253,7 +259,10 @@ class StagingStore:
         )
         rows = self.conn.execute(
             """SELECT uid FROM documents
-               WHERE last_interaction_at < ? AND status NOT IN (?, ?, ?)""",
+               WHERE last_interaction_at < ? AND status NOT IN (?, ?, ?)
+                 AND uid NOT IN (SELECT uid FROM screening)
+                 AND uid NOT IN (SELECT uid FROM extraction)
+                 AND uid NOT IN (SELECT uid FROM rob_assessment)""",
             (cutoff, *terminal),
         ).fetchall()
         purged = [r["uid"] for r in rows]
