@@ -41,6 +41,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from sr_agent.models.schemas import DocStatus  # noqa: E402
+from sr_agent.store import writer_lock  # noqa: E402
 from sr_agent.store.staging import StagingStore  # noqa: E402
 
 # Trạng thái "hậu cổng người": sự tồn tại của bất kỳ doc nào ở đây = người ĐÃ
@@ -281,11 +282,18 @@ def main(argv: list[str] | None = None) -> int:
         if args.cmd == "status":
             return cmd_status(store, phases)
         if args.cmd == "run":
-            if args.start_from is None and not args.query:
-                print("❌ `run` từ đầu cần --query (phase ingest). "
-                      "Hoặc dùng --from <phase> để tiếp tục.")
+            if not writer_lock.acquire("orchestrator"):
+                lock_info = writer_lock.holder()
+                print(f"❌ Không thể acquire writer lock — đang được giữ bởi: {lock_info}")
                 return 2
-            return run_pipeline(store, phases, args, start_from=args.start_from)
+            try:
+                if args.start_from is None and not args.query:
+                    print("❌ `run` từ đầu cần --query (phase ingest). "
+                          "Hoặc dùng --from <phase> để tiếp tục.")
+                    return 2
+                return run_pipeline(store, phases, args, start_from=args.start_from)
+            finally:
+                writer_lock.release()
     return 0
 
 

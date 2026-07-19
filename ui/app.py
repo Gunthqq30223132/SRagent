@@ -9,6 +9,8 @@ Tab 2: health snapshot + alert đang mở — dashboard tối giản, không ser
 
 from __future__ import annotations
 
+import os
+
 import streamlit as st
 
 from sr_agent.config import TTL_HOURS, WIP_LIMIT
@@ -18,6 +20,20 @@ from sr_agent.monitor import health as health_mod
 from sr_agent.monitor import probes
 from sr_agent.publish.notion_page import NotionPublisher
 from sr_agent.store.staging import StagingStore
+from sr_agent.store.writer_lock import holder
+
+
+def is_write_disabled(lock_info: dict | None, current_pid: int | None = None) -> bool:
+    """Xác định xem các nút ghi trên UI có bị vô hiệu hóa hay không (pure function).
+
+    UI không bao giờ acquire lock. Nếu có bất kỳ holder nào (hoặc PID khác),
+    trả về True để UI hiển thị banner cảnh báo và disable mọi nút ghi.
+    """
+    if lock_info is None:
+        return False
+    if current_pid is not None and lock_info.get("pid") == current_pid:
+        return False
+    return True
 
 st.set_page_config(page_title="SR-Agent QC Queue", layout="wide")
 
@@ -28,6 +44,14 @@ st.set_page_config(page_title="SR-Agent QC Queue", layout="wide")
 # đúng thread theo cấu trúc, mọi rerun/cửa sổ tự cô lập qua file lock của SQLite.
 store = StagingStore()
 publisher = NotionPublisher()
+
+lock_holder = holder()
+disabled_writes = is_write_disabled(lock_holder, os.getpid())
+if disabled_writes:
+    st.error(
+        f"🔒 **Chế độ chỉ đọc**: Tiến trình `{lock_holder.get('role')}` "
+        f"(PID {lock_holder.get('pid')}) đang giữ writer lock. Thao tác Approve/Reject bị vô hiệu hóa."
+    )
 
 st.title("SR-Agent — Quality Control Queue")
 st.caption(
@@ -135,7 +159,7 @@ with queue_tab:
 
             approve_col, reject_col = st.columns(2)
             with approve_col:
-                if st.button("✅ Approve → Notion", type="primary", use_container_width=True):
+                if st.button("✅ Approve → Notion", type="primary", use_container_width=True, disabled=disabled_writes):
                     page_id = publisher.publish(doc, store)
                     st.success(
                         f"Đã publish trang {page_id}" if page_id
@@ -144,7 +168,7 @@ with queue_tab:
                     st.rerun()
             with reject_col:
                 reason = st.text_input("Lý do reject", placeholder="ví dụ: không liên quan đề tài")
-                if st.button("❌ Reject", use_container_width=True):
+                if st.button("❌ Reject", use_container_width=True, disabled=disabled_writes):
                     doc.status = DocStatus.REJECTED
                     store.upsert(doc)
                     store.log_event(doc.uid, "REJECTED", reason or "không ghi lý do")
