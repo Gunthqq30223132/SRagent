@@ -180,3 +180,85 @@ def test_idempotency(temp_db):
                 events = [e["event_type"] for e in store.conn.execute("SELECT event_type FROM events WHERE uid = ?", (doc.uid,)).fetchall()]
                 assert events.count("FULLTEXT_FETCHED") == 1
                 assert store.get("arxiv:2412.40001").full_text == extracted_text
+
+
+# --- Test đối kháng của PM (luật Oracle — pm-succession.md §3 bước 6) -----------------
+
+
+def test_ttl_clock_not_reset_on_fetch(temp_db):
+    """D38 §4(g): fetch full_text KHÔNG được reset đồng hồ TTL triage (touch=False).
+
+    Nếu vi phạm, mọi doc SR được fetch sẽ trẻ hóa last_interaction_at và
+    lách cơ chế purge — đúng họ bug TTL đã trả học phí ở PR #23.
+    """
+    with StagingStore(temp_db) as store:
+        doc = create_dummy_doc("arxiv:2412.50001")
+        store.upsert(doc)
+        store.log_event(doc.uid, "SCREEN_INCLUDED", "passed screening")
+
+        old_ts = "2026-01-01T00:00:00+00:00"
+        store.conn.execute(
+            "UPDATE documents SET last_interaction_at = ? WHERE uid = ?",
+            (old_ts, doc.uid),
+        )
+        store.conn.commit()
+
+        with respx.mock(base_url="https://arxiv.org") as respx_mock:
+            respx_mock.get("/pdf/2412.50001.pdf").respond(200, content=b"%PDF-x")
+            with patch("tools.fulltext_fetch.extract_text_from_pdf", return_value="Long text. " * 300):
+                fetch_arxiv_fulltext_batch(store, limit=10)
+
+        row = store.conn.execute(
+            "SELECT last_interaction_at FROM documents WHERE uid = ?", (doc.uid,)
+        ).fetchone()
+        assert row["last_interaction_at"] == old_ts
+        assert store.get(doc.uid).full_text is not None
+
+
+def test_extractor_raises_is_fail_closed(temp_db):
+    """pdftotext/mutool vắng mặt (ca MISSING EXTRACTOR có thật trong run FL-2):
+    extract raise ⇒ FULLTEXT_FETCH_FAILED, KHÔNG ghi full_text, batch vẫn đi tiếp doc sau."""
+    with StagingStore(temp_db) as store:
+        doc1 = create_dummy_doc("arxiv:2412.60001")
+        doc2 = create_dummy_doc("arxiv:2412.60002")
+        for d in (doc1, doc2):
+            store.upsert(d)
+            store.log_event(d.uid, "SCREEN_INCLUDED", "passed screening")
+
+        with respx.mock(base_url="https://arxiv.org") as respx_mock:
+            respx_mock.get("/pdf/2412.60001.pdf").respond(200, content=b"%PDF-a")
+            respx_mock.get("/pdf/2412.60002.pdf").respond(200, content=b"%PDF-b")
+            with patch(
+                "tools.fulltext_fetch.extract_text_from_pdf",
+                side_effect=[RuntimeError("pdftotext not found"), "Good text. " * 300],
+            ):
+                count = fetch_arxiv_fulltext_batch(store, limit=10)
+
+        assert count == 2
+        events1 = [e["event_type"] for e in store.conn.execute("SELECT event_type FROM events WHERE uid = ?", (doc1.uid,)).fetchall()]
+        assert "FULLTEXT_FETCH_FAILED" in events1
+        assert "FULLTEXT_FETCHED" not in events1
+        assert store.get(doc1.uid).full_text is None
+        assert store.get(doc2.uid).full_text is not None
+
+
+def test_provenance_detail_frozen_format(temp_db):
+    """D38 §0.3: detail của FULLTEXT_FETCHED phải theo hợp đồng đóng băng
+    `rung=<n> source=<...> chars=<len>` — bậc 2-4 và console D37 sẽ đọc format này."""
+    with StagingStore(temp_db) as store:
+        doc = create_dummy_doc("arxiv:2412.70001")
+        store.upsert(doc)
+        store.log_event(doc.uid, "SCREEN_INCLUDED", "passed screening")
+
+        text = "Frozen contract text. " * 150
+        with respx.mock(base_url="https://arxiv.org") as respx_mock:
+            respx_mock.get("/pdf/2412.70001.pdf").respond(200, content=b"%PDF-c")
+            with patch("tools.fulltext_fetch.extract_text_from_pdf", return_value=text):
+                fetch_arxiv_fulltext_batch(store, limit=10)
+
+        row = store.conn.execute(
+            "SELECT detail FROM events WHERE uid = ? AND event_type = 'FULLTEXT_FETCHED'",
+            (doc.uid,),
+        ).fetchone()
+        assert row is not None
+        assert row["detail"] == f"rung=1 source=arxiv_pdf chars={len(text.strip())}"

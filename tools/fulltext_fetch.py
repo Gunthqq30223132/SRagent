@@ -92,7 +92,11 @@ def fetch_arxiv_fulltext_batch(
                 if len(text_clean) >= MIN_FULLTEXT_LENGTH:
                     doc.full_text = text
                     store.upsert(doc, touch=False)
-                    store.log_event(uid, "FULLTEXT_FETCHED", f"Length: {len(text_clean)} chars")
+                    store.log_event(
+                        uid,
+                        "FULLTEXT_FETCHED",
+                        f"rung=1 source=arxiv_pdf chars={len(text_clean)}",
+                    )
                 else:
                     store.log_event(
                         uid,
