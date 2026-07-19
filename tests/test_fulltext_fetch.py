@@ -430,3 +430,103 @@ def test_inbox_rung4_matching_file(temp_db):
                 ).fetchall()
                 assert len(events) == 1
                 assert events[0]["detail"].startswith("rung=4 source=inbox chars=")
+
+
+# --- Test đối kháng của PM vòng 2 (luật Oracle — pm-succession.md §3 bước 6) ----------
+
+
+def test_non_open_access_never_fetched_from_epmc(temp_db, temp_warehouse_db):
+    """D38 §0.2 (cổng hợp pháp): doc EuropePMC KHÔNG open-access tuyệt đối không
+    được gọi HTTP đến /fullTextXML — bậc 2 phải skip, không phải fail.
+
+    respx mock không đăng ký route nào: nếu code vẫn gọi ra ngoài, respx raise
+    và test fail — chứng minh bằng cơ chế, không bằng lời hứa.
+    """
+    with StagingStore(temp_db) as store:
+        doc = create_dummy_doc(
+            "europepmc:MED:55556666", source="europepmc", is_open_access=False
+        )
+        store.upsert(doc)
+        store.log_event(doc.uid, "SCREEN_INCLUDED", "passed screening")
+
+        with tempfile.TemporaryDirectory() as empty_inbox:
+            with respx.mock:  # không route nào — mọi call HTTP sẽ raise
+                count = fetch_fulltext_batch(
+                    store,
+                    limit=10,
+                    rungs=[1, 2, 3, 4],
+                    warehouse_db_path=temp_warehouse_db,
+                    inbox_dir=Path(empty_inbox),
+                )
+
+        assert count == 1
+        assert store.get(doc.uid).full_text is None
+        details = [
+            e["detail"]
+            for e in store.conn.execute(
+                "SELECT detail FROM events WHERE uid = ? AND event_type = 'FULLTEXT_FETCH_FAILED'",
+                (doc.uid,),
+            ).fetchall()
+        ]
+        # bậc 2 skip êm (không event rung=2) — chỉ bậc 3/4 ghi fail
+        assert not any(d.startswith("rung=2") for d in details)
+
+
+def test_malformed_xml_is_fail_closed(temp_db):
+    """XML hỏng từ EuropePMC ⇒ FULLTEXT_FETCH_FAILED bậc 2, KHÔNG ghi full_text —
+    fail-closed trước dữ liệu rác, không bao giờ 'sửa lại cho khớp'."""
+    with StagingStore(temp_db) as store:
+        doc = create_dummy_doc(
+            "europepmc:MED:77778888", source="europepmc", is_open_access=True
+        )
+        store.upsert(doc)
+        store.log_event(doc.uid, "SCREEN_INCLUDED", "passed screening")
+
+        with respx.mock(base_url="https://www.ebi.ac.uk") as respx_mock:
+            respx_mock.get("/europepmc/webservices/rest/MED/77778888/fullTextXML").respond(
+                200, text="<article><body>không phải XML đóng đúng"
+            )
+            count = fetch_fulltext_batch(store, limit=10, rungs=[2])
+
+        assert count == 1
+        assert store.get(doc.uid).full_text is None
+        events = [
+            (e["event_type"], e["detail"])
+            for e in store.conn.execute(
+                "SELECT event_type, detail FROM events WHERE uid = ?", (doc.uid,)
+            ).fetchall()
+        ]
+        assert any(
+            et == "FULLTEXT_FETCH_FAILED" and d.startswith("rung=2") for et, d in events
+        )
+        assert not any(et == "FULLTEXT_FETCHED" for et, _ in events)
+
+
+def test_jats_with_namespace_still_parsed(temp_db):
+    """JATS thật thường mang XML namespace — parser phải bóc được body có
+    namespace, không chỉ XML trần như test của executor."""
+    with StagingStore(temp_db) as store:
+        doc = create_dummy_doc(
+            "europepmc:PMC:12345678", source="europepmc", is_open_access=True
+        )
+        store.upsert(doc)
+        store.log_event(doc.uid, "SCREEN_INCLUDED", "passed screening")
+
+        body_text = "Namespaced JATS body content. " * 100
+        xml_ns = (
+            '<article xmlns="https://jats.nlm.nih.gov" xmlns:xlink="http://www.w3.org/1999/xlink">'
+            f"<front><article-title>T</article-title></front><body><p>{body_text}</p></body>"
+            "<back><ref-list><ref>Ref A</ref></ref-list></back></article>"
+        )
+
+        with respx.mock(base_url="https://www.ebi.ac.uk") as respx_mock:
+            respx_mock.get("/europepmc/webservices/rest/PMC/12345678/fullTextXML").respond(
+                200, text=xml_ns
+            )
+            count = fetch_fulltext_batch(store, limit=10, rungs=[2])
+
+        assert count == 1
+        doc_after = store.get(doc.uid)
+        assert doc_after.full_text is not None
+        assert "Namespaced JATS body content" in doc_after.full_text
+        assert "Ref A" not in doc_after.full_text
