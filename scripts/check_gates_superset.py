@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
 import os
 import sys
-import yaml
+
+# PyYAML không nằm trong deps dự án (pyproject zero-touch — CLAUDE.md #1/#4);
+# thiếu thì dùng fallback parser bên dưới, vốn được viết cho đúng trường hợp này.
+try:
+    import yaml
+except ModuleNotFoundError:
+    yaml = None
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 REPO_DIR = os.path.dirname(SCRIPT_DIR)
@@ -34,6 +40,8 @@ REQUIRED_GATES = {
 
 def parse_yaml(filepath):
     try:
+        if yaml is None:
+            raise ModuleNotFoundError("PyYAML unavailable")
         with open(filepath, 'r') as f:
             return yaml.safe_load(f)
     except Exception as e:
