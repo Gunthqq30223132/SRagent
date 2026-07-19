@@ -32,6 +32,10 @@ jobs:
         run: |
           python -m pytest
 
+      - name: Run Gate Contract Superset Verification
+        run: |
+          python3 scripts/check_gates_superset.py
+
       - name: Run M6 Gate Verification
         run: |
           bash scripts/gate_m6.sh
