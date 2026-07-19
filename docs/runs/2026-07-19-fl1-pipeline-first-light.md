@@ -192,3 +192,48 @@ flowchart TD
 ## 7. Kết Luận
 
 Pha chạy sống **First Light FL-1** đã kích hoạt thành công toàn bộ đường ống E2E với các LLM thật (`llama3.1:8b`, `gemma4:e4b`, `qwen2.5:7b-instruct`) trên phần cứng thật (MacBook Air M4 16GB). Orchestrator đã tự động điều phối qua các phase `ingest` -> `screen` -> `eligibility` -> `extract` -> `rob` và dừng chính xác tại Cổng Người `consensus_review` theo đúng thiết kế bất biến.
+
+---
+
+## 8. Nghiệm thu độc lập của Kiến trúc sư (2026-07-19)
+
+**Phán quyết: ĐẠT — merge.** Đo lại toàn bộ: base = design HEAD `033168c` ✓ ·
+SHA khớp khai báo ✓ · scope đúng 5 file ✓ · 366 passed ✓ · gate_m6 + gate_d32
+PASS ✓ · NO ABS PATHS ✓ · golden captures là response Ollama thật, đúng schema ✓.
+Executor tuân thủ trọn vẹn mandate (run-only, số đo kèm lệnh, không ép số đẹp) —
+và chính nhờ báo cáo trung thực mà run này lộ ra các phát hiện dưới đây.
+
+### Đính chính nhãn (luật Anchor — nhãn phải đúng bản chất)
+1. §3 ghi "Numeric Firewall phát hiện 5 quote unverified" — không chính xác:
+   đó là `verify_quote` (event `EXTRACT_UNVERIFIED`) của tầng extraction.
+   Numeric Firewall (`tools/guard/firewall.py`) hiện CHƯA nối vào extract
+   (premortem B2 lân cận). Số 5 đúng, tên cơ chế sai.
+2. Golden captures RoB2/classification KHÔNG sinh ra từ phase `rob` của
+   pipeline (rob xử lý 0 doc) — chúng được tạo bởi script capture riêng, gọi
+   Ollama thật trên abstract thật (arxiv:2412.12881). Vẫn đạt mục đích
+   schema-evidence, nhưng provenance phải ghi đúng.
+
+### Phát hiện hệ thống từ dữ liệu run (lỗi HỆ, không phải lỗi executor)
+- **F1 — extract thiếu tiền điều kiện:** danh sách 10 doc được extract KHÁC
+  hẳn danh sách 10 doc vừa screen (Ragas, FAIR-RAG, Quranic… là doc tồn từ
+  các run cũ). `evidence_extract` lọc `status='queued'` trần, không đòi
+  SCREEN/ELIG — trên DB không sạch nó gặm doc chưa qua sàng, và extract từ
+  abstract-only sinh 5 quote unverified. Fix trong PR kế tiếp.
+- **F2 — κ=0.0000 tái xuất:** khớp toán học với kịch bản screener A include
+  10/10 (po=0.9, pe=0.9 ⇒ κ=0 — kappa paradox trên batch prevalence cao).
+  Cần đối chiếu event `SCREEN_DEGENERATE` trong DB trạm dev (guard chỉ nổ khi
+  valid_n ≥ 10 VÀ rate đúng 100%/0%). Hệ sẽ thêm sàn κ (SCREEN_KAPPA_LOW).
+- **F3 — PRISMA trộn mọi run:** "Records screened: 30" trong khi run này
+  screen 10 — events không có run-scoping nên PRISMA cộng dồn lịch sử
+  (premortem B4 xác nhận bằng số thật).
+- **F4 — thuế bằng chứng xác minh NGUỒN GỐC, không xác minh TÍNH LIÊN QUAN:**
+  golden capture cho thấy LLM phân loại paper CS là "RCT" và gán quote
+  đúng-nguyên-văn nhưng vô nghĩa với domain (quote về chain-of-thought cho
+  d1_randomization). verify_quote pass vì đúng substring. Lưới đỡ thật là
+  song thẩm mismatch + cổng người — giữ nguyên thiết kế, nhưng điểm mù này
+  phải được ghi thành giới hạn đã biết của evidence tax.
+
+### Hệ quả điều hành
+Đường găng số 1 của hệ bây giờ là **full-text acquisition** (0/9 doc có toàn
+văn ⇒ eligibility/rob/BS4 đói dữ liệu). FL-2 (nối kho PDF/pdftotext vào
+`full_text`) đi TRƯỚC BS4.
