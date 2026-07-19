@@ -170,6 +170,7 @@ class Document(BaseModel):
     published_date: datetime | None = None
     url: str | None = None
     full_text: str | None = None
+    is_open_access: bool = False
 
     sections: AnySections | None = None
     tech_meta: TechnicalMetadata | None = None

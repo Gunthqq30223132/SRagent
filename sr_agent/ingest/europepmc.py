@@ -160,6 +160,7 @@ class EuropePMCFetcher:
                 authors=_parse_authors(rec),
                 published_date=_parse_date(rec),
                 url=f"https://europepmc.org/article/{src}/{rec_id}",
+                is_open_access=(rec.get("isOpenAccess") == "Y"),
                 status=DocStatus.FETCHED,
             ))
         return docs
