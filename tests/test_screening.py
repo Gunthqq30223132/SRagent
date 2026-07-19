@@ -586,3 +586,41 @@ class TestDegenerateGuard:
         ).fetchall()]
         assert "SCREEN_DEGENERATE" not in events   # mẫu quá nhỏ, κ/rate chưa có nghĩa
 
+
+
+class TestKappaFloor:
+    """FL-1 2026-07-19: κ=0.0000 lọt qua guard thoái hóa (không rater nào đúng
+    100% một chiều — kappa paradox trên batch prevalence cao). Sàn κ bắt phần này."""
+
+    def test_kappa_below_floor_boundaries(self):
+        from tools.screen_run import kappa_below_floor, DEGENERATE_MIN_VALID, KAPPA_FLOOR
+
+        n = DEGENERATE_MIN_VALID
+        assert kappa_below_floor(0.0, n) is True          # kịch bản FL-1 nguyên bản
+        assert kappa_below_floor(KAPPA_FLOOR - 0.01, n) is True
+        assert kappa_below_floor(KAPPA_FLOOR, n) is False   # đúng sàn = không nổ
+        assert kappa_below_floor(0.9042, n) is False        # mốc hiệu chuẩn M7.2
+        assert kappa_below_floor(None, n) is False          # single-model: κ không đo
+        assert kappa_below_floor(0.0, n - 1) is False       # batch quá nhỏ
+
+    def test_flag_low_kappa_writes_event_with_rates(self, store):
+        from tools.screen_run import flag_low_kappa
+
+        fired = flag_low_kappa(store, kappa=0.0, n_docs=10,
+                               include_rate_a=1.0, include_rate_b=0.9)
+        assert fired is True
+        rows = store.conn.execute(
+            "SELECT detail FROM events WHERE event_type = 'SCREEN_KAPPA_LOW'"
+        ).fetchall()
+        assert len(rows) == 1
+        assert "κ=0.0000" in rows[0]["detail"] and "A=100%" in rows[0]["detail"]
+
+    def test_flag_low_kappa_silent_when_healthy(self, store):
+        from tools.screen_run import flag_low_kappa
+
+        assert flag_low_kappa(store, kappa=0.9042, n_docs=10,
+                              include_rate_a=0.6, include_rate_b=0.5) is False
+        rows = store.conn.execute(
+            "SELECT 1 FROM events WHERE event_type = 'SCREEN_KAPPA_LOW'"
+        ).fetchall()
+        assert rows == []

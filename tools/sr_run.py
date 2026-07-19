@@ -115,18 +115,20 @@ def build_phases() -> list[Phase]:
             build_args=lambda a: ["--protocol", str(a.protocol), "--limit", str(a.limit)],
         ),
         Phase(
-            name="extract",
-            kind=AUTO,
-            desc="Trích dữ liệu có thuế bằng chứng (evidenced extraction).",
-            runner_ref=("tools.evidence_extract", "main"),
-            build_args=lambda a: ["--limit", str(a.limit)],
-        ),
-        Phase(
             name="rob",
             kind=AUTO,
             desc="Đánh giá Risk-of-Bias (BS3) — hạ trọng số study thiên lệch.",
             runner_ref=("tools.rob_run", "main"),
             build_args=lambda a: ["--protocol", str(a.protocol), "--limit", str(a.limit)],
+        ),
+        Phase(
+            # FL-1 2026-07-19: dời extract xuống SAU rob theo đúng ý đồ BS3 §0
+            # (chấm độ tin cậy study trước khi số liệu của nó được trích/tin).
+            name="extract",
+            kind=AUTO,
+            desc="Trích dữ liệu có thuế bằng chứng (evidenced extraction).",
+            runner_ref=("tools.evidence_extract", "main"),
+            build_args=lambda a: ["--limit", str(a.limit)],
         ),
         Phase(
             name="consensus_review",

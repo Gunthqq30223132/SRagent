@@ -4,8 +4,10 @@
 làm trước khi chuyển giao). Executor thi công theo mandate trỏ vào spec này;
 PM kế nhiệm thẩm định theo `pm-succession.md` §3 — **không thiết kế lại**.
 
-**Điều kiện kích hoạt:** CHỈ thi công sau khi FL-1 (Pipeline First Light) merge
-— phân bố verdict/escalation thật từ FL-1 là dữ liệu nghiệm thu của BS4.
+**Điều kiện kích hoạt (cập nhật sau FL-1, 2026-07-19):** CHỈ thi công sau khi
+**FL-2 (full-text acquisition)** merge. FL-1 cho thấy 0/9 doc có toàn văn ⇒
+ELIG_INCLUDED = 0 ⇒ BS4 không có input; đồng thời phân bố verdict RoB thật
+(cần cho nghiệm thu weighting) chỉ đo được khi rob chạy trên full-text thật.
 
 ## §0. Vị trí & vì sao đây là mắt xích nhạy nhất
 

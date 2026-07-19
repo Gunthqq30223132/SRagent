@@ -92,6 +92,7 @@ class TestM6HotfixInvariants:
         doc.status = DocStatus.QUEUED
         doc.abstract = "We evaluate our methods."
         store.upsert(doc)
+        store.log_event(doc.uid, "ELIG_INCLUDED", "")  # tiền điều kiện extract (FL-1)
 
         # Mock structured extraction outputting negative answers without quotes
         dummy_extraction = {

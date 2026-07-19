@@ -29,6 +29,7 @@ class TestExtraction:
         doc.status = DocStatus.QUEUED
         doc.abstract = "We use the ImageNet-1k dataset for benchmarks."
         store.upsert(doc)
+        store.log_event(doc.uid, "ELIG_INCLUDED", "")  # tiền điều kiện extract (FL-1)
         
         dummy_extraction = {
             "has_code_repo": {"value": "false", "quote": "", "section": "abstract"},
@@ -63,6 +64,7 @@ class TestExtraction:
         doc.status = DocStatus.QUEUED
         doc.abstract = "We use the ImageNet-1k dataset for benchmarks."
         store.upsert(doc)
+        store.log_event(doc.uid, "ELIG_INCLUDED", "")  # tiền điều kiện extract (FL-1)
         
         # Quote not in abstract
         dummy_extraction = {
@@ -97,6 +99,7 @@ class TestExtraction:
         doc.status = DocStatus.QUEUED
         doc.abstract = "We use the ImageNet-1k dataset for benchmarks."
         store.upsert(doc)
+        store.log_event(doc.uid, "ELIG_INCLUDED", "")  # tiền điều kiện extract (FL-1)
         
         # Quote is in abstract, but section is context (where it is empty)
         dummy_extraction = {
@@ -116,3 +119,38 @@ class TestExtraction:
         exts_all = store.extractions("ieee:38111222", verified_only=False)
         dataset_spec = [e for e in exts_all if e["field"] == "dataset_spec"][0]
         assert dataset_spec["verified"] == 0  # should be unverified due to wrong section
+
+
+class TestExtractionPrecondition:
+    """FL-1 2026-07-19: extract phải đòi ELIG_INCLUDED — filter 'queued' trần
+    từng gặm 10 doc tồn chưa qua sàng từ các run cũ trên DB không sạch."""
+
+    def test_pending_uids_requires_elig_included(self, store):
+        from tools.evidence_extract import pending_extraction_uids
+
+        ok = make_doc("ieee", "38111222", "Passed eligibility", 1)
+        ok.status = DocStatus.QUEUED
+        store.upsert(ok)
+        store.log_event(ok.uid, "ELIG_INCLUDED", "")
+
+        stale = make_doc("ieee", "38111333", "Stale from old run", 1)
+        stale.status = DocStatus.QUEUED
+        store.upsert(stale)  # queued nhưng KHÔNG có ELIG_INCLUDED
+
+        abstract_only = make_doc("ieee", "38111444", "No full text", 1)
+        abstract_only.status = DocStatus.QUEUED
+        store.upsert(abstract_only)
+        store.log_event(abstract_only.uid, "ELIG_ABSTRACT_ONLY", "")
+
+        assert pending_extraction_uids(store) == ["ieee:38111222"]
+
+    def test_pending_uids_skips_already_extracted(self, store):
+        from tools.evidence_extract import pending_extraction_uids
+
+        doc = make_doc("ieee", "38111222", "Done already", 1)
+        doc.status = DocStatus.QUEUED
+        store.upsert(doc)
+        store.log_event(doc.uid, "ELIG_INCLUDED", "")
+        store.add_extraction(doc.uid, "population", "adults", "adults", "methods", 1)
+
+        assert pending_extraction_uids(store) == []
