@@ -1,6 +1,5 @@
 """Tests for tools/evidence_extract.py (Evidence Extraction)."""
 
-# LaTeX math block: $E = mc^2$
 
 import json
 from pathlib import Path

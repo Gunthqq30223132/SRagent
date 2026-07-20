@@ -142,9 +142,109 @@ def check_streamlit() -> CheckResult:
     )
 
 
+def check_model_digests(client=None) -> CheckResult:
+    import json
+    from sr_agent.parser.ollama_client import OllamaClient
+    
+    lock_path = Path(__file__).resolve().parent.parent / "tools" / "profiles" / "models.lock.json"
+    if not lock_path.exists():
+        return CheckResult(
+            "Model digests", Level.OPTIONAL, True,
+            "bỏ qua (không tìm thấy models.lock.json)"
+        )
+    
+    try:
+        lock_data = json.loads(lock_path.read_text(encoding="utf-8"))
+        locked_models = lock_data.get("models", {})
+    except Exception as exc:
+        return CheckResult(
+            "Model digests", Level.OPTIONAL, False,
+            f"lỗi đọc lockfile: {exc}",
+            fix_hint="kiểm tra định dạng file tools/profiles/models.lock.json"
+        )
+        
+    client = client or OllamaClient()
+    if not client.is_available():
+        return CheckResult(
+            "Model digests", Level.OPTIONAL, False,
+            "không kiểm tra được (server không phản hồi)",
+            fix_hint="mở Ollama server"
+        )
+        
+    digests = client.get_model_digests()
+    
+    mismatches = []
+    missing_models = []
+    
+    for model_name, expected_digest in locked_models.items():
+        actual_digest = digests.get(model_name)
+        if not actual_digest:
+            found = False
+            for act_name, act_dig in digests.items():
+                if act_name == model_name or act_name.startswith(model_name + ":") or model_name.startswith(act_name + ":"):
+                    actual_digest = act_dig
+                    found = True
+                    break
+            if not found:
+                missing_models.append(model_name)
+                continue
+                
+        if actual_digest != expected_digest:
+            mismatches.append(f"{model_name} (actual={actual_digest[:8]}... vs expected={expected_digest[:8]}...)")
+            
+    if missing_models or mismatches:
+        detail = []
+        if missing_models:
+            detail.append(f"thiếu model {', '.join(missing_models)}")
+        if mismatches:
+            detail.append(f"lệch digest: {', '.join(mismatches)}")
+        
+        return CheckResult(
+            "Model digests", Level.OPTIONAL, False,
+            "CẢNH BÁO: " + "; ".join(detail),
+            fix_hint="ollama pull lại model bị lệch hoặc cập nhật lockfile"
+        )
+        
+    return CheckResult(
+        "Model digests", Level.OPTIONAL, True,
+        "tất cả model khớp digest trong lockfile"
+    )
+
+
+def check_model_drift(store, batch_uid: str, client) -> None:
+    import json
+    lock_path = Path(__file__).resolve().parent.parent / "tools" / "profiles" / "models.lock.json"
+    if not lock_path.exists():
+        return
+    try:
+        lock_data = json.loads(lock_path.read_text(encoding="utf-8"))
+        locked_models = lock_data.get("models", {})
+    except Exception:
+        return
+    
+    if not client or not hasattr(client, "get_model_digests"):
+        return
+        
+    digests = client.get_model_digests()
+    for model_name, expected_digest in locked_models.items():
+        actual_digest = digests.get(model_name)
+        if not actual_digest:
+            for act_name, act_dig in digests.items():
+                if act_name == model_name or act_name.startswith(model_name + ":") or model_name.startswith(act_name + ":"):
+                    actual_digest = act_dig
+                    break
+        if actual_digest and actual_digest != expected_digest:
+            store.log_event(
+                batch_uid,
+                "MODEL_DRIFT",
+                f"{model_name}: {expected_digest} -> {actual_digest}"
+            )
+
+
 def run_checks(db_path: Path | None = None, ollama_client=None) -> list[CheckResult]:
     results = [check_python(), check_core_deps(), check_storage_writable(db_path)]
     results += check_ollama(ollama_client)
+    results.append(check_model_digests(ollama_client))
     results += [check_ieee_key(), check_notion(), check_streamlit()]
     return results
 
