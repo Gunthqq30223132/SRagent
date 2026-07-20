@@ -1,4 +1,3 @@
-# LaTeX math block: $E = mc^2$
 """Tests for D36 - Run Scoping."""
 
 import os
@@ -229,3 +228,54 @@ def test_abandoned_run_releases_exemption(tmp_path):
         purged = store.purge_expired(ttl_hours=24)
         assert "arxiv:2401.12345" in purged
         assert store.exists("arxiv:2401.12345") is False
+
+
+# --- Test đối kháng của PM (luật Oracle — pm-succession.md §3 bước 6) -----------------
+
+
+def test_legacy_null_run_events_not_excluded(tmp_path):
+    """Doc di sản (event KHÔNG có run_id) tuyệt đối không bị loại oan khỏi triage/purge
+    khi tồn tại run OPEN — nếu subquery xử NULL sai, toàn bộ hàng đợi duyệt biến mất."""
+    db_path = tmp_path / "test.db"
+    with StagingStore(db_path) as store:
+        store.conn.execute(
+            "INSERT INTO sr_runs (run_id, query, protocol_path, protocol_sha256, state, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            ("run_A", "q", "p", "s", "OPEN", "2026-07-20T00:00:00Z"),
+        )
+        legacy = Document(uid="arxiv:2401.00001", source="arxiv", source_id="arxiv:2401.00001",
+                          authority_tier=1, title="legacy", status=DocStatus.QUEUED)
+        store.upsert(legacy)
+        # event di sản: không run_id (env cũng phải sạch)
+        os.environ.pop("SR_RUN_ID", None)
+        store.log_event(legacy.uid, "FETCHED", "legacy triage doc")
+
+        queue = store.get_wip_queue()
+        assert len(queue) == 1
+        assert queue[0].uid == legacy.uid
+
+        past_time = (datetime.now(timezone.utc) - timedelta(hours=100)).isoformat()
+        store.conn.execute("UPDATE documents SET last_interaction_at = ?", (past_time,))
+        store.conn.commit()
+        purged = store.purge_expired(ttl_hours=24)
+        assert legacy.uid in purged  # di sản vẫn theo vòng đời TTL bình thường
+
+
+def test_closed_run_releases_exemption(tmp_path):
+    """CLOSED (không chỉ ABANDONED) cũng thả miễn trừ — run chốt xong thì doc
+    quay về vòng đời triage, không bất tử."""
+    db_path = tmp_path / "test.db"
+    with StagingStore(db_path) as store:
+        store.conn.execute(
+            "INSERT INTO sr_runs (run_id, query, protocol_path, protocol_sha256, state, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            ("run_C", "q", "p", "s", "CLOSED", "2026-07-20T00:00:00Z"),
+        )
+        doc = Document(uid="arxiv:2401.00002", source="arxiv", source_id="arxiv:2401.00002",
+                       authority_tier=1, title="closed-run doc", status=DocStatus.QUEUED)
+        store.upsert(doc)
+        store.log_event(doc.uid, "SCREEN_INCLUDED", run_id="run_C")
+
+        queue = store.get_wip_queue()
+        assert len(queue) == 1
+        assert queue[0].uid == doc.uid
