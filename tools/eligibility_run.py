@@ -19,7 +19,7 @@ sys.path.insert(0, str(ROOT))
 from sr_agent.config import OLLAMA_MODEL
 from sr_agent.models.schemas import DocStatus, Document
 from sr_agent.store.staging import StagingStore
-from sr_agent.errors import TransientError
+from sr_agent.errors import TransientError, ContextOverflowError
 import httpx
 
 from tools.protocol_build import ReviewProtocol
@@ -121,7 +121,7 @@ def invoke_eligibility_agent(
         if not is_valid:
             return "invalid", criterion_id, evidence_quote, confidence
         return verdict, criterion_id, evidence_quote, confidence
-    except (TransientError, httpx.HTTPError) as exc:
+    except (TransientError, httpx.HTTPError, ContextOverflowError) as exc:
         raise exc
     except Exception as exc:
         logger.error(f"LLM generation failed: {exc}")
@@ -173,21 +173,25 @@ def run_eligibility_batch(store: StagingStore, protocol: ReviewProtocol, criteri
             full_text_str = build_full_text_str(doc)
             system_prompt, user_prompt = build_eligibility_prompts(doc.title, full_text_str, protocol, criteria)
 
-            # Invoke agent
-            verdict, crit_id, quote, conf = invoke_eligibility_agent(client, system_prompt, user_prompt, full_text_str, criteria)
+            # Invoke agent and handle context overflow
+            try:
+                verdict, crit_id, quote, conf = invoke_eligibility_agent(client, system_prompt, user_prompt, full_text_str, criteria)
 
-            # Record screening verdict
-            store.add_screen_verdict(uid, "eligibility", client.model, verdict, crit_id, quote, conf)
+                # Record screening verdict
+                store.add_screen_verdict(uid, "eligibility", client.model, verdict, crit_id, quote, conf)
 
-            # Handle decisions
-            if verdict == "exclude":
-                store.set_status(uid, DocStatus.REJECTED)
-                store.log_event(uid, "ELIG_EXCLUDED", crit_id)
-            elif verdict == "include":
-                store.log_event(uid, "ELIG_INCLUDED", "LLM eligibility include")
-            else:
-                # invalid
-                store.log_event(uid, "ELIG_ESCALATED", f"verdict=invalid, criterion={crit_id or ''}")
+                # Handle decisions
+                if verdict == "exclude":
+                    store.set_status(uid, DocStatus.REJECTED)
+                    store.log_event(uid, "ELIG_EXCLUDED", crit_id)
+                elif verdict == "include":
+                    store.log_event(uid, "ELIG_INCLUDED", "LLM eligibility include")
+                else:
+                    # invalid
+                    store.log_event(uid, "ELIG_ESCALATED", f"verdict=invalid, criterion={crit_id or ''}")
+            except ContextOverflowError as exc:
+                store.log_event(uid, "LLM_CONTEXT_OVERFLOW", f"stage=eligibility token_estimate={exc.token_estimate}")
+                store.log_event(uid, "ELIG_ESCALATED", f"Context overflow error: {exc}")
 
             processed_count += 1
 

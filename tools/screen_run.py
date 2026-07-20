@@ -84,6 +84,7 @@ def flag_low_kappa(store, kappa, n_docs, include_rate_a, include_rate_b) -> bool
 def normalize_text(text: str) -> str:
     if not text:
         return ""
+    import unicodedata
     text = text.casefold()
     for char in "'‘’":
         text = text.replace(char, "'")
@@ -91,6 +92,8 @@ def normalize_text(text: str) -> str:
         text = text.replace(char, '"')
     for char in "–—":
         text = text.replace(char, "-")
+    text = unicodedata.normalize("NFKC", text)      # ligature ﬁ→fi, µ→μ, ¹→1
+    text = re.sub(r"(?<=\w)-\s+(?=\w)", "", text)   # nối từ bị ngắt-gạch cuối dòng PDF
     # Collapse multiple whitespaces
     text = re.sub(r"\s+", " ", text)
     return text.strip()

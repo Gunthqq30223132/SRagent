@@ -42,3 +42,12 @@ class SchemaValidationError(PermanentError):
 
 class UnsupportedFormat(PermanentError):
     """ID hoặc content-type không khớp quy tắc tĩnh nào."""
+
+
+class ContextOverflowError(PermanentError):
+    """Văn bản vượt quá giới hạn ngữ cảnh LLM."""
+
+    def __init__(self, message: str, token_estimate: int):
+        super().__init__(message)
+        self.token_estimate = token_estimate
+
