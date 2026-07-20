@@ -104,3 +104,21 @@ class OllamaClient:
             return [m.get("name", "") for m in response.json().get("models", [])]
         except (httpx.HTTPError, ValueError):
             return []
+
+    def get_model_digests(self) -> dict[str, str]:
+        """Trả về dict chứa mapping {tên_model: digest}."""
+        try:
+            response = self.client.get(f"{self.base_url}/api/tags", timeout=2)
+            if response.status_code != 200:
+                return {}
+            models = response.json().get("models", [])
+            result = {}
+            for m in models:
+                name = m.get("name", "")
+                digest = m.get("digest", "")
+                if digest.startswith("sha256:"):
+                    digest = digest[7:]
+                result[name] = digest
+            return result
+        except (httpx.HTTPError, ValueError, KeyError):
+            return {}

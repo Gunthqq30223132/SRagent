@@ -288,6 +288,9 @@ def run_rob_batch(store: StagingStore, protocol: Any, limit: int) -> int:
         logger.error("One or both Ollama models are unavailable. Cannot run RoB assessment.")
         return 0
 
+    from sr_agent.doctor import check_model_drift
+    check_model_drift(store, "rob:batch", client_a)
+
     # Read config from protocol dynamically
     overall_rule = getattr(protocol, "overall_rule", "rob2_standard")
     minors_threshold = getattr(protocol, "minors_threshold", None)

@@ -1,0 +1,143 @@
+{
+  "topic_vi": "Tối ưu hóa kết cục điều trị cho bệnh nhân với thuốc mê đường hô hấp: Bằng chứng và chiến lược ứng dụng",
+  "population": {
+    "concept": "adult patients undergoing general anesthesia",
+    "synonyms": [
+      "adult patients",
+      "general anesthesia",
+      "surgical patients",
+      "cardiac surgery",
+      "heart surgery",
+      "high-risk surgery",
+      "coronary artery bypass graft",
+      "CABG",
+      "valve surgery",
+      "non-cardiac surgery"
+    ],
+    "required": true
+  },
+  "intervention": {
+    "concept": "volatile inhaled anesthetics optimization",
+    "synonyms": [
+      "volatile anesthetic",
+      "inhaled anesthetic",
+      "sevoflurane",
+      "desflurane",
+      "isoflurane",
+      "MAC-guided",
+      "minimum alveolar concentration",
+      "organ protective conditioning",
+      "preconditioning",
+      "postconditioning",
+      "low-flow anesthesia",
+      "low flow"
+    ],
+    "required": true
+  },
+  "comparison": {
+    "concept": "total intravenous anesthesia or unoptimized protocols",
+    "synonyms": [
+      "total intravenous anesthesia",
+      "TIVA",
+      "propofol",
+      "standard volatile",
+      "unoptimized",
+      "normal flow"
+    ],
+    "required": false
+  },
+  "outcome": {
+    "concept": "treatment outcomes and organ protection",
+    "synonyms": [
+      "organ protection",
+      "myocardial protection",
+      "renal protection",
+      "cerebral protection",
+      "kidney injury",
+      "infarction",
+      "postoperative cognitive dysfunction",
+      "POCD",
+      "hemodynamic stability",
+      "recovery quality",
+      "postoperative nausea and vomiting",
+      "PONV",
+      "awareness",
+      "length of stay",
+      "ICU stay",
+      "mortality"
+    ],
+    "required": false
+  },
+  "year_range": [
+    2005,
+    2026
+  ],
+  "languages": [
+    "en"
+  ],
+  "study_types_excluded": [
+    "editorial",
+    "poster",
+    "thesis",
+    "letter",
+    "case report",
+    "animal study",
+    "in vitro",
+    "pediatric"
+  ],
+  "exclusion_criteria": [
+    "ET1",
+    "ET2",
+    "ET3",
+    "ET4",
+    "ET5",
+    "ET7",
+    "EF1",
+    "EF2",
+    "EF4"
+  ],
+  "rob_hints": {
+    "d1_randomization": [
+      "random",
+      "allocat",
+      "sequence",
+      "block",
+      "stratif"
+    ],
+    "d2_deviations": [
+      "blind",
+      "mask",
+      "double-blind",
+      "open-label",
+      "sham"
+    ],
+    "d3_missing_outcome": [
+      "intent",
+      "lost to follow",
+      "withdraw",
+      "dropout",
+      "missing"
+    ],
+    "d4_measurement": [
+      "observer",
+      "blinded assess",
+      "objective",
+      "subjective"
+    ],
+    "d5_selection": [
+      "pre-specif",
+      "protocol register",
+      "selective report",
+      "primary outcome"
+    ]
+  },
+  "consensus": {
+    "rob_weights": {
+      "Low": 1.0,
+      "Some concerns": 0.5,
+      "High": 0.25,
+      "VOID": 0.0,
+      "ESCALATED": 0.0
+    }
+  }
+}

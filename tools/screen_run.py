@@ -349,6 +349,7 @@ def _batch_rates(verdicts: list[str]) -> tuple[float | None, float | None, int]:
 
 def run_screening_batch(store: StagingStore, protocol: ReviewProtocol, criteria: dict, limit: int) -> dict:
     from sr_agent.parser.ollama_client import OllamaClient
+    from sr_agent.doctor import check_model_drift
     
     started_at = datetime.now(timezone.utc).isoformat()
     model_a = _screen_model_a()
@@ -360,6 +361,8 @@ def run_screening_batch(store: StagingStore, protocol: ReviewProtocol, criteria:
     if not client_a.is_available():
         logger.error("Ollama is not available. Cannot run multi-agent screening.")
         return {"processed": 0, "kappa": None}
+
+    check_model_drift(store, "screening:batch", client_a)
 
     available_models = client_a.list_models()
 

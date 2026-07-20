@@ -17,7 +17,7 @@ from typing import Literal
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, create_model
 
 from sr_agent.config import OLLAMA_MODEL
 from sr_agent.models.schemas import DocStatus, Document
@@ -38,11 +38,18 @@ class EvidencedField(BaseModel):
     section: str        # section id nơi quote nằm (title/abstract/context/method/...)
 
 
-class EvidencedExtraction(BaseModel):
-    has_code_repo: EvidencedField
-    dataset_spec: EvidencedField
-    baselines: EvidencedField
-    metrics: EvidencedField
+class LegacyField(BaseModel):
+    id: str
+    description_en: str
+    value_hint: str | None = None
+
+
+LEGACY_EXTRACTION_FIELDS = [
+    LegacyField(id="has_code_repo", description_en="Whether a code repository link is explicitly stated (True/False)."),
+    LegacyField(id="dataset_spec", description_en="The size/specification of dataset used verbatim, else null."),
+    LegacyField(id="baselines", description_en="Verbatim list of baseline model names compared against, else null."),
+    LegacyField(id="metrics", description_en="Verbatim list of evaluation metrics used, else null.")
+]
 
 
 # --- Helper functions ----------------------------------------------------------------
@@ -91,8 +98,9 @@ def pending_extraction_uids(store: StagingStore) -> list[str]:
     return [r["uid"] for r in rows]
 
 
-def run_extraction_batch(store: StagingStore, limit: int) -> int:
+def run_extraction_batch(store: StagingStore, limit: int, protocol = None) -> int:
     from sr_agent.parser.ollama_client import OllamaClient
+    from tools.protocol_build import ReviewProtocol
 
     client = OllamaClient()
     if not client.is_available():
@@ -104,45 +112,57 @@ def run_extraction_batch(store: StagingStore, limit: int) -> int:
     if not to_extract:
         print("No documents require evidence extraction.")
         return 0
-        
+
+    # Determine extraction fields
+    if protocol and getattr(protocol, "extraction_fields", None):
+        fields = protocol.extraction_fields
+    else:
+        fields = LEGACY_EXTRACTION_FIELDS
+
+    # Dynamic schema creation
+    EvidencedExtraction = create_model(
+        "EvidencedExtraction",
+        **{f.id: (EvidencedField, ...) for f in fields}
+    )
+
+    # Dynamic prompt building
+    fields_desc = []
+    for i, f in enumerate(fields, 1):
+        desc = f"{i}. {f.id}: {f.description_en}"
+        if getattr(f, "value_hint", None):
+            desc += f" (Hint: {f.value_hint})"
+        fields_desc.append(desc)
+    fields_str = "\n".join(fields_desc)
+
+    system_prompt = (
+        "You are an expert academic data extraction assistant. "
+        f"Extract the following fields from the scientific article's sections:\n{fields_str}\n\n"
+        "Instructions:\n"
+        "- For each field, you must provide the 'value', the 'section' name (e.g. 'abstract', 'context', 'method', 'findings', 'implications'), "
+        "and a verbatim 'quote' from that section supporting the value.\n"
+        "- The quote must be EXACTLY word-for-word from the text. If the value is false or null and no quote is possible, output empty string for quote and section.\n"
+        "- Output must strictly match the EvidencedExtraction JSON schema."
+    )
+
     processed_count = 0
     for uid in to_extract[:limit]:
         doc = store.get(uid)
         if not doc:
             continue
-            
+
         print(f"Extracting evidence: {uid} - {doc.title[:60]}")
-        
+
         full_text_str = build_full_text_str(doc)
-        
-        system_prompt = (
-            "You are an expert academic data extraction assistant. "
-            "Extract the following fields from the scientific article's sections:\n"
-            "1. has_code_repo: Whether a code repository link is explicitly stated (True/False).\n"
-            "2. dataset_spec: The size/specification of dataset used verbatim, else null.\n"
-            "3. baselines: Verbatim list of baseline model names compared against, else null.\n"
-            "4. metrics: Verbatim list of evaluation metrics used, else null.\n\n"
-            "Instructions:\n"
-            "- For each field, you must provide the 'value', the 'section' name (e.g. 'abstract', 'context', 'method', 'findings', 'implications'), "
-            "and a verbatim 'quote' from that section supporting the value.\n"
-            "- The quote must be EXACTLY word-for-word from the text. If the value is false or null and no quote is possible, output empty string for quote and section.\n"
-            "- Output must strictly match the EvidencedExtraction JSON schema."
-        )
-        
+
         try:
             extraction_data = client.generate_structured(
                 system_prompt=system_prompt,
                 user_prompt=full_text_str,
                 schema_model=EvidencedExtraction
             )
-            
+
             # Map fields to verify
-            fields_map = {
-                "has_code_repo": extraction_data.has_code_repo,
-                "dataset_spec": extraction_data.dataset_spec,
-                "baselines": extraction_data.baselines,
-                "metrics": extraction_data.metrics
-            }
+            fields_map = {f.id: getattr(extraction_data, f.id) for f in fields}
             
             for field, data in fields_map.items():
                 value = data.value
@@ -195,12 +215,21 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Evidence Extraction Runner")
     ap.add_argument("--limit", type=int, default=10, help="Giới hạn số lượng tài liệu xử lý")
     ap.add_argument("--db", type=Path, help="Override DB path (SQLite)")
+    ap.add_argument("--protocol", type=Path, help="Đường dẫn file JSON review protocol")
     
     args = ap.parse_args(argv)
     
+    protocol = None
+    if args.protocol:
+        if not args.protocol.exists():
+            print(f"Lỗi: Không tìm thấy file protocol tại {args.protocol}", file=sys.stderr)
+            return 1
+        from tools.protocol_build import ReviewProtocol
+        protocol = ReviewProtocol.model_validate_json(args.protocol.read_text(encoding="utf-8"))
+        
     store_path = args.db if args.db else None
     with StagingStore(store_path) if store_path else StagingStore() as store:
-        count = run_extraction_batch(store, args.limit)
+        count = run_extraction_batch(store, args.limit, protocol=protocol)
         print(f"Đã hoàn thành trích xuất minh chứng cho {count} tài liệu.")
         
     return 0

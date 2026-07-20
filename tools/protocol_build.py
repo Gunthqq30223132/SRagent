@@ -16,7 +16,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from sr_agent.store.staging import StagingStore
 from tools.topic_run import DEFAULT_PROFILE, build_fetchers, load_profile, run_direct
@@ -32,6 +32,12 @@ class PicoConcept(BaseModel):
     required: bool = True        # False = không vào query, chỉ dùng khi screening
 
 
+class ExtractionField(BaseModel):
+    id: str
+    description_en: str
+    value_hint: str | None = None
+
+
 class ReviewProtocol(BaseModel):
     topic_vi: str                        # ý định gốc — chỉ là nhãn/audit
     population: PicoConcept
@@ -42,6 +48,19 @@ class ReviewProtocol(BaseModel):
     languages: list[str] = Field(default_factory=lambda: ["en"])
     study_types_excluded: list[str] = Field(default_factory=lambda: ["editorial", "poster", "thesis"])
     exclusion_criteria: list[str]        # tập con của ET1..ET7, EF1..EF4
+    extraction_fields: list[ExtractionField] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_extraction_fields(self) -> ReviewProtocol:
+        seen_ids = set()
+        id_pattern = re.compile(r"^[a-z][a-z0-9_]{2,40}$")
+        for f in self.extraction_fields:
+            if not id_pattern.match(f.id):
+                raise ValueError(f"Invalid extraction field ID: '{f.id}' (must match {id_pattern.pattern})")
+            if f.id in seen_ids:
+                raise ValueError(f"Duplicate extraction field ID: '{f.id}'")
+            seen_ids.add(f.id)
+        return self
 
 
 # --- Helper functions ----------------------------------------------------------------

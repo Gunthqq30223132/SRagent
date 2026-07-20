@@ -8,4 +8,4 @@ staging/
 *.egg-info/
 ._*
 .DS_Store
-
+staging/backups/

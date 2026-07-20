@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Backup đêm: 03:00 sao lưu SQLite DB staging an toàn WAL.
+  Template file: {{REPO_DIR}} được thay thế khi cài đặt.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.sragent.backup</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>{{REPO_DIR}}/scripts/backup_staging.sh</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>{{REPO_DIR}}</string>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>3</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>{{REPO_DIR}}/staging/backup.log</string>
+    <key>StandardErrorPath</key>
+    <string>{{REPO_DIR}}/staging/backup.log</string>
+
+    <key>RunAtLoad</key>
+    <false/>
+</dict>
+</plist>
