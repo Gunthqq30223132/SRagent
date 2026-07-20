@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -22,6 +23,8 @@ from sr_agent.config import OLLAMA_MODEL
 from sr_agent.models.schemas import DocStatus, Document
 from sr_agent.store.staging import StagingStore
 from sr_agent.errors import ContextOverflowError
+from tools.eligibility_run import build_full_text_str
+from tools.guard.firewall import extract_anchors
 from tools.screen_run import verify_quote
 
 logger = logging.getLogger("tools.evidence_extract")
@@ -110,7 +113,6 @@ def run_extraction_batch(store: StagingStore, limit: int) -> int:
             
         print(f"Extracting evidence: {uid} - {doc.title[:60]}")
         
-        from tools.eligibility_run import build_full_text_str
         full_text_str = build_full_text_str(doc)
         
         system_prompt = (
@@ -155,8 +157,6 @@ def run_extraction_batch(store: StagingStore, limit: int) -> int:
                         
                         # Value-anchor consistency check
                         if any(c.isdigit() for c in value):
-                            import re
-                            from tools.guard.firewall import extract_anchors
                             val_anchors = extract_anchors(value)
                             q_anchors = extract_anchors(quote)
                             val_nums = {n for a in val_anchors for n in re.findall(r'\d+', a.raw)}

@@ -242,3 +242,32 @@ class TestEligibilityRunner:
         
         # Check abstract-only = 2
         assert "- **Abstract-only (no full-text retrieved)**: 2" in report
+
+
+class TestEligibilityContextOverflow:
+    """Đối kháng PM: executor chỉ test overflow ở extract — eligibility chưa có test."""
+
+    @respx.mock
+    def test_overflow_escalates_and_batch_continues(self, store, protocol, criteria, monkeypatch):
+        doc = make_doc("ieee", "77777777", "Title 7", 1)
+        doc.status = DocStatus.QUEUED
+        doc.full_text = "medical full text content " * 500
+        store.upsert(doc)
+        store.log_event("ieee:77777777", "SCREEN_INCLUDED")
+
+        monkeypatch.setenv("SR_NUM_CTX", "50")
+        respx.get(f"{OLLAMA}/api/tags").mock(return_value=httpx.Response(200, json={}))
+
+        count = run_eligibility_batch(store, protocol, criteria, limit=2)
+        assert count == 1
+
+        events = {
+            e["event_type"]: e["detail"]
+            for e in store.conn.execute(
+                "SELECT event_type, detail FROM events WHERE uid = 'ieee:77777777'"
+            ).fetchall()
+        }
+        assert "LLM_CONTEXT_OVERFLOW" in events
+        assert "stage=eligibility" in events["LLM_CONTEXT_OVERFLOW"]
+        assert "token_estimate=" in events["LLM_CONTEXT_OVERFLOW"]
+        assert "ELIG_ESCALATED" in events

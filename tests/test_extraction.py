@@ -267,3 +267,32 @@ class TestExtractionMedReady:
         assert events[0]["detail"] == "has_code_repo"
         assert "500 mg" not in events[0]["detail"]
         assert "50 mg" not in events[0]["detail"]
+
+    def test_num_ctx_env_override_honored(self, monkeypatch):
+        """Đối kháng PM: đường env SR_NUM_CTX phải có tác dụng thật — executor chỉ
+        test tham số num_ctx tường minh, chưa test đường env mà vận hành thật sẽ dùng."""
+        from sr_agent.parser.ollama_client import OllamaClient
+        from sr_agent.errors import ContextOverflowError
+
+        monkeypatch.setenv("SR_NUM_CTX", "5")
+        client = OllamaClient()
+        with pytest.raises(ContextOverflowError):
+            client.generate_structured(
+                system_prompt="This is a system prompt",
+                user_prompt="This is a user prompt",
+                schema_model=Document,
+            )
+
+    def test_num_ctx_env_invalid_falls_back(self, monkeypatch):
+        """SR_NUM_CTX rác ⇒ quay về mặc định 16384, không crash."""
+        from sr_agent.parser.ollama_client import OllamaClient
+        from sr_agent.errors import ContextOverflowError
+
+        monkeypatch.setenv("SR_NUM_CTX", "not-a-number")
+        client = OllamaClient()
+        with pytest.raises(ContextOverflowError):
+            client.generate_structured(
+                system_prompt="x" * 60000,
+                user_prompt="y" * 60000,
+                schema_model=Document,
+            )

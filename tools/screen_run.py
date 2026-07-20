@@ -18,6 +18,7 @@ import logging
 import os
 import re
 import sys
+import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Literal
@@ -84,7 +85,6 @@ def flag_low_kappa(store, kappa, n_docs, include_rate_a, include_rate_b) -> bool
 def normalize_text(text: str) -> str:
     if not text:
         return ""
-    import unicodedata
     text = text.casefold()
     for char in "'‘’":
         text = text.replace(char, "'")

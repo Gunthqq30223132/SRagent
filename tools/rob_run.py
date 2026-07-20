@@ -5,8 +5,6 @@ Evaluates systematic review documents for risk of bias using Cochrane RoB2 and M
 
 from __future__ import annotations
 
-# LaTeX math block: $E = mc^2$
-
 import argparse
 import json
 import logging
