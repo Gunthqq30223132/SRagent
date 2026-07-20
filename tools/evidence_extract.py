@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -21,6 +22,9 @@ from pydantic import BaseModel, Field
 from sr_agent.config import OLLAMA_MODEL
 from sr_agent.models.schemas import DocStatus, Document
 from sr_agent.store.staging import StagingStore
+from sr_agent.errors import ContextOverflowError
+from tools.eligibility_run import build_full_text_str
+from tools.guard.firewall import extract_anchors
 from tools.screen_run import verify_quote
 
 logger = logging.getLogger("tools.evidence_extract")
@@ -45,6 +49,8 @@ class EvidencedExtraction(BaseModel):
 
 def get_section_text(doc: Document, section_name: str) -> str:
     s_name = section_name.strip().lower()
+    if s_name == "full_text":
+        return doc.full_text or ""
     if s_name == "title":
         return doc.title or ""
     if s_name == "abstract":
@@ -107,15 +113,7 @@ def run_extraction_batch(store: StagingStore, limit: int) -> int:
             
         print(f"Extracting evidence: {uid} - {doc.title[:60]}")
         
-        # Compile full text or all sections
-        full_text_context = []
-        if doc.abstract:
-            full_text_context.append(f"Section: abstract\n{doc.abstract}")
-        for role, sec in doc.canonical_sections.items():
-            if sec:
-                full_text_context.append(f"Section: {role.value}\n{sec.content}")
-                
-        full_text_str = "\n\n".join(full_text_context)
+        full_text_str = build_full_text_str(doc)
         
         system_prompt = (
             "You are an expert academic data extraction assistant. "
@@ -156,6 +154,21 @@ def run_extraction_batch(store: StagingStore, limit: int) -> int:
                     section_text = get_section_text(doc, section)
                     if verify_quote(section_text, quote):
                         verified = 1
+                        
+                        # Value-anchor consistency check
+                        if any(c.isdigit() for c in value):
+                            val_anchors = extract_anchors(value)
+                            q_anchors = extract_anchors(quote)
+                            val_nums = {n for a in val_anchors for n in re.findall(r'\d+', a.raw)}
+                            q_nums = {n for a in q_anchors for n in re.findall(r'\d+', a.raw)}
+                            if not val_nums:
+                                val_nums = set(re.findall(r'\d+', value))
+                            if not q_nums:
+                                q_nums = set(re.findall(r'\d+', quote))
+                            if not val_nums.issubset(q_nums):
+                                verified = 0
+                                logger.warning(f"Value mismatch for {uid} field {field}. Numbers in value not in quote.")
+                                store.log_event(uid, "EXTRACT_VALUE_MISMATCH", field)
                     else:
                         logger.warning(f"Verification failed for {uid} field {field}. Quote not in section {section}.")
                         store.log_event(uid, "EXTRACT_UNVERIFIED", field)
@@ -167,6 +180,9 @@ def run_extraction_batch(store: StagingStore, limit: int) -> int:
                         
                 store.add_extraction(uid, field, value, quote, section, verified)
                 
+            processed_count += 1
+        except ContextOverflowError as exc:
+            store.log_event(uid, "LLM_CONTEXT_OVERFLOW", f"stage=extract token_estimate={exc.token_estimate}")
             processed_count += 1
         except Exception as exc:
             logger.error(f"Error during extraction for {uid}: {exc}")

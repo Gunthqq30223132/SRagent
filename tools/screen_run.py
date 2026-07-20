@@ -18,6 +18,7 @@ import logging
 import os
 import re
 import sys
+import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Literal
@@ -91,6 +92,8 @@ def normalize_text(text: str) -> str:
         text = text.replace(char, '"')
     for char in "–—":
         text = text.replace(char, "-")
+    text = unicodedata.normalize("NFKC", text)      # ligature ﬁ→fi, µ→μ, ¹→1
+    text = re.sub(r"(?<=\w)-\s+(?=\w)", "", text)   # nối từ bị ngắt-gạch cuối dòng PDF
     # Collapse multiple whitespaces
     text = re.sub(r"\s+", " ", text)
     return text.strip()

@@ -23,7 +23,7 @@ sys.path.insert(0, str(ROOT))
 from sr_agent.config import OLLAMA_MODEL
 from sr_agent.models.schemas import DocStatus, Document
 from sr_agent.store.staging import StagingStore
-from sr_agent.errors import TransientError, SchemaValidationError
+from sr_agent.errors import TransientError, SchemaValidationError, ContextOverflowError
 from sr_agent.parser.ollama_client import OllamaClient
 from tools.screen_run import verify_quote
 from tools.eligibility_run import has_full_text, build_full_text_str
@@ -501,6 +501,10 @@ def run_rob_batch(store: StagingStore, protocol: Any, limit: int) -> int:
 
             processed_count += 1
 
+        except ContextOverflowError as exc:
+            store.log_event(uid, "LLM_CONTEXT_OVERFLOW", f"stage=rob token_estimate={exc.token_estimate}")
+            store.log_event(uid, "ROB_ESCALATED", f"Context overflow error: {exc}")
+            processed_count += 1
         except (TransientError, httpx.HTTPError) as exc:
             logger.error(f"Transient error during RoB assessment for {uid}: {exc}")
             break

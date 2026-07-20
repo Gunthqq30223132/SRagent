@@ -71,6 +71,24 @@ class TestVerifier:
         quote = "Fine-Tuning"
         assert verify_quote(source, quote) is False
 
+    def test_normalize_text_pdf_medical(self):
+        # ligature ﬁ→fi, µ→μ, ¹→1
+        source = "efﬁcacy of anes-\nthesia"
+        quote = "efficacy of anesthesia"
+        assert verify_quote(source, quote) is True
+
+        source2 = "0.5 µg/kg"
+        quote2 = "0.5 μg/kg"  # two different codepoints (micro µ vs mu μ)
+        assert verify_quote(source2, quote2) is True
+
+        # State-of-the-art must NOT be broken
+        source3 = "state-of-the-art technology"
+        quote3 = "state-of-the-art"
+        assert verify_quote(source3, quote3) is True
+
+        # Real quote mismatch must still fail
+        assert verify_quote(source, "efficacy of surgery") is False
+
 
 class TestScreeningA:
     @respx.mock
