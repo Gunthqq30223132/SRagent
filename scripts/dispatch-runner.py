@@ -24,7 +24,7 @@ def get_git_repo_root() -> str:
     return proc.stdout.strip()
 
 
-def get_committed_capsule_sha256(repo_root: str, task_id: str, envelope_path: str) -> str:
+def get_committed_envelope_data(repo_root: str, task_id: str, envelope_path: str) -> tuple[bytes, str]:
     # Resolve envelope path relative to repo root
     abs_envelope = os.path.abspath(envelope_path)
     rel_envelope = os.path.relpath(abs_envelope, repo_root)
@@ -35,7 +35,25 @@ def get_committed_capsule_sha256(repo_root: str, task_id: str, envelope_path: st
         sys.stderr.write(f"Error: Dispatch envelope '{rel_envelope}' is not committed at HEAD.\n")
         sys.exit(1)
 
-    return hashlib.sha256(proc.stdout).hexdigest()[:12]
+    return proc.stdout, hashlib.sha256(proc.stdout).hexdigest()[:12]
+
+
+def normalize_model_name(raw_model: str) -> str:
+    model = raw_model
+    if model.startswith("kiro/"):
+        model = "kr/" + model[len("kiro/"):]
+    if model.endswith("-thinking"):
+        model = model[:-len("-thinking")]
+    return model
+
+
+def extract_code_block(text: str) -> str:
+    import re
+    pattern = r"```(?:python)?\s*\n?(.*?)```"
+    match = re.search(pattern, text, re.DOTALL)
+    if match:
+        return match.group(1)
+    return text
 
 
 def get_9router_api_key() -> str:
@@ -72,7 +90,7 @@ def main():
     envelope_path = args.envelope if args.envelope else f".agents/dispatch/{task_id}.md"
 
     repo_root = get_git_repo_root()
-    capsule_sha256 = get_committed_capsule_sha256(repo_root, task_id, envelope_path)
+    envelope_bytes, capsule_sha256 = get_committed_envelope_data(repo_root, task_id, envelope_path)
     api_key = get_9router_api_key()
 
     if not os.path.exists(envelope_path):
@@ -82,7 +100,14 @@ def main():
     with open(envelope_path, "r", encoding="utf-8") as f:
         envelope_content = f.read()
 
-    model_requested = "kr/claude-sonnet-4.5"
+    envelope_text = envelope_bytes.decode("utf-8", errors="replace")
+    target_model_raw = "kiro/claude-sonnet-4.5-thinking"
+    for line in envelope_text.splitlines():
+        if line.strip().startswith("TARGET:"):
+            target_model_raw = line.split("TARGET:", 1)[1].strip()
+            break
+
+    model_requested = normalize_model_name(target_model_raw)
     url = "http://localhost:20128/v1/chat/completions"
     payload = {
         "model": model_requested,
@@ -150,6 +175,20 @@ def main():
     if not model_returned:
         model_returned = model_requested
 
+    completion_text = "".join(completion_text_parts)
+    completion_sha256 = ""
+    if completion_text:
+        extracted_code = extract_code_block(completion_text)
+        target_file_path = os.path.join(
+            os.path.dirname(repo_root), "attempts", task_id, "tests", "test_new_attempt_adversarial.py"
+        )
+        os.makedirs(os.path.dirname(target_file_path), exist_ok=True)
+        with open(target_file_path, "w", encoding="utf-8") as f:
+            f.write(extracted_code)
+        with open(target_file_path, "rb") as f:
+            written_bytes = f.read()
+        completion_sha256 = hashlib.sha256(written_bytes).hexdigest()[:12]
+
     # Ensure trace directory exists
     trace_dir = os.path.join(repo_root, ".agents", "traces", task_id)
     os.makedirs(trace_dir, exist_ok=True)
@@ -160,7 +199,9 @@ def main():
         "timestamp": utc_now,
         "task_id": task_id,
         "capsule_sha256": capsule_sha256,
+        "completion_sha256": completion_sha256,
         "model_requested": model_requested,
+        "target_model_raw": target_model_raw,
         "model_returned": model_returned,
         "prompt_tokens": prompt_tokens,
         "completion_tokens": completion_tokens,
@@ -172,7 +213,6 @@ def main():
     with open(dispatch_jsonl_path, "a", encoding="utf-8") as f:
         f.write(json.dumps(record) + "\n")
 
-    completion_text = "".join(completion_text_parts)
     sys.stdout.write(completion_text + ("\n" if not completion_text.endswith("\n") else ""))
 
     if status_code != 200:

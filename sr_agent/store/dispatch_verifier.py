@@ -6,6 +6,37 @@ import os
 import subprocess
 
 
+def normalize_model_name(raw_model: str) -> str:
+    model = raw_model
+    if model.startswith("kiro/"):
+        model = "kr/" + model[len("kiro/"):]
+    if model.endswith("-thinking"):
+        model = model[:-len("-thinking")]
+    return model
+
+
+def get_target_file_content(task_id: str, repo_root: str) -> bytes | None:
+    candidate_paths = [
+        os.path.join(repo_root, "..", "attempts", task_id, "tests", "test_new_attempt_adversarial.py"),
+        os.path.join(repo_root, "attempts", task_id, "tests", "test_new_attempt_adversarial.py"),
+        os.path.join(repo_root, "tests", "test_new_attempt_adversarial.py"),
+    ]
+    for path in candidate_paths:
+        if os.path.exists(path):
+            try:
+                with open(path, "rb") as f:
+                    return f.read()
+            except Exception:
+                pass
+
+    for git_ref in [f"attempt/{task_id}:tests/test_new_attempt_adversarial.py", "HEAD:tests/test_new_attempt_adversarial.py"]:
+        proc = subprocess.run(["git", "show", git_ref], capture_output=True, cwd=repo_root)
+        if proc.returncode == 0 and proc.stdout:
+            return proc.stdout
+
+    return None
+
+
 def verify_dispatch_receipt(task_id: str, repo_root: str = ".") -> tuple[bool, str]:
     """Verify dispatch receipt in .agents/traces/<task-id>/dispatch.jsonl against committed envelope."""
     trace_path = os.path.join(repo_root, ".agents", "traces", task_id, "dispatch.jsonl")
@@ -38,7 +69,19 @@ def verify_dispatch_receipt(task_id: str, repo_root: str = ".") -> tuple[bool, s
     if proc.returncode != 0:
         return (False, f"FAIL: dispatch envelope not committed at {git_spec}")
 
-    expected_sha = hashlib.sha256(proc.stdout).hexdigest()[:12]
+    envelope_raw = proc.stdout
+    expected_sha = hashlib.sha256(envelope_raw).hexdigest()[:12]
+    envelope_text = envelope_raw.decode("utf-8", errors="replace")
+
+    target_from_envelope = ""
+    for line in envelope_text.splitlines():
+        if line.strip().startswith("TARGET:"):
+            target_from_envelope = line.split("TARGET:", 1)[1].strip()
+            break
+    normalized_target = normalize_model_name(target_from_envelope) if target_from_envelope else ""
+
+    target_content_bytes = get_target_file_content(task_id, repo_root)
+    file_sha256 = hashlib.sha256(target_content_bytes).hexdigest()[:12] if target_content_bytes is not None else None
 
     total_tokens = 0
     for record in parsed_records:
@@ -48,6 +91,36 @@ def verify_dispatch_receipt(task_id: str, repo_root: str = ".") -> tuple[bool, s
                 False,
                 f"FAIL: capsule SHA mismatch (expected {expected_sha}, got {capsule_sha})",
             )
+
+        # 1. Verify completion_sha256
+        rec_completion_sha = record.get("completion_sha256")
+        if not rec_completion_sha or file_sha256 != rec_completion_sha:
+            return (
+                False,
+                f"FAIL: completion_sha256 mismatch (expected {file_sha256}, got {rec_completion_sha})",
+            )
+
+        # 2. Verify Model Pin
+        if target_from_envelope:
+            raw_match = record.get("target_model_raw") == target_from_envelope
+            req_match = record.get("model_requested") == normalized_target
+            if not (raw_match or req_match):
+                return (
+                    False,
+                    f"FAIL: target model pin mismatch (envelope target '{target_from_envelope}', record raw '{record.get('target_model_raw')}', record req '{record.get('model_requested')}')",
+                )
+
+        model_returned = record.get("model_returned")
+        if not model_returned:
+            return (False, "FAIL: model_returned is empty")
+
+        if normalized_target:
+            base_target = normalized_target.split("/")[-1]
+            if base_target not in model_returned:
+                import sys
+                sys.stderr.write(
+                    f"Warning: model_returned '{model_returned}' diverges from base model '{base_target}'\n"
+                )
 
         prompt_tokens = record.get("prompt_tokens", 0)
         if not isinstance(prompt_tokens, (int, float)) or prompt_tokens <= 0:
