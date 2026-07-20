@@ -1,247 +1,332 @@
+# tests/test_new_attempt_adversarial.py
 """
 Adversarial test suite for scripts/new-attempt.sh
-
-Tests edge cases and security boundaries without modifying the script itself.
-Each test uses an isolated temporary git repository.
+Tests edge cases, injection attempts, and contract violations.
 """
-
 import hashlib
 import os
+import re
 import subprocess
-import sys
 from pathlib import Path
 
 import pytest
 
 
-def run_script(repo_path: Path, task_id: str) -> subprocess.CompletedProcess:
-    """Execute new-attempt.sh in the given repository context."""
-    script_path = Path(__file__).parent.parent / "scripts" / "new-attempt.sh"
-    result = subprocess.run(
-        ["bash", str(script_path), task_id],
-        cwd=repo_path,
-        capture_output=True,
-        text=True,
-    )
-    return result
-
-
-def setup_repo_with_capsule(tmp_path: Path, task_id: str, content: str) -> Path:
-    """Create a git repo with a committed dispatch capsule."""
-    repo = tmp_path / "repo"
-    repo.mkdir()
+@pytest.fixture
+def temp_repo(tmp_path):
+    """Create a temporary git repository with a valid dispatch envelope."""
+    repo_dir = tmp_path / "repo"
+    repo_dir.mkdir()
     
     # Initialize git repo
-    subprocess.run(["git", "init"], cwd=repo, check=True, capture_output=True)
+    subprocess.run(["git", "init"], cwd=repo_dir, check=True, capture_output=True)
     subprocess.run(
         ["git", "config", "user.email", "noreply@localhost"],
-        cwd=repo,
+        cwd=repo_dir,
         check=True,
         capture_output=True,
     )
     subprocess.run(
         ["git", "config", "user.name", "Test User"],
-        cwd=repo,
+        cwd=repo_dir,
         check=True,
         capture_output=True,
     )
     
-    # Create dispatch capsule
-    capsule_dir = repo / ".agents" / "dispatch"
-    capsule_dir.mkdir(parents=True)
-    capsule_file = capsule_dir / f"{task_id}.md"
-    capsule_file.write_text(content)
+    # Create dispatch directory structure
+    dispatch_dir = repo_dir / ".agents" / "dispatch"
+    dispatch_dir.mkdir(parents=True)
     
-    # Commit the capsule
-    subprocess.run(["git", "add", "."], cwd=repo, check=True, capture_output=True)
+    return repo_dir
+
+
+def create_envelope(repo_dir, task_id, content="# Test Capsule\nTest content"):
+    """Create and commit a dispatch envelope for the given task_id."""
+    envelope_path = repo_dir / ".agents" / "dispatch" / f"{task_id}.md"
+    envelope_path.write_text(content)
+    
+    subprocess.run(["git", "add", "."], cwd=repo_dir, check=True, capture_output=True)
     subprocess.run(
-        ["git", "commit", "-m", "Add capsule"],
-        cwd=repo,
+        ["git", "commit", "-m", f"Add {task_id} envelope"],
+        cwd=repo_dir,
         check=True,
         capture_output=True,
     )
+
+
+def get_script_path():
+    """Get the absolute path to new-attempt.sh script."""
+    # Script is at scripts/new-attempt.sh relative to repo root
+    current_file = Path(__file__).resolve()
+    repo_root = current_file.parent.parent
+    return repo_root / "scripts" / "new-attempt.sh"
+
+
+def test_dotdot_path_traversal(temp_repo):
+    """Test that task-id '..' does not create directories outside attempts/."""
+    task_id = ".."
+    create_envelope(temp_repo, task_id)
     
-    return repo
-
-
-def get_committed_capsule_sha256(repo: Path, task_id: str) -> str:
-    """Calculate SHA-256 of the committed capsule file."""
+    # Capture parent directory contents before
+    parent_dir = temp_repo.parent
+    before_contents = set(parent_dir.iterdir())
+    
+    script = get_script_path()
     result = subprocess.run(
-        ["git", "show", f"HEAD:.agents/dispatch/{task_id}.md"],
-        cwd=repo,
-        capture_output=True,
-        check=True,
-    )
-    return hashlib.sha256(result.stdout).hexdigest()[:12]
-
-
-def test_dotdot_path_traversal_no_side_effects(tmp_path):
-    """
-    Test case 1: task-id '..' should not create directories outside attempts/
-    """
-    repo = setup_repo_with_capsule(tmp_path, "..", "# Test capsule\n")
-    parent_before = set(tmp_path.iterdir())
-    
-    result = run_script(repo, "..")
-    
-    assert result.returncode != 0, "Script should reject '..' task-id"
-    
-    # Verify no new directories created in parent
-    parent_after = set(tmp_path.iterdir())
-    new_items = parent_after - parent_before
-    
-    # Only 'attempts' dir is allowed if created
-    attempts_dir = tmp_path / "attempts"
-    if attempts_dir in new_items:
-        # If attempts exists, verify it's empty or doesn't contain dangerous paths
-        if attempts_dir.exists():
-            attempts_contents = list(attempts_dir.iterdir())
-            assert len(attempts_contents) == 0 or all(
-                item.name != ".."
-                for item in attempts_contents
-            ), "No '..' worktree should be created"
-    else:
-        # Ideally nothing should be created
-        assert len(new_items) == 0, f"Unexpected items created: {new_items}"
-
-
-def test_dot_current_directory_rejection(tmp_path):
-    """
-    Test case 2: task-id '.' should fail without side effects
-    """
-    repo = setup_repo_with_capsule(tmp_path, ".", "# Test capsule\n")
-    
-    result = run_script(repo, ".")
-    
-    assert result.returncode != 0, "Script should reject '.' task-id"
-    
-    # Verify no worktree created
-    attempts_dir = tmp_path / "attempts"
-    if attempts_dir.exists():
-        contents = list(attempts_dir.iterdir())
-        assert len(contents) == 0, "No worktree should be created for '.'"
-
-
-def test_whitespace_in_task_id(tmp_path):
-    """
-    Test case 3: task-id with whitespace should exit 1 with error message
-    """
-    task_id = "a b"
-    repo = setup_repo_with_capsule(tmp_path, task_id, "# Test capsule\n")
-    
-    result = run_script(repo, task_id)
-    
-    assert result.returncode == 1, "Should exit 1 for invalid characters"
-    assert "invalid" in result.stderr.lower() or "character" in result.stderr.lower(), \
-        "stderr should mention invalid characters"
-
-
-def test_leading_dash_no_option_injection(tmp_path):
-    """
-    Test case 4: task-id starting with '-' should not cause option injection
-    Should either succeed creating attempt/-foo or fail cleanly (exit != 0)
-    """
-    task_id = "-foo"
-    content = "# Test capsule for -foo\n"
-    repo = setup_repo_with_capsule(tmp_path, task_id, content)
-    
-    result = run_script(repo, task_id)
-    
-    # Accept either success or clean failure, but no crashes/tracebacks
-    if result.returncode == 0:
-        # If successful, verify worktree was created correctly
-        attempts_dir = tmp_path / "attempts"
-        worktree_path = attempts_dir / task_id
-        assert worktree_path.exists(), f"Worktree should exist at {worktree_path}"
-        
-        # Verify branch exists
-        branch_check = subprocess.run(
-            ["git", "branch", "--list", f"attempt/{task_id}"],
-            cwd=repo,
-            capture_output=True,
-            text=True,
-        )
-        assert f"attempt/{task_id}" in branch_check.stdout, "Branch should exist"
-    else:
-        # If failed, should be clean exit without crash
-        assert result.returncode in [1, 2], \
-            f"Should exit cleanly with 1 or 2, got {result.returncode}"
-        # Should not contain bash errors or tracebacks
-        combined_output = result.stdout + result.stderr
-        assert "line" not in combined_output.lower() or "error" in combined_output.lower(), \
-            "Should not have bash line errors"
-
-
-def test_dirty_working_tree_uses_committed_version(tmp_path):
-    """
-    Test case 5: Modified capsule in working tree should not affect SHA output
-    Output SHA must match the committed version, not the working tree version
-    """
-    task_id = "test-dirty"
-    committed_content = "# Original committed content\n"
-    modified_content = "# Modified working tree content\n"
-    
-    repo = setup_repo_with_capsule(tmp_path, task_id, committed_content)
-    
-    # Calculate expected SHA from committed version
-    expected_sha = get_committed_capsule_sha256(repo, task_id)
-    
-    # Modify the capsule in working tree (make it dirty)
-    capsule_file = repo / ".agents" / "dispatch" / f"{task_id}.md"
-    capsule_file.write_text(modified_content)
-    
-    # Verify working tree is dirty
-    status = subprocess.run(
-        ["git", "status", "--porcelain"],
-        cwd=repo,
+        [str(script), task_id],
+        cwd=temp_repo,
         capture_output=True,
         text=True,
     )
-    assert status.stdout.strip() != "", "Working tree should be dirty"
     
-    # Run script
-    result = run_script(repo, task_id)
+    # Should fail
+    assert result.returncode != 0, "Script should reject '..' as task-id"
     
-    assert result.returncode == 0, f"Script should succeed: {result.stderr}"
+    # Parent directory should be unchanged (only attempts/ subdirectory allowed)
+    after_contents = set(parent_dir.iterdir())
+    new_items = after_contents - before_contents
+    
+    # Filter out only the 'attempts' directory if it was created
+    unexpected_items = [
+        item for item in new_items 
+        if item.name != "attempts"
+    ]
+    
+    assert len(unexpected_items) == 0, (
+        f"Unexpected items created in parent directory: {unexpected_items}"
+    )
+    
+    # Ensure no worktree at attempts/..
+    attempts_dir = parent_dir / "attempts"
+    if attempts_dir.exists():
+        assert not (attempts_dir / "..").is_dir() or (attempts_dir / "..").resolve() == parent_dir
+
+
+def test_dot_path_traversal(temp_repo):
+    """Test that task-id '.' is rejected with no side effects."""
+    task_id = "."
+    create_envelope(temp_repo, task_id)
+    
+    parent_dir = temp_repo.parent
+    before_contents = set(parent_dir.iterdir())
+    
+    script = get_script_path()
+    result = subprocess.run(
+        [str(script), task_id],
+        cwd=temp_repo,
+        capture_output=True,
+        text=True,
+    )
+    
+    # Should fail
+    assert result.returncode != 0, "Script should reject '.' as task-id"
+    
+    # No side effects
+    after_contents = set(parent_dir.iterdir())
+    new_items = after_contents - before_contents
+    
+    # Only 'attempts' directory is allowed
+    unexpected_items = [
+        item for item in new_items 
+        if item.name != "attempts"
+    ]
+    
+    assert len(unexpected_items) == 0, (
+        f"Unexpected side effects: {unexpected_items}"
+    )
+
+
+def test_whitespace_in_task_id(temp_repo):
+    """Test that task-id with whitespace is rejected with proper error message."""
+    task_id = "a b"
+    # Don't create envelope since it should fail validation first
+    
+    script = get_script_path()
+    result = subprocess.run(
+        [str(script), task_id],
+        cwd=temp_repo,
+        capture_output=True,
+        text=True,
+    )
+    
+    # Should exit with code 1
+    assert result.returncode == 1, f"Expected exit code 1, got {result.returncode}"
+    
+    # Stderr should mention invalid characters
+    stderr_lower = result.stderr.lower()
+    assert "invalid" in stderr_lower or "character" in stderr_lower, (
+        f"Expected error message about invalid characters, got: {result.stderr}"
+    )
+
+
+def test_leading_dash_no_injection(temp_repo):
+    """Test that task-id starting with '-' doesn't cause option injection."""
+    task_id = "-foo"
+    create_envelope(temp_repo, task_id)
+    
+    script = get_script_path()
+    result = subprocess.run(
+        [str(script), task_id],
+        cwd=temp_repo,
+        capture_output=True,
+        text=True,
+    )
+    
+    # Should either succeed cleanly or fail cleanly - no traceback/crash
+    if result.returncode == 0:
+        # If it succeeds, verify the branch was created correctly
+        branch_name = f"attempt/{task_id}"
+        branch_check = subprocess.run(
+            ["git", "branch", "--list", branch_name],
+            cwd=temp_repo,
+            capture_output=True,
+            text=True,
+        )
+        assert branch_name in branch_check.stdout, (
+            f"Expected branch {branch_name} to be created"
+        )
+        
+        # Verify worktree exists at correct location
+        attempts_dir = temp_repo.parent / "attempts"
+        worktree_path = attempts_dir / task_id
+        assert worktree_path.exists(), f"Expected worktree at {worktree_path}"
+    else:
+        # If it fails, should be a clean failure (exit code 1 or 2)
+        assert result.returncode in [1, 2], (
+            f"Expected clean exit code 1 or 2, got {result.returncode}"
+        )
+        
+        # No Python traceback or bash errors in output
+        combined_output = result.stdout + result.stderr
+        assert "Traceback" not in combined_output, (
+            "Should not have Python traceback"
+        )
+        assert "line " not in combined_output.lower() or "error" not in combined_output.lower(), (
+            "Should not have bash line errors"
+        )
+
+
+def test_dirty_working_tree_uses_committed_version(temp_repo):
+    """Test that SHA-256 is computed from committed version, not working tree."""
+    task_id = "test-dirty"
+    committed_content = "# Committed Content\nThis is committed"
+    create_envelope(temp_repo, task_id, committed_content)
+    
+    # Now modify the envelope in working tree (dirty)
+    envelope_path = temp_repo / ".agents" / "dispatch" / f"{task_id}.md"
+    dirty_content = "# Dirty Content\nThis is NOT committed"
+    envelope_path.write_text(dirty_content)
+    
+    # Compute expected SHA-256 from committed version
+    git_show_result = subprocess.run(
+        ["git", "show", f"HEAD:.agents/dispatch/{task_id}.md"],
+        cwd=temp_repo,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    committed_bytes = git_show_result.stdout.encode('utf-8')
+    expected_sha = hashlib.sha256(committed_bytes).hexdigest()[:12]
+    
+    # Run the script
+    script = get_script_path()
+    result = subprocess.run(
+        [str(script), task_id],
+        cwd=temp_repo,
+        capture_output=True,
+        text=True,
+    )
+    
+    assert result.returncode == 0, f"Script failed: {result.stderr}"
     
     # Extract SHA from output
-    output_lines = result.stdout.strip().split("\n")
-    sha_line = [line for line in output_lines if "Capsule-SHA256:" in line]
-    assert len(sha_line) == 1, "Should have exactly one Capsule-SHA256 line"
+    match = re.search(r"Capsule-SHA256:\s*([0-9a-f]+)", result.stdout)
+    assert match, f"Could not find Capsule-SHA256 in output: {result.stdout}"
     
-    output_sha = sha_line[0].split(":")[-1].strip()
-    
-    assert output_sha == expected_sha, \
-        f"SHA should match committed version: expected {expected_sha}, got {output_sha}"
+    actual_sha = match.group(1)
+    assert actual_sha == expected_sha, (
+        f"SHA mismatch: expected {expected_sha} (from committed version), "
+        f"got {actual_sha}"
+    )
 
 
-def test_sha_output_format(tmp_path):
-    """
-    Test case 6: Capsule-SHA256 output format validation
-    Should contain exactly 12 lowercase hex characters
-    """
+def test_output_format_validation(temp_repo):
+    """Test that Capsule-SHA256 output has exactly 12 lowercase hex characters."""
     task_id = "format-test"
-    content = "# Test capsule for format validation\n"
-    repo = setup_repo_with_capsule(tmp_path, task_id, content)
+    create_envelope(temp_repo, task_id)
     
-    result = run_script(repo, task_id)
+    script = get_script_path()
+    result = subprocess.run(
+        [str(script), task_id],
+        cwd=temp_repo,
+        capture_output=True,
+        text=True,
+    )
     
-    assert result.returncode == 0, f"Script should succeed: {result.stderr}"
+    assert result.returncode == 0, f"Script failed: {result.stderr}"
     
-    # Find the SHA line
-    sha_line = None
-    for line in result.stdout.strip().split("\n"):
-        if "Capsule-SHA256:" in line:
-            sha_line = line
-            break
+    # Find the Capsule-SHA256 line
+    match = re.search(r"Capsule-SHA256:\s*([0-9a-f]+)", result.stdout)
+    assert match, f"Could not find Capsule-SHA256 in output: {result.stdout}"
     
-    assert sha_line is not None, "Output should contain Capsule-SHA256 line"
+    sha_value = match.group(1)
     
-    # Extract SHA value
-    sha_value = sha_line.split(":")[-1].strip()
+    # Verify exactly 12 characters
+    assert len(sha_value) == 12, (
+        f"Expected 12 hex characters, got {len(sha_value)}: {sha_value}"
+    )
     
-    # Validate format: exactly 12 hex characters, lowercase
-    assert len(sha_value) == 12, f"SHA should be 12 characters, got {len(sha_value)}"
-    assert sha_value.islower(), "SHA should be lowercase"
-    assert all(c in "0123456789abcdef" for c in sha_value), \
-        f"SHA should only contain hex characters, got {sha_value}"
+    # Verify all lowercase hex
+    assert re.fullmatch(r"[0-9a-f]{12}", sha_value), (
+        f"Expected lowercase hex characters only, got: {sha_value}"
+    )
+
+
+def test_missing_committed_envelope_fails(temp_repo):
+    """Test that script fails when envelope is not committed."""
+    task_id = "not-committed"
+    
+    # Create envelope but don't commit it
+    envelope_path = temp_repo / ".agents" / "dispatch" / f"{task_id}.md"
+    envelope_path.write_text("# Uncommitted Content")
+    
+    script = get_script_path()
+    result = subprocess.run(
+        [str(script), task_id],
+        cwd=temp_repo,
+        capture_output=True,
+        text=True,
+    )
+    
+    # Should fail with exit code 1
+    assert result.returncode == 1, (
+        f"Expected exit code 1 for missing committed envelope, got {result.returncode}"
+    )
+
+
+def test_existing_branch_fails(temp_repo):
+    """Test that script fails when branch already exists."""
+    task_id = "existing-branch"
+    create_envelope(temp_repo, task_id)
+    
+    # Create the branch manually
+    branch_name = f"attempt/{task_id}"
+    subprocess.run(
+        ["git", "branch", branch_name],
+        cwd=temp_repo,
+        check=True,
+        capture_output=True,
+    )
+    
+    script = get_script_path()
+    result = subprocess.run(
+        [str(script), task_id],
+        cwd=temp_repo,
+        capture_output=True,
+        text=True,
+    )
+    
+    # Should fail with exit code 1
+    assert result.returncode == 1, (
+        f"Expected exit code 1 for existing branch, got {result.returncode}"
+    )
