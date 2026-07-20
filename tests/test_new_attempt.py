@@ -44,11 +44,20 @@ def _init_repo(path: str) -> str:
 
 
 class TestNewAttemptHappyPath:
-    """Exercise the normal success path."""
+    """Exercise the normal success path when committed dispatch file exists."""
 
-    def test_creates_worktree_and_branch(self, tmp_path):
+    def test_creates_worktree_and_branch_with_committed_dispatch(self, tmp_path):
         repo_dir = str(tmp_path / "repo")
         _init_repo(repo_dir)
+
+        # Create & commit dispatch envelope
+        dispatch_dir = os.path.join(repo_dir, ".agents", "dispatch")
+        os.makedirs(dispatch_dir, exist_ok=True)
+        dispatch_file = os.path.join(dispatch_dir, "test-task-001.md")
+        with open(dispatch_file, "w") as f:
+            f.write("# Dispatch envelope for test-task-001\n")
+        _git(["add", "."], cwd=repo_dir)
+        _git(["commit", "-m", "add dispatch envelope"], cwd=repo_dir)
 
         result = subprocess.run(
             ["sh", SCRIPT_PATH, "test-task-001"],
@@ -76,56 +85,10 @@ class TestNewAttemptHappyPath:
         # ── Stdout assertions ────────────────────────────────────────
         assert "=== NEW ATTEMPT ===" in result.stdout
         assert "attempt/test-task-001" in result.stdout
+        assert "Capsule-SHA256:" in result.stdout
         assert "Ready for dispatch." in result.stdout
 
-        # ── Capsule-SHA256 absent case ───────────────────────────────
-        assert "no dispatch envelope found" in result.stdout
-
         # ── Cleanup worktree ─────────────────────────────────────────
-        _git(["worktree", "remove", str(worktree_dir), "--force"], cwd=repo_dir)
-
-
-class TestNewAttemptWithCapsule:
-    """Test capsule SHA-256 computation when dispatch file exists."""
-
-    def test_capsule_sha_printed(self, tmp_path):
-        repo_dir = str(tmp_path / "repo")
-        _init_repo(repo_dir)
-
-        # Create the dispatch envelope
-        dispatch_dir = os.path.join(repo_dir, ".agents", "dispatch")
-        os.makedirs(dispatch_dir, exist_ok=True)
-        dispatch_file = os.path.join(dispatch_dir, "task-capsule.md")
-        with open(dispatch_file, "w") as f:
-            f.write("# Dispatch envelope for task-capsule\n")
-        _git(["add", "."], cwd=repo_dir)
-        _git(["commit", "-m", "add dispatch"], cwd=repo_dir)
-
-        result = subprocess.run(
-            ["sh", SCRIPT_PATH, "task-capsule"],
-            cwd=repo_dir,
-            capture_output=True,
-            text=True,
-        )
-
-        assert result.returncode == 0, (
-            f"stdout: {result.stdout}\nstderr: {result.stderr}"
-        )
-        assert "Capsule-SHA256:" in result.stdout
-        assert "no dispatch envelope found" not in result.stdout
-
-        # The SHA line should have a 12-char hex prefix
-        for line in result.stdout.splitlines():
-            if line.startswith("Capsule-SHA256:"):
-                sha_val = line.split(":", 1)[1].strip()
-                assert len(sha_val) == 12, f"Expected 12 hex chars, got: {sha_val!r}"
-                assert all(
-                    c in "0123456789abcdef" for c in sha_val
-                ), f"Non-hex chars in: {sha_val!r}"
-                break
-
-        # Cleanup
-        worktree_dir = tmp_path / "attempts" / "task-capsule"
         _git(["worktree", "remove", str(worktree_dir), "--force"], cwd=repo_dir)
 
 
@@ -133,7 +96,55 @@ class TestNewAttemptWithCapsule:
 
 
 class TestNewAttemptErrors:
-    """Validate that the script fails correctly on bad input."""
+    """Validate that the script fails correctly on bad input or missing envelope."""
+
+    def test_missing_dispatch_envelope_exits_nonzero(self, tmp_path):
+        repo_dir = str(tmp_path / "repo")
+        _init_repo(repo_dir)
+
+        result = subprocess.run(
+            ["sh", SCRIPT_PATH, "missing-envelope-task"],
+            cwd=repo_dir,
+            capture_output=True,
+            text=True,
+        )
+
+        assert result.returncode != 0
+        assert "does not exist in committed HEAD" in result.stderr
+
+    def test_uncommitted_dispatch_envelope_exits_nonzero(self, tmp_path):
+        repo_dir = str(tmp_path / "repo")
+        _init_repo(repo_dir)
+
+        # Create uncommitted dispatch file
+        dispatch_dir = os.path.join(repo_dir, ".agents", "dispatch")
+        os.makedirs(dispatch_dir, exist_ok=True)
+        with open(os.path.join(dispatch_dir, "uncommitted-task.md"), "w") as f:
+            f.write("# Uncommitted dispatch\n")
+
+        result = subprocess.run(
+            ["sh", SCRIPT_PATH, "uncommitted-task"],
+            cwd=repo_dir,
+            capture_output=True,
+            text=True,
+        )
+
+        assert result.returncode != 0
+        assert "does not exist in committed HEAD" in result.stderr
+
+    def test_invalid_task_id_exits_nonzero(self, tmp_path):
+        repo_dir = str(tmp_path / "repo")
+        _init_repo(repo_dir)
+
+        result = subprocess.run(
+            ["sh", SCRIPT_PATH, "../invalid/path"],
+            cwd=repo_dir,
+            capture_output=True,
+            text=True,
+        )
+
+        assert result.returncode != 0
+        assert "invalid characters" in result.stderr
 
     def test_no_arguments_exits_nonzero(self, tmp_path):
         repo_dir = str(tmp_path / "repo")
@@ -152,6 +163,13 @@ class TestNewAttemptErrors:
     def test_duplicate_branch_exits_nonzero(self, tmp_path):
         repo_dir = str(tmp_path / "repo")
         _init_repo(repo_dir)
+
+        dispatch_dir = os.path.join(repo_dir, ".agents", "dispatch")
+        os.makedirs(dispatch_dir, exist_ok=True)
+        with open(os.path.join(dispatch_dir, "dup-task.md"), "w") as f:
+            f.write("# Dup task dispatch\n")
+        _git(["add", "."], cwd=repo_dir)
+        _git(["commit", "-m", "add dup dispatch"], cwd=repo_dir)
 
         # First run — should succeed
         result1 = subprocess.run(
@@ -177,7 +195,6 @@ class TestNewAttemptErrors:
         assert "already exists" in result2.stderr
 
     def test_not_a_git_repo(self, tmp_path):
-        """Running outside a git repo should fail."""
         plain_dir = str(tmp_path / "not-a-repo")
         os.makedirs(plain_dir, exist_ok=True)
 
@@ -190,3 +207,4 @@ class TestNewAttemptErrors:
 
         assert result.returncode != 0
         assert "not inside a git repository" in result.stderr
+
