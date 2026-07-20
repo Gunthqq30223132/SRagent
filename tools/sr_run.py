@@ -85,6 +85,26 @@ def _has_approved(store: StagingStore) -> bool:
     return bool(row["n"])
 
 
+def is_consensus_approved(store: StagingStore) -> bool:
+    import os
+    run_id = os.getenv("SR_RUN_ID")
+    if not run_id:
+        return False
+    row = store.conn.execute(
+        "SELECT 1 FROM events WHERE run_id = ? AND event_type = 'CONSENSUS_APPROVED' LIMIT 1",
+        (run_id,)
+    ).fetchone()
+    return row is not None
+
+
+def get_sha256(path: Path) -> str:
+    import hashlib
+    h = hashlib.sha256()
+    with path.open("rb") as f:
+        h.update(f.read())
+    return h.hexdigest()
+
+
 def build_phases() -> list[Phase]:
     """Đồ thị chuẩn của tuyến SR — nguồn sự thật duy nhất về thứ tự giai đoạn.
 
@@ -136,7 +156,7 @@ def build_phases() -> list[Phase]:
             kind=HUMAN_GATE,
             desc="CON NGƯỜI xác nhận tập bằng chứng trước khi tổng hợp (BS4). "
             "Cổng người thứ hai — không tự vượt.",
-            satisfied=lambda store: False,  # v1: luôn dừng — tổng hợp chưa nối
+            satisfied=is_consensus_approved,
             resume_hint="consensus",
         ),
         Phase(
@@ -147,6 +167,18 @@ def build_phases() -> list[Phase]:
             build_args=lambda a: ["--protocol", str(a.protocol)],
         ),
     ]
+
+
+def _status_counts_for_run(store: StagingStore, run_id: str) -> dict[str, int]:
+    rows = store.conn.execute(
+        """SELECT d.status, COUNT(DISTINCT d.uid) AS n
+           FROM documents d
+           JOIN events e ON d.uid = e.uid
+           WHERE e.run_id = ?
+           GROUP BY d.status""",
+        (run_id,)
+    ).fetchall()
+    return {r["status"]: r["n"] for r in rows}
 
 
 def _status_counts(store: StagingStore) -> dict[str, int]:
@@ -170,8 +202,21 @@ def cmd_plan(phases: list[Phase]) -> int:
     return 0
 
 
-def cmd_status(store: StagingStore, phases: list[Phase]) -> int:
-    counts = _status_counts(store)
+def cmd_status(store: StagingStore, phases: list[Phase], run_id: str | None = None) -> int:
+    import os
+    if run_id:
+        os.environ["SR_RUN_ID"] = run_id
+        counts = _status_counts_for_run(store, run_id)
+        # Check if the run exists
+        run = store.conn.execute("SELECT * FROM sr_runs WHERE run_id = ?", (run_id,)).fetchone()
+        if run:
+            print(f"Run ID: {run_id} ({run['state']})")
+            print(f"Query: {run['query']}")
+            print(f"Protocol: {run['protocol_path']} (SHA: {run['protocol_sha256'][:8]}...)")
+            print()
+    else:
+        counts = _status_counts(store)
+
     print("documents theo DocStatus:")
     for status, n in sorted(counts.items()):
         print(f"  {status:>16}: {n}")
@@ -183,6 +228,20 @@ def cmd_status(store: StagingStore, phases: list[Phase]) -> int:
             continue
         ok = bool(ph.satisfied and ph.satisfied(store))
         print(f"cổng {ph.name!r}: {'✅ đã qua' if ok else '⛔ chưa'}")
+    return 0
+
+
+def cmd_runs(store: StagingStore) -> int:
+    rows = store.conn.execute(
+        "SELECT run_id, query, state, created_at FROM sr_runs ORDER BY created_at DESC"
+    ).fetchall()
+    if not rows:
+        print("Không có SR run nào.")
+        return 0
+    print(f"{'RUN ID':<30} | {'STATE':<15} | {'CREATED AT':<25} | {'QUERY'}")
+    print("-" * 90)
+    for r in rows:
+        print(f"{r['run_id']:<30} | {r['state']:<15} | {r['created_at']:<25} | {r['query']}")
     return 0
 
 
@@ -259,8 +318,13 @@ def main(argv: list[str] | None = None) -> int:
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     sub.add_parser("plan", help="in đồ thị các phase + cổng người")
+    
     st = sub.add_parser("status", help="đếm documents theo DocStatus + trạng thái cổng")
     st.add_argument("--db", type=Path, help="override DB path")
+    st.add_argument("--run", help="Chỉ xem status cho run cụ thể")
+
+    runs_p = sub.add_parser("runs", help="liệt kê các sr_runs")
+    runs_p.add_argument("--db", type=Path, help="override DB path")
 
     run_p = sub.add_parser("run", help="chạy tuyến, dừng ở cổng người chưa thỏa")
     run_p.add_argument("--query", default="", help="truy vấn ingest (phase đầu)")
@@ -270,6 +334,7 @@ def main(argv: list[str] | None = None) -> int:
     run_p.add_argument("--from", dest="start_from", default=None,
                        help="tiếp tục từ phase này (sau khi đã duyệt)")
     run_p.add_argument("--db", type=Path, help="override DB path")
+    run_p.add_argument("--run", help="Resume an existing run_id")
 
     args = ap.parse_args(argv)
     phases = build_phases()
@@ -280,17 +345,66 @@ def main(argv: list[str] | None = None) -> int:
     db_kwargs = {"db_path": args.db} if getattr(args, "db", None) else {}
     with StagingStore(**db_kwargs) as store:
         if args.cmd == "status":
-            return cmd_status(store, phases)
+            return cmd_status(store, phases, getattr(args, "run", None))
+        if args.cmd == "runs":
+            return cmd_runs(store)
         if args.cmd == "run":
             if not writer_lock.acquire("orchestrator"):
                 lock_info = writer_lock.holder()
                 print(f"❌ Không thể acquire writer lock — đang được giữ bởi: {lock_info}")
                 return 2
             try:
-                if args.start_from is None and not args.query:
-                    print("❌ `run` từ đầu cần --query (phase ingest). "
-                          "Hoặc dùng --from <phase> để tiếp tục.")
-                    return 2
+                import os
+                import random
+                from datetime import datetime, timezone
+                
+                run_id = getattr(args, "run", None)
+                if run_id:
+                    # Resume existing run
+                    run_row = store.conn.execute("SELECT * FROM sr_runs WHERE run_id = ?", (run_id,)).fetchone()
+                    if not run_row:
+                        print(f"❌ Lỗi: Không tìm thấy run_id={run_id!r} trong sr_runs.")
+                        return 2
+                    if run_row["state"] != "OPEN":
+                        print(f"❌ Lỗi: Run {run_id} đang ở trạng thái {run_row['state']!r}, không thể resume.")
+                        return 2
+                    if not args.protocol or not args.protocol.exists():
+                        print("❌ Lỗi: Cần truyền --protocol hợp lệ để đối chiếu.")
+                        return 2
+                    current_sha = get_sha256(args.protocol)
+                    if current_sha != run_row["protocol_sha256"]:
+                        print(f"❌ Lỗi: Protocol SHA256 không khớp! Gốc: {run_row['protocol_sha256']}, Hiện tại: {current_sha}")
+                        return 2
+                    
+                    print(f"⏯  Resume run: {run_id}")
+                    os.environ["SR_RUN_ID"] = run_id
+                    args.query = run_row["query"]
+                else:
+                    # Start new run
+                    if args.start_from is not None:
+                        print("❌ Lỗi: Chỉ có thể resume (--run <id>) mới dùng được `--from`.")
+                        return 2
+                    if not args.query:
+                        print("❌ `run` từ đầu cần --query (phase ingest).")
+                        return 2
+                    if not args.protocol or not args.protocol.exists():
+                        print("❌ Lỗi: Khởi tạo run mới yêu cầu --protocol (file JSON hợp lệ).")
+                        return 2
+                        
+                    hex_part = f"{random.randint(0, 0xffff):04x}"
+                    run_id = f"sr-{datetime.now().strftime('%Y%m%d-%H%M%S')}-{hex_part}"
+                    protocol_sha256 = get_sha256(args.protocol)
+                    created_at = datetime.now(timezone.utc).isoformat()
+                    
+                    store.conn.execute(
+                        """INSERT INTO sr_runs (run_id, query, protocol_path, protocol_sha256, state, created_at)
+                           VALUES (?, ?, ?, ?, ?, ?)""",
+                        (run_id, args.query, str(args.protocol), protocol_sha256, "OPEN", created_at)
+                    )
+                    store.conn.commit()
+                    print(f"🚀 Bắt đầu run mới: {run_id}")
+                    os.environ["SR_RUN_ID"] = run_id
+
                 return run_pipeline(store, phases, args, start_from=args.start_from)
             finally:
                 writer_lock.release()

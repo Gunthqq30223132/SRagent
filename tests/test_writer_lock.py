@@ -63,12 +63,14 @@ class TestWriterLock:
 
     def test_sr_run_releases_in_finally_on_exception(self, tmp_path):
         lock_file = tmp_path / ".sr_writer.lock"
+        proto_file = tmp_path / "proto.json"
+        proto_file.write_text("{}", encoding="utf-8")
 
         with patch("sr_agent.store.writer_lock.DEFAULT_LOCK_PATH", lock_file):
             with patch("tools.sr_run.run_pipeline", side_effect=RuntimeError("Phase crash")):
                 # Run sr_run with arguments that reach run_pipeline
                 with pytest.raises(RuntimeError, match="Phase crash"):
-                    sr_run.main(["run", "--query", "test"])
+                    sr_run.main(["run", "--query", "test", "--protocol", str(proto_file)])
 
                 # Ensure lock was released in finally despite exception
                 assert holder(lock_file) is None
