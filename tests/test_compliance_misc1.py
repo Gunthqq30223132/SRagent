@@ -172,3 +172,49 @@ class TestBackupStaging:
         with StagingStore(newest_file) as s:
             res = s.conn.execute("SELECT bar FROM foo").fetchone()
             assert res["bar"] == "hello"
+
+
+class TestDynamicFieldValueAnchor:
+    """Đối kháng PM: giao điểm D40 (field động) × value-anchor (MED-READY).
+
+    Hai tính năng build ở hai mandate khác nhau — chỗ chúng gặp nhau là nơi bug
+    tích hợp ẩn, và ca này (liều thuốc value≠quote) là failure mode chết người
+    của SR gây mê. Executor test value khớp; đây test value LỆCH trên field động.
+    """
+
+    @respx.mock
+    def test_dynamic_field_dose_mismatch_caught(self, store):
+        doc = Document(
+            uid="arxiv:9999.0001", source="arxiv", source_id="arxiv:9999.0001",
+            authority_tier=1, title="T", abstract="We administered 50 mg of Sevoflurane.",
+        )
+        doc.status = DocStatus.QUEUED
+        store.upsert(doc)
+        store.log_event(doc.uid, "ELIG_INCLUDED", "")
+
+        proto = ReviewProtocol(
+            topic_vi="inhaled anesthetics",
+            population=PicoConcept(concept="anesthetics"),
+            intervention=PicoConcept(concept="sevoflurane"),
+            exclusion_criteria=[],
+            extraction_fields=[
+                ExtractionField(id="anesthetic_dose", description_en="Dose of the volatile agent"),
+            ],
+        )
+        # LLM bịa 500 mg trong khi quote (verify pass) chỉ nói 50 mg
+        dummy = {"anesthetic_dose": {"value": "500 mg", "quote": "50 mg of Sevoflurane", "section": "abstract"}}
+        respx.get(f"{OLLAMA}/api/tags").mock(return_value=httpx.Response(200, json={}))
+        respx.post(f"{OLLAMA}/api/chat").mock(return_value=httpx.Response(200, json={
+            "message": {"role": "assistant", "content": json.dumps(dummy)}
+        }))
+
+        count = run_extraction_batch(store, limit=1, protocol=proto)
+        assert count == 1
+
+        exts = store.extractions(doc.uid, verified_only=False)
+        assert len(exts) == 1
+        # quote verify pass nhưng số lệch ⇒ verified phải bị hạ về 0
+        assert exts[0]["verified"] == 0
+        events = [e["event_type"] for e in store.conn.execute(
+            "SELECT event_type FROM events WHERE uid = ?", (doc.uid,)).fetchall()]
+        assert "EXTRACT_VALUE_MISMATCH" in events

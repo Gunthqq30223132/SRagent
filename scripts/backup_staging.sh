@@ -19,7 +19,19 @@ TIMESTAMP=$(date +"%Y%m%d-%H%M%S")
 BACKUP_FILE="$BACKUP_DIR/staging-$TIMESTAMP.db"
 
 echo "Creating WAL-safe backup of $DB_PATH to $BACKUP_FILE..."
-sqlite3 "$DB_PATH" ".backup '$BACKUP_FILE'"
+# WAL-safe qua SQLite Online Backup API. Ưu tiên sqlite3 CLI; nếu vắng (CI/runner
+# tối giản không cài sqlite3 binary) fallback stdlib Python — cùng một API .backup(),
+# WAL-safe như nhau, 0 dep mới.
+if command -v sqlite3 >/dev/null 2>&1; then
+  sqlite3 "$DB_PATH" ".backup '$BACKUP_FILE'"
+else
+  python3 - "$DB_PATH" "$BACKUP_FILE" <<'PY'
+import sqlite3, sys
+src, dst = sys.argv[1], sys.argv[2]
+with sqlite3.connect(src) as s, sqlite3.connect(dst) as d:
+    s.backup(d)
+PY
+fi
 
 # Rotate: keep only the 7 newest files
 echo "Rotating backups in $BACKUP_DIR..."
