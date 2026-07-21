@@ -10,9 +10,12 @@ import os
 import re
 from pathlib import Path
 
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv
 
-load_dotenv()
+    load_dotenv()
+except ImportError:
+    pass
 
 # --- Định danh nguồn & quy tắc ID tĩnh -------------------------------------
 # Nguồn A: IEEE Xplore (CS Transactions) — document ID 8 chữ số.

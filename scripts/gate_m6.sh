@@ -7,9 +7,9 @@ echo "=========================================="
 
 FAILED=0
 
-# Use venv python if available, otherwise fallback to system python
-PYTHON_CMD="python"
-if [ -d ".venv" ] && [ -f ".venv/bin/python" ]; then
+# Use venv python if available and functional, otherwise fallback to system python
+PYTHON_CMD="${PYTHON_CMD:-python}"
+if [ -d ".venv" ] && [ -f ".venv/bin/python" ] && .venv/bin/python -c "import dotenv" >/dev/null 2>&1; then
     PYTHON_CMD=".venv/bin/python"
 fi
 
