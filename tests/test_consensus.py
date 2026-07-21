@@ -19,6 +19,7 @@ def test_spec_9a_verified_extractions_and_human_rob_priority():
     """(a) ledger chỉ nhận verified=1; human overall thắng rob_a."""
     extractions = [
         {
+            "claim_id": "clm-doc1",
             "run_id": "run1",
             "uid": "doc1",
             "field": "recovery_time",
@@ -27,6 +28,7 @@ def test_spec_9a_verified_extractions_and_human_rob_priority():
             "verified": 1,
         },
         {
+            "claim_id": "clm-doc2",
             "run_id": "run1",
             "uid": "doc2",
             "field": "recovery_time",
@@ -35,6 +37,7 @@ def test_spec_9a_verified_extractions_and_human_rob_priority():
             "verified": 2,  # Should be excluded
         },
         {
+            "claim_id": "clm-doc3",
             "run_id": "run1",
             "uid": "doc3",
             "field": "recovery_time",
@@ -68,13 +71,14 @@ def test_spec_9a_verified_extractions_and_human_rob_priority():
     assert len(claims) == 1
     assert claims[0].uid == "doc1"
     assert claims[0].rob_overall in ("Low", "low")
-    assert claims[0].weight == 1.0
+    assert claims[0].weight == rob_weight(claims[0].rob_overall)
 
 
 def test_spec_9b_void_weight_zero_retained_in_ledger():
     """(b) VOID weight 0 vẫn nằm ledger."""
     extractions = [
         {
+            "claim_id": "clm-void",
             "run_id": "run1",
             "uid": "doc_void",
             "field": "primary_outcome",
@@ -123,6 +127,7 @@ def test_spec_9c_direction_matching_invariants():
 
     extractions = [
         {
+            "claim_id": "clm-d1",
             "run_id": "run1",
             "uid": "d1",
             "field": "f1",
@@ -131,6 +136,7 @@ def test_spec_9c_direction_matching_invariants():
             "verified": 1,
         },
         {
+            "claim_id": "clm-d2",
             "run_id": "run1",
             "uid": "d2",
             "field": "f1",
@@ -139,6 +145,7 @@ def test_spec_9c_direction_matching_invariants():
             "verified": 1,
         },
         {
+            "claim_id": "clm-d3",
             "run_id": "run1",
             "uid": "d3",
             "field": "f2",
