@@ -178,13 +178,25 @@ def main():
     completion_text = "".join(completion_text_parts)
     completion_sha256 = ""
     if completion_text:
-        extracted_code = extract_code_block(completion_text)
         import re
-        path_match = re.search(r"<path>(.*?)</path>", completion_text)
-        rel_target_path = path_match.group(1).strip() if path_match else os.path.join("tests", "test_new_attempt_adversarial.py")
-        target_file_path = os.path.join(
-            os.path.dirname(repo_root), "attempts", task_id, rel_target_path
-        )
+        write_match = re.search(r"<write_file>\s*<path>(.*?)</path>\s*<contents>(.*?)</contents>", completion_text, re.DOTALL)
+        if write_match:
+            rel_target_path = write_match.group(1).strip()
+            extracted_code = write_match.group(2)
+            if extracted_code.startswith("\n"):
+                extracted_code = extracted_code[1:]
+        else:
+            extracted_code = extract_code_block(completion_text)
+            path_match = re.search(r"<path>(.*?)</path>", completion_text)
+            rel_target_path = path_match.group(1).strip() if path_match else os.path.join("tests", "test_new_attempt_adversarial.py")
+
+        if os.path.basename(repo_root) == task_id or "/attempts/" in repo_root:
+            target_file_path = os.path.join(repo_root, rel_target_path)
+        else:
+            target_file_path = os.path.join(
+                os.path.dirname(repo_root), "attempts", task_id, rel_target_path
+            )
+
         os.makedirs(os.path.dirname(target_file_path), exist_ok=True)
         with open(target_file_path, "w", encoding="utf-8") as f:
             f.write(extracted_code)
