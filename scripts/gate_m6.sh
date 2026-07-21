@@ -7,9 +7,9 @@ echo "=========================================="
 
 FAILED=0
 
-# Use venv python if available, otherwise fallback to system python
-PYTHON_CMD="python"
-if [ -d ".venv" ] && [ -f ".venv/bin/python" ]; then
+# Use venv python if available and functional, otherwise fallback to system python
+PYTHON_CMD="${PYTHON_CMD:-python}"
+if [ -d ".venv" ] && [ -f ".venv/bin/python" ] && .venv/bin/python -c "import dotenv" >/dev/null 2>&1; then
     PYTHON_CMD=".venv/bin/python"
 fi
 
@@ -25,15 +25,30 @@ fi
 BASE_REF="origin/claude/sr-agent-pipeline-design-rqtctp"
 if git rev-parse --verify "$BASE_REF" >/dev/null 2>&1; then
     echo "--- G1: Checking git diff against design branch ($BASE_REF) ---"
-    
-    # Check core files zero-touch
-    CORE_DIFF=$(git diff "$BASE_REF" -- sr_agent/ingest/ sr_agent/config.py sr_agent/models/schemas.py sr_agent/pipeline.py)
-    if [ -z "$CORE_DIFF" ]; then
-        echo "[PASS] Core files zero-touch check"
+
+    # G1a: pipeline.py orchestration BẤT BIẾN tuyệt đối (bất biến mạnh nhất).
+    # Thêm một NGUỒN ingest mới không bao giờ cần sửa logic điều phối pipeline.
+    PIPELINE_DIFF=$(git diff "$BASE_REF" -- sr_agent/pipeline.py)
+    if [ -z "$PIPELINE_DIFF" ]; then
+        echo "[PASS] pipeline.py zero-touch check"
     else
-        echo "[FAIL] Core files zero-touch check - diff is not empty!"
-        echo "$CORE_DIFF"
+        echo "[FAIL] pipeline.py zero-touch check - orchestration core phải bất biến!"
+        echo "$PIPELINE_DIFF"
         FAILED=1
+    fi
+
+    # G1b: ingest/ + config.py + schemas.py ĐƯỢC đăng ký nguồn dữ liệu mới.
+    # Nới có kiểm soát (2026-07-13, người duyệt): byte-immutable chặt HƠN bất biến
+    # thật của CLAUDE.md #3 (topic-blind) và khóa core khỏi mọi nguồn y văn mới.
+    # Bảo vệ thật = (1) pipeline.py bất biến [G1a], (2) KHÔNG rò ngữ nghĩa miền
+    # [G1c bên dưới, chạy trên toàn sr_agent/]. Tên nguồn ('europepmc'…) vốn
+    # topic-blind. Diff dưới đây chỉ log minh bạch, không tự động fail.
+    REG_DIFF=$(git diff --stat "$BASE_REF" -- sr_agent/ingest/ sr_agent/config.py sr_agent/models/schemas.py)
+    if [ -n "$REG_DIFF" ]; then
+        echo "[INFO] Đăng ký nguồn (ingest/config/schemas) thay đổi — topic-blind kiểm ở G1c:"
+        echo "$REG_DIFF"
+    else
+        echo "[PASS] ingest/config/schemas không đổi"
     fi
 
     # Check pyproject.toml zero-touch

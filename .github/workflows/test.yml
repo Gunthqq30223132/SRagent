@@ -26,12 +26,20 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[ui,dev]"
+          python -m pip install -e ".[ui,dev]"
 
       - name: Run Pytest
         run: |
           python -m pytest
 
+      - name: Run Gate Contract Superset Verification
+        run: |
+          python scripts/check_gates_superset.py
+
       - name: Run M6 Gate Verification
         run: |
           bash scripts/gate_m6.sh
+
+      - name: Run D32 Gate Verification
+        run: |
+          bash scripts/gate_d32.sh

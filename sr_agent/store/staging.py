@@ -51,7 +51,19 @@ CREATE TABLE IF NOT EXISTS events (
     uid        TEXT NOT NULL,
     event_type TEXT NOT NULL,
     detail     TEXT NOT NULL DEFAULT '',
+    run_id     TEXT,
     created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_events_run ON events(run_id);
+
+CREATE TABLE IF NOT EXISTS sr_runs (
+    run_id          TEXT PRIMARY KEY,
+    query           TEXT NOT NULL,
+    protocol_path   TEXT NOT NULL,
+    protocol_sha256 TEXT NOT NULL,
+    state           TEXT NOT NULL,
+    created_at      TEXT NOT NULL,
+    closed_at       TEXT
 );
 
 -- M4: heartbeat batch (dead-man's switch) + standing query cho heal
@@ -95,6 +107,19 @@ CREATE TABLE IF NOT EXISTS extraction (
     verified INTEGER NOT NULL,
     created_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS rob_assessment (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    uid         TEXT NOT NULL,
+    agent       TEXT NOT NULL,
+    model       TEXT NOT NULL,
+    study_type  TEXT NOT NULL,
+    domain      TEXT NOT NULL,
+    verdict     TEXT NOT NULL,
+    quote       TEXT,
+    created_at  TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_rob_assessment_uid ON rob_assessment(uid);
 """
 
 
@@ -108,8 +133,31 @@ class StagingStore:
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.conn = sqlite3.connect(self.db_path)
         self.conn.row_factory = sqlite3.Row
+        self._apply_pragmas()
+
+        # Idempotent migration: add run_id column to events table if table exists but column is missing
+        cursor = self.conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='events'")
+        if cursor.fetchone():
+            cursor = self.conn.execute("PRAGMA table_info(events)")
+            columns = [row["name"] for row in cursor.fetchall()]
+            if "run_id" not in columns:
+                self.conn.execute("ALTER TABLE events ADD COLUMN run_id TEXT")
+                self.conn.commit()
+
         self.conn.executescript(_SCHEMA)
         self.conn.commit()
+
+    def _apply_pragmas(self) -> None:
+        """WAL + busy_timeout: cho phép ingest/orchestrator (ghi) và UI duyệt
+        (đọc) truy cập cùng file DB đồng thời mà không 'database is locked'.
+
+        journal_mode bền vững theo file (set một lần, mọi connection sau kế
+        thừa); busy_timeout theo từng connection nên phải set mỗi lần mở. DB
+        ':memory:' không hỗ trợ WAL và tự trả 'memory' — không lỗi, chấp nhận.
+        """
+        self.conn.execute("PRAGMA journal_mode=WAL")
+        self.conn.execute("PRAGMA busy_timeout=30000")  # 30s: khớp backoff MAX_RETRIES
+        self.conn.execute("PRAGMA synchronous=NORMAL")  # an toàn dưới WAL, nhanh hơn FULL
 
     def close(self) -> None:
         self.conn.close()
@@ -200,6 +248,10 @@ class StagingStore:
         rows = self.conn.execute(
             """SELECT payload FROM documents
                WHERE status = ?
+                 AND uid NOT IN (
+                     SELECT DISTINCT uid FROM events
+                     WHERE run_id IN (SELECT run_id FROM sr_runs WHERE state = 'OPEN')
+                 )
                ORDER BY rubric_score DESC, fetched_at ASC
                LIMIT ?""",
             (DocStatus.QUEUED.value, limit),
@@ -218,7 +270,13 @@ class StagingStore:
     # --- TTL -------------------------------------------------------------------
 
     def purge_expired(self, ttl_hours: int = TTL_HOURS) -> list[str]:
-        """Đánh EXPIRED + xóa bản ghi quá TTL không tương tác. Trả về uids đã purge."""
+        """Đánh EXPIRED + xóa bản ghi quá TTL không tương tác. Trả về uids đã purge.
+
+        MIỄN TRỪ tuyến SR: doc đã có vết trong screening/extraction/rob_assessment
+        thuộc corpus systematic-review đang chạy — các stage máy không cập nhật
+        last_interaction_at, và một SR run hợp lệ kéo dài quá TTL (cổng người,
+        escalation). TTL chỉ dọn hàng đợi triage đơn-tài-liệu chưa ai đụng tới.
+        """
         cutoff = (datetime.now(timezone.utc) - timedelta(hours=ttl_hours)).isoformat()
         terminal = (
             DocStatus.APPROVED.value,
@@ -227,7 +285,14 @@ class StagingStore:
         )
         rows = self.conn.execute(
             """SELECT uid FROM documents
-               WHERE last_interaction_at < ? AND status NOT IN (?, ?, ?)""",
+               WHERE last_interaction_at < ? AND status NOT IN (?, ?, ?)
+                 AND uid NOT IN (SELECT uid FROM screening)
+                 AND uid NOT IN (SELECT uid FROM extraction)
+                 AND uid NOT IN (SELECT uid FROM rob_assessment)
+                 AND uid NOT IN (
+                     SELECT DISTINCT uid FROM events
+                     WHERE run_id IN (SELECT run_id FROM sr_runs WHERE state = 'OPEN')
+                 )""",
             (cutoff, *terminal),
         ).fetchall()
         purged = [r["uid"] for r in rows]
@@ -315,10 +380,12 @@ class StagingStore:
 
     # --- events -------------------------------------------------------------------
 
-    def log_event(self, uid: str, event_type: str, detail: str = "") -> None:
+    def log_event(self, uid: str, event_type: str, detail: str = "", run_id: str | None = None) -> None:
+        import os
+        rid = run_id if run_id is not None else os.getenv("SR_RUN_ID") or None
         self.conn.execute(
-            "INSERT INTO events (uid, event_type, detail, created_at) VALUES (?, ?, ?, ?)",
-            (uid, event_type, detail, _now()),
+            "INSERT INTO events (uid, event_type, detail, run_id, created_at) VALUES (?, ?, ?, ?, ?)",
+            (uid, event_type, detail, rid, _now()),
         )
         self.conn.commit()
 
@@ -425,3 +492,26 @@ class StagingStore:
                WHERE d.status = 'queued' AND e.event_type = 'SCREEN_ESCALATED'"""
         ).fetchall()
         return {r["uid"] for r in rows}
+
+    def add_rob_assessment(
+        self,
+        uid: str,
+        agent: str,
+        model: str,
+        study_type: str,
+        domain: str,
+        verdict: str,
+        quote: str | None = None,
+    ) -> None:
+        self.conn.execute(
+            """INSERT INTO rob_assessment
+               (uid, agent, model, study_type, domain, verdict, quote, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (uid, agent, model, study_type, domain, verdict, quote, _now()),
+        )
+        self.conn.commit()
+
+    def get_rob_assessments(self, uid: str) -> list[sqlite3.Row]:
+        return self.conn.execute(
+            "SELECT * FROM rob_assessment WHERE uid = ? ORDER BY created_at", (uid,)
+        ).fetchall()

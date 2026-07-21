@@ -71,6 +71,24 @@ class TestVerifier:
         quote = "Fine-Tuning"
         assert verify_quote(source, quote) is False
 
+    def test_normalize_text_pdf_medical(self):
+        # ligature ﬁ→fi, µ→μ, ¹→1
+        source = "efﬁcacy of anes-\nthesia"
+        quote = "efficacy of anesthesia"
+        assert verify_quote(source, quote) is True
+
+        source2 = "0.5 µg/kg"
+        quote2 = "0.5 μg/kg"  # two different codepoints (micro µ vs mu μ)
+        assert verify_quote(source2, quote2) is True
+
+        # State-of-the-art must NOT be broken
+        source3 = "state-of-the-art technology"
+        quote3 = "state-of-the-art"
+        assert verify_quote(source3, quote3) is True
+
+        # Real quote mismatch must still fail
+        assert verify_quote(source, "efficacy of surgery") is False
+
 
 class TestScreeningA:
     @respx.mock
@@ -81,25 +99,28 @@ class TestScreeningA:
         doc.abstract = "This is an abstract about RAG and LLM."
         store.upsert(doc)
         
-        # Mock Ollama outputting include
+        # Mock Ollama outputting include — M7.2: include cũng phải kèm relevance_quote verbatim
         dummy_verdict = {
             "verdict": "include",
+            "relevance_quote": "about RAG and LLM",
             "confidence": "high"
         }
         respx.get(f"{OLLAMA}/api/tags").mock(return_value=httpx.Response(200, json={}))
         respx.post(f"{OLLAMA}/api/chat").mock(return_value=httpx.Response(200, json={
             "message": {"role": "assistant", "content": json.dumps(dummy_verdict)}
         }))
-        
+
         count = run_screening_a(store, protocol, criteria, limit=1)
         assert count == 1
-        
+
         # Verify db verdict
         verdicts = store.screen_verdicts("ieee:38111222")
         assert len(verdicts) == 1
         assert verdicts[0]["verdict"] == "include"
         assert verdicts[0]["agent"] == "screener_a"
         assert verdicts[0]["confidence"] == "high"
+        # relevance_quote được lưu vào cột evidence_quote (không đổi schema DB)
+        assert verdicts[0]["evidence_quote"] == "about RAG and LLM"
 
     @respx.mock
     def test_screening_a_exclude_valid_verdict(self, store, protocol, criteria):
@@ -216,6 +237,7 @@ class TestConsensusAndTiebreaker:
 
         dummy_verdict = {
             "verdict": "include",
+            "relevance_quote": "RAG and LLM systems",
             "confidence": "high"
         }
         respx.get(f"{OLLAMA}/api/tags").mock(return_value=httpx.Response(200, json={}))
@@ -248,10 +270,11 @@ class TestConsensusAndTiebreaker:
                     "evidence_quote": "Wrong population details", "confidence": "high"
                 })}
             }),
-            # Screener B
+            # Screener B — include hợp lệ (M7.2: phải kèm relevance_quote verbatim)
             httpx.Response(200, json={
                 "message": {"role": "assistant", "content": json.dumps({
-                    "verdict": "include", "confidence": "high"
+                    "verdict": "include", "relevance_quote": "Wrong population details",
+                    "confidence": "high"
                 })}
             }),
             # Tiebreaker
@@ -288,16 +311,18 @@ class TestConsensusAndTiebreaker:
                     "evidence_quote": "Wrong population details", "confidence": "high"
                 })}
             }),
-            # Screener B
+            # Screener B — include hợp lệ
             httpx.Response(200, json={
                 "message": {"role": "assistant", "content": json.dumps({
-                    "verdict": "include", "confidence": "high"
+                    "verdict": "include", "relevance_quote": "Wrong population details",
+                    "confidence": "high"
                 })}
             }),
-            # Tiebreaker (low confidence)
+            # Tiebreaker (low confidence, quote hợp lệ — escalate vì confidence chứ không vì invalid)
             httpx.Response(200, json={
                 "message": {"role": "assistant", "content": json.dumps({
-                    "verdict": "include", "confidence": "low"
+                    "verdict": "include", "relevance_quote": "Wrong population details",
+                    "confidence": "low"
                 })}
             })
         ])
@@ -389,3 +414,231 @@ class TestScreenerBIndependence:
         assert json.dumps(a_verdict_dict) not in messages_text
         assert '"verdict": "exclude"' not in messages_text  # B does not see A's output verdict
 
+
+class TestModelAConfig:
+    """M7.2 Phase 2R: SR_SCREEN_MODEL_A tách screener A khỏi OLLAMA_MODEL toàn cục."""
+
+    def _seed_doc(self, store):
+        doc = make_doc("ieee", "38111222", "Title 2", 1)
+        doc.status = DocStatus.QUEUED
+        doc.abstract = "RAG and LLM systems are here."
+        store.upsert(doc)
+
+    def _include_response(self):
+        return httpx.Response(200, json={
+            "message": {"role": "assistant", "content": json.dumps({
+                "verdict": "include", "relevance_quote": "RAG and LLM systems",
+                "confidence": "high"
+            })}
+        })
+
+    @respx.mock
+    def test_env_model_a_is_used_and_recorded(self, store, protocol, criteria, monkeypatch):
+        monkeypatch.setenv("SR_SCREEN_MODEL_A", "custom-a:1b")
+        monkeypatch.setenv("SR_SCREEN_MODEL_B", "gemma4:e4b")
+        self._seed_doc(store)
+        respx.get(f"{OLLAMA}/api/tags").mock(return_value=httpx.Response(200, json={
+            "models": [{"name": "custom-a:1b"}, {"name": "gemma4:e4b"}]
+        }))
+        respx.post(f"{OLLAMA}/api/chat").mock(return_value=self._include_response())
+
+        from tools.screen_run import run_screening_batch
+        run_screening_batch(store, protocol, criteria, limit=1)
+
+        models = {r["agent"]: r["model"] for r in store.screen_verdicts("ieee:38111222")}
+        assert models["screener_a"] == "custom-a:1b"     # ghi đúng model từng row
+        assert models["screener_b"] == "gemma4:e4b"
+
+    @respx.mock
+    def test_missing_model_a_falls_back_loudly(self, store, protocol, criteria, monkeypatch):
+        monkeypatch.setenv("SR_SCREEN_MODEL_A", "khong-ton-tai:9b")
+        monkeypatch.setenv("SR_SCREEN_MODEL_B", "gemma4:e4b")
+        self._seed_doc(store)
+        respx.get(f"{OLLAMA}/api/tags").mock(return_value=httpx.Response(200, json={
+            "models": [{"name": "gemma4:e4b"}]             # thiếu model A tùy biến
+        }))
+        respx.post(f"{OLLAMA}/api/chat").mock(return_value=self._include_response())
+
+        from tools.screen_run import run_screening_batch
+        run_screening_batch(store, protocol, criteria, limit=1)
+
+        models = {r["agent"]: r["model"] for r in store.screen_verdicts("ieee:38111222")}
+        assert models["screener_a"] == OLLAMA_MODEL        # quay về mặc định, không chết lặng
+        events = [r["event_type"] for r in store.conn.execute(
+            "SELECT event_type FROM events WHERE uid = 'screening:batch'"
+        ).fetchall()]
+        assert "SCREEN_MODEL_A_FALLBACK" in events         # và phải ỒN ÀO
+
+
+class TestQuoteCopyDiscipline:
+    """M7.2 Phase 1b: luật chép quote cơ học phải có mặt trong CẢ BA prompt.
+
+    Phase 2 đo được screener A invalid 50.6% do chèn '...' và sửa ký tự LaTeX —
+    lỗi kỷ luật chép, chữa ở prompt; verifier giữ nguyên (nới verifier = nới firewall)."""
+
+    def test_all_three_prompts_carry_quote_copy_rules(self, protocol, criteria):
+        from tools.screen_run import (
+            QUOTE_COPY_RULES,
+            build_screener_a_prompts,
+            build_screener_b_prompts,
+            build_tiebreaker_prompts,
+        )
+
+        sys_a, _ = build_screener_a_prompts("T", "A", protocol, criteria)
+        sys_b, _ = build_screener_b_prompts("T", "A", protocol, criteria)
+        sys_tb, _ = build_tiebreaker_prompts("T", "A", protocol, criteria, "v1", "v2")
+
+        for sys_prompt in (sys_a, sys_b, sys_tb):
+            assert QUOTE_COPY_RULES in sys_prompt
+            assert "character-for-character" in sys_prompt
+            assert "NEVER shorten with '...'" in sys_prompt
+
+    def test_exclude_prompts_pin_criterion_id_to_listed_codes(self, protocol, criteria):
+        from tools.screen_run import build_screener_a_prompts, build_screener_b_prompts
+
+        sys_a, _ = build_screener_a_prompts("T", "A", protocol, criteria)
+        sys_b, _ = build_screener_b_prompts("T", "A", protocol, criteria)
+        for sys_prompt in (sys_a, sys_b):
+            assert "EXACTLY one of the codes listed" in sys_prompt
+
+
+class TestSymmetricEvidenceTax:
+    """M7.2 §2.1: include cũng phải trả phí kiểm chứng — không còn verdict miễn phí.
+
+    Trước hiệu chuẩn, include không cần gì trong khi exclude phải qua verify_quote ⇒
+    model nhỏ thoái hóa 100% include (κ = 0, First Light 2026-07-11)."""
+
+    @respx.mock
+    def test_include_without_relevance_quote_is_invalid(self, store, protocol, criteria):
+        doc = make_doc("ieee", "38111222", "Title RAG LLM", 1)
+        doc.status = DocStatus.QUEUED
+        doc.abstract = "This is an abstract about RAG and LLM."
+        store.upsert(doc)
+
+        dummy_verdict = {"verdict": "include", "confidence": "high"}   # thiếu relevance_quote
+        respx.get(f"{OLLAMA}/api/tags").mock(return_value=httpx.Response(200, json={}))
+        respx.post(f"{OLLAMA}/api/chat").mock(return_value=httpx.Response(200, json={
+            "message": {"role": "assistant", "content": json.dumps(dummy_verdict)}
+        }))
+
+        count = run_screening_a(store, protocol, criteria, limit=1)
+        assert count == 1
+        verdicts = store.screen_verdicts("ieee:38111222")
+        assert verdicts[0]["verdict"] == "invalid"   # include miễn phí không còn tồn tại
+
+    @respx.mock
+    def test_include_with_hallucinated_relevance_quote_is_invalid(self, store, protocol, criteria):
+        doc = make_doc("ieee", "38111222", "Title RAG LLM", 1)
+        doc.status = DocStatus.QUEUED
+        doc.abstract = "This is an abstract about RAG and LLM."
+        store.upsert(doc)
+
+        dummy_verdict = {
+            "verdict": "include",
+            "relevance_quote": "totally fabricated sentence not in the text",
+            "confidence": "high"
+        }
+        respx.get(f"{OLLAMA}/api/tags").mock(return_value=httpx.Response(200, json={}))
+        respx.post(f"{OLLAMA}/api/chat").mock(return_value=httpx.Response(200, json={
+            "message": {"role": "assistant", "content": json.dumps(dummy_verdict)}
+        }))
+
+        count = run_screening_a(store, protocol, criteria, limit=1)
+        assert count == 1
+        verdicts = store.screen_verdicts("ieee:38111222")
+        assert verdicts[0]["verdict"] == "invalid"   # quote bịa = void, không phải "sửa lại cho khớp"
+
+
+class TestDegenerateGuard:
+    """M7.2 §3 Phase 1.3: screener vote một chiều 100% trên batch đủ lớn ⇒ SCREEN_DEGENERATE."""
+
+    def _seed_docs(self, store, n):
+        for i in range(n):
+            doc = make_doc("ieee", f"381113{i:02d}", f"Title {i}", 1)
+            doc.status = DocStatus.QUEUED
+            doc.abstract = "RAG and LLM systems are here."
+            store.upsert(doc)
+
+    def _mock_all_include(self):
+        respx.get(f"{OLLAMA}/api/tags").mock(return_value=httpx.Response(200, json={
+            "models": [{"name": "gemma4:e4b"}]
+        }))
+        respx.post(f"{OLLAMA}/api/chat").mock(return_value=httpx.Response(200, json={
+            "message": {"role": "assistant", "content": json.dumps({
+                "verdict": "include", "relevance_quote": "RAG and LLM systems",
+                "confidence": "high"
+            })}
+        }))
+
+    @respx.mock
+    def test_all_include_batch_fires_degenerate_for_both_screeners(self, store, protocol, criteria, monkeypatch):
+        monkeypatch.setenv("SR_SCREEN_MODEL_B", "gemma4:e4b")
+        self._seed_docs(store, 10)
+        self._mock_all_include()
+
+        from tools.screen_run import run_screening_batch
+        res = run_screening_batch(store, protocol, criteria, limit=10)
+
+        assert res["processed"] == 10
+        assert res["include_rate_a"] == 1.0 and res["include_rate_b"] == 1.0
+        assert res["invalid_rate_a"] == 0.0 and res["invalid_rate_b"] == 0.0
+        assert res["kappa"] == 1.0            # đồng thuận tuyệt đối include: p_o = p_e = 1
+
+        events = [r["event_type"] for r in store.conn.execute(
+            "SELECT event_type FROM events WHERE uid = 'screening:batch'"
+        ).fetchall()]
+        assert events.count("SCREEN_DEGENERATE") == 2   # cả A lẫn B đều một chiều
+
+    @respx.mock
+    def test_small_batch_does_not_fire_degenerate(self, store, protocol, criteria, monkeypatch):
+        monkeypatch.setenv("SR_SCREEN_MODEL_B", "gemma4:e4b")
+        self._seed_docs(store, 2)             # dưới ngưỡng DEGENERATE_MIN_VALID
+        self._mock_all_include()
+
+        from tools.screen_run import run_screening_batch
+        res = run_screening_batch(store, protocol, criteria, limit=2)
+
+        assert res["processed"] == 2
+        events = [r["event_type"] for r in store.conn.execute(
+            "SELECT event_type FROM events WHERE uid = 'screening:batch'"
+        ).fetchall()]
+        assert "SCREEN_DEGENERATE" not in events   # mẫu quá nhỏ, κ/rate chưa có nghĩa
+
+
+
+class TestKappaFloor:
+    """FL-1 2026-07-19: κ=0.0000 lọt qua guard thoái hóa (không rater nào đúng
+    100% một chiều — kappa paradox trên batch prevalence cao). Sàn κ bắt phần này."""
+
+    def test_kappa_below_floor_boundaries(self):
+        from tools.screen_run import kappa_below_floor, DEGENERATE_MIN_VALID, KAPPA_FLOOR
+
+        n = DEGENERATE_MIN_VALID
+        assert kappa_below_floor(0.0, n) is True          # kịch bản FL-1 nguyên bản
+        assert kappa_below_floor(KAPPA_FLOOR - 0.01, n) is True
+        assert kappa_below_floor(KAPPA_FLOOR, n) is False   # đúng sàn = không nổ
+        assert kappa_below_floor(0.9042, n) is False        # mốc hiệu chuẩn M7.2
+        assert kappa_below_floor(None, n) is False          # single-model: κ không đo
+        assert kappa_below_floor(0.0, n - 1) is False       # batch quá nhỏ
+
+    def test_flag_low_kappa_writes_event_with_rates(self, store):
+        from tools.screen_run import flag_low_kappa
+
+        fired = flag_low_kappa(store, kappa=0.0, n_docs=10,
+                               include_rate_a=1.0, include_rate_b=0.9)
+        assert fired is True
+        rows = store.conn.execute(
+            "SELECT detail FROM events WHERE event_type = 'SCREEN_KAPPA_LOW'"
+        ).fetchall()
+        assert len(rows) == 1
+        assert "κ=0.0000" in rows[0]["detail"] and "A=100%" in rows[0]["detail"]
+
+    def test_flag_low_kappa_silent_when_healthy(self, store):
+        from tools.screen_run import flag_low_kappa
+
+        assert flag_low_kappa(store, kappa=0.9042, n_docs=10,
+                              include_rate_a=0.6, include_rate_b=0.5) is False
+        rows = store.conn.execute(
+            "SELECT 1 FROM events WHERE event_type = 'SCREEN_KAPPA_LOW'"
+        ).fetchall()
+        assert rows == []

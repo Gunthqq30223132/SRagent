@@ -19,13 +19,20 @@ import json
 import logging
 from typing import Any
 
+from pydantic import BaseModel
+
 from sr_agent.config import NOTION_PARENT_PAGE_ID, NOTION_TOKEN
 from sr_agent.models.schemas import CanonicalRole, DocStatus, Document
 from sr_agent.store.staging import StagingStore
+from tools.guard.outbound import OutboundViolation, scan
 
 logger = logging.getLogger("sr_agent.notion")
 
 QA_LABELS = ("[CONFIRMED]", "[INFERRED]", "[UNKNOWN]")
+
+
+class TranslationResult(BaseModel):
+    translated_text: str
 
 
 def _rt(text: str) -> list[dict[str, Any]]:
@@ -45,7 +52,13 @@ def _paragraph(text: str = "") -> dict[str, Any]:
     return {"type": "paragraph", "paragraph": {"rich_text": _rt(text) if text else []}}
 
 
-def build_page_payload(doc: Document, parent_page_id: str) -> dict[str, Any]:
+def build_page_payload(
+    doc: Document,
+    parent_page_id: str,
+    parent_type: str = "page",
+    title_prop_name: str = "title",
+    vi_abstract: str | None = None
+) -> dict[str, Any]:
     """Dựng payload pages.create — pure function, test được không cần API."""
     meta_bullets = [
         _bullet(f"UID: {doc.uid}"),
@@ -86,18 +99,51 @@ def build_page_payload(doc: Document, parent_page_id: str) -> dict[str, Any]:
     if not qa_blocks:
         qa_blocks.append(_paragraph("(Chưa có câu hỏi phản biện — tài liệu chưa qua LLM parse)"))
 
+    en_paragraphs = [p.strip() for p in doc.abstract.split("\n") if p.strip()] if doc.abstract else ["No abstract available."]
+    vi_paragraphs = [p.strip() for p in vi_abstract.split("\n") if p.strip()] if vi_abstract else ["(Chưa dịch được tóm tắt)"]
+
+    en_blocks = [_paragraph(p) for p in en_paragraphs]
+    vi_blocks = [_paragraph(p) for p in vi_paragraphs]
+
+    col_list_block = {
+        "type": "column_list",
+        "column_list": {
+            "children": [
+                {
+                    "type": "column",
+                    "column": {
+                        "children": [
+                            {"type": "heading_3", "heading_3": {"rich_text": _rt("English")}},
+                            *en_blocks
+                        ]
+                    }
+                },
+                {
+                    "type": "column",
+                    "column": {
+                        "children": [
+                            {"type": "heading_3", "heading_3": {"rich_text": _rt("Tiếng Việt")}},
+                            *vi_blocks
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+
     children = [
         _heading("1. Metadata"),
         *meta_bullets,
+        col_list_block,
         _heading("2. Q&A — Critical Review"),
         *qa_blocks,
         _heading("3. My Notes"),
         _paragraph(),
     ]
     return {
-        "parent": {"page_id": parent_page_id},
+        "parent": {f"{parent_type}_id": parent_page_id},
         "properties": {
-            "title": {"title": _rt(doc.title)},
+            title_prop_name: {"title": _rt(doc.title)},
         },
         "children": children,
     }
@@ -134,7 +180,51 @@ class NotionPublisher:
             logger.info("%s đã có trang Notion %s — bỏ qua", doc.uid, stored.notion_page_id)
             return stored.notion_page_id
 
-        payload = build_page_payload(doc, self.parent_page_id or "<parent-page-id>")
+        parent_type = "page"
+        title_prop_name = "title"
+        if not self.dry_run:
+            try:
+                db_info = self.client.databases.retrieve(database_id=self.parent_page_id)
+                parent_type = "database"
+                for k, v in db_info.get("properties", {}).items():
+                    if v.get("type") == "title":
+                        title_prop_name = k
+                        break
+            except Exception:
+                parent_type = "page"
+
+        vi_abstract = None
+        if doc.abstract:
+            try:
+                from sr_agent.parser.ollama_client import OllamaClient
+                client = OllamaClient()
+                if client.is_available():
+                    system_prompt = (
+                        "You are a professional academic translator. Your task is to translate the "
+                        "provided academic paper abstract into natural, professional Vietnamese. "
+                        "Keep technical terms accurate."
+                    )
+                    user_prompt = f"Abstract to translate:\n{doc.abstract}"
+                    res = client.generate_structured(system_prompt, user_prompt, TranslationResult)
+                    vi_abstract = res.translated_text
+            except Exception as e:
+                logger.warning("Không thể dịch tự động abstract qua Ollama: %s", e)
+
+        payload = build_page_payload(
+            doc,
+            self.parent_page_id or "<parent-page-id>",
+            parent_type=parent_type,
+            title_prop_name=title_prop_name,
+            vi_abstract=vi_abstract
+        )
+
+        payload_str = json.dumps(payload, ensure_ascii=False)
+        findings = scan(payload_str)
+        if findings:
+            rule_types = ", ".join(sorted({f.rule_id for f in findings}))
+            logger.error("Outbound interceptor chặn payload của %s: %s", doc.uid, rule_types)
+            store.log_event(doc.uid, "OUTBOUND_BLOCKED", rule_types)
+            raise OutboundViolation(findings)
 
         if self.dry_run:
             logger.warning("NOTION_TOKEN trống — DRY-RUN, in payload thay vì gọi API")

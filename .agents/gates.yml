@@ -1,0 +1,14 @@
+# AnesthOS Gates Configuration (Project-Agnostic Manifest)
+project: "AnesthOS"
+version: "1.0.0"
+
+# Mapped verification commands
+quality_gates:
+  secret_scan: "python3 scripts/scan-history-secrets.py"
+  lint_boundary: "bash scripts/gate_m6.sh"
+  test_suite: "python3 -m pytest"
+  compliance_check: "bash scripts/gate_d32.sh"
+
+# Numeric Firewall gate for clinical mathematical calculations
+# $Dose = C \times Weight$
+clinical_firewall: "python3 -m pytest tests/test_guards.py"

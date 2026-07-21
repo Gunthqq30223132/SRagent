@@ -20,93 +20,171 @@ from sr_agent.store.staging import StagingStore
 logger = logging.getLogger("tools.prisma_report")
 
 
-def generate_prisma_report(store: StagingStore) -> str:
+def generate_prisma_report(store: StagingStore, run_id: str | None = None) -> str:
     conn = store.conn
     
-    # 1. Identification
-    # Sum fetched from runs
-    total_fetched_runs = 0
-    total_duplicates_runs = 0
-    total_rubric_rejected_runs = 0
-    
-    for row in conn.execute("SELECT report_json FROM runs"):
-        try:
-            report = json.loads(row["report_json"])
-            total_fetched_runs += report.get("fetched", 0)
-            total_duplicates_runs += report.get("duplicates", 0)
-            total_rubric_rejected_runs += report.get("rejected_by_rubric", 0)
-        except Exception:
-            pass
-            
-    # Fallback to events
-    fetched_events = conn.execute("SELECT COUNT(*) n FROM events WHERE event_type = 'FETCHED'").fetchone()["n"]
-    identified = max(total_fetched_runs, fetched_events)
-    
-    # Duplicates
-    dup_events = conn.execute(
-        "SELECT COUNT(*) n FROM events WHERE event_type IN ('DUPLICATE_ID', 'DUPLICATE_FUZZY')"
-    ).fetchone()["n"]
-    duplicates_removed = max(total_duplicates_runs, dup_events)
-    
-    # Rubric rejected
-    rubric_events = conn.execute(
-        "SELECT COUNT(*) n FROM events WHERE event_type = 'REJECTED' AND detail LIKE '%rubric%'"
-    ).fetchone()["n"]
-    # Also fallback to status REJECTED if no events
-    rubric_docs = conn.execute(
-        "SELECT COUNT(*) n FROM documents WHERE status = 'rejected' AND uid NOT IN (SELECT DISTINCT uid FROM screening)"
-    ).fetchone()["n"]
-    rubric_rejected = max(total_rubric_rejected_runs, rubric_events, rubric_docs)
-    
-    # 2. Screening
-    # Screened: documents that have screening verdicts
-    screened = conn.execute("SELECT COUNT(DISTINCT uid) n FROM screening").fetchone()["n"]
-    
-    # Excluded by screening:
-    # Let's count unique uids where verdict is 'exclude'
-    excluded = conn.execute(
-        "SELECT COUNT(DISTINCT uid) n FROM screening WHERE verdict = 'exclude'"
-    ).fetchone()["n"]
-    
-    # Excluded reasons
-    exclusion_reasons = {}
-    for r in conn.execute(
-        "SELECT criterion_id, COUNT(DISTINCT uid) n FROM screening WHERE verdict = 'exclude' GROUP BY criterion_id"
-    ):
-        cid = r["criterion_id"] or "Unknown"
-        exclusion_reasons[cid] = r["n"]
+    if run_id:
+        # 1. Identification (strictly from events for this run_id)
+        identified = conn.execute(
+            "SELECT COUNT(DISTINCT uid) n FROM events WHERE event_type = 'FETCHED' AND run_id = ?",
+            (run_id,)
+        ).fetchone()["n"]
         
-    # 3. Eligibility (full-text)
-    # Assessed for eligibility: documents that passed screening (agreement on include, or resolved by tiebreaker)
-    # For Phase M6a: any screened document with verdict='include'
-    # For future: we can check documents that passed screening.
-    # Let's count uids that are not excluded by screening and did not fail rubric
-    eligible = screened - excluded
-    
-    # Excluded at eligibility (full-text): e.g. EF1..EF4.
-    # In Phase M6a, this is 0 since we haven't done full-text eligibility screening.
-    full_text_excluded = 0
-    full_text_reasons = {}
-    
-    # 4. Included
-    # Included: status = APPROVED or APPROVED_LOCAL
-    included = conn.execute(
-        "SELECT COUNT(*) n FROM documents WHERE status IN ('approved', 'approved_local')"
-    ).fetchone()["n"]
-    
-    # Abstract-only: count of queued/approved documents that do not have full_text in payload
-    abstract_only = 0
-    for row in conn.execute("SELECT payload FROM documents WHERE status IN ('queued', 'approved', 'approved_local')"):
-        try:
-            doc = Document.model_validate_json(row["payload"])
-            if not doc.full_text or not doc.full_text.strip():
-                abstract_only += 1
-        except Exception:
-            pass
+        duplicates_removed = conn.execute(
+            "SELECT COUNT(DISTINCT uid) n FROM events WHERE event_type IN ('DUPLICATE_ID', 'DUPLICATE_FUZZY') AND run_id = ?",
+            (run_id,)
+        ).fetchone()["n"]
+        
+        rubric_rejected = conn.execute(
+            "SELECT COUNT(DISTINCT uid) n FROM events WHERE event_type = 'REJECTED' AND detail LIKE '%rubric%' AND run_id = ?",
+            (run_id,)
+        ).fetchone()["n"]
+        
+        # 2. Screening
+        screened = conn.execute(
+            "SELECT COUNT(DISTINCT uid) n FROM events WHERE event_type IN ('SCREEN_INCLUDED', 'SCREEN_EXCLUDED', 'SCREEN_ESCALATED') AND run_id = ?",
+            (run_id,)
+        ).fetchone()["n"]
+        
+        excluded = conn.execute(
+            "SELECT COUNT(DISTINCT uid) n FROM events WHERE event_type = 'SCREEN_EXCLUDED' AND run_id = ?",
+            (run_id,)
+        ).fetchone()["n"]
+        
+        exclusion_reasons = {}
+        for r in conn.execute(
+            """SELECT detail as criterion_id, COUNT(DISTINCT uid) n
+               FROM events
+               WHERE event_type = 'SCREEN_EXCLUDED' AND run_id = ?
+               GROUP BY detail""",
+            (run_id,)
+        ):
+            cid = r["criterion_id"] or "Unknown"
+            exclusion_reasons[cid] = r["n"]
+            
+        # 3. Eligibility
+        eligible = conn.execute(
+            "SELECT COUNT(DISTINCT uid) n FROM events WHERE event_type IN ('ELIG_INCLUDED', 'ELIG_EXCLUDED') AND run_id = ?",
+            (run_id,)
+        ).fetchone()["n"]
+        
+        full_text_excluded = conn.execute(
+            "SELECT COUNT(DISTINCT uid) n FROM events WHERE event_type = 'ELIG_EXCLUDED' AND run_id = ?",
+            (run_id,)
+        ).fetchone()["n"]
+        
+        full_text_reasons = {}
+        for r in conn.execute(
+            """SELECT detail, COUNT(DISTINCT uid) n
+               FROM events
+               WHERE event_type = 'ELIG_EXCLUDED' AND run_id = ?
+               GROUP BY detail""",
+            (run_id,)
+        ):
+            cid = r["detail"] or "Unknown"
+            full_text_reasons[cid] = r["n"]
+            
+        abstract_only = conn.execute(
+            "SELECT COUNT(DISTINCT uid) n FROM events WHERE event_type = 'ELIG_ABSTRACT_ONLY' AND run_id = ?",
+            (run_id,)
+        ).fetchone()["n"]
+        
+        # 4. Included
+        included = conn.execute(
+            "SELECT COUNT(DISTINCT uid) n FROM events WHERE event_type = 'ELIG_INCLUDED' AND run_id = ?",
+            (run_id,)
+        ).fetchone()["n"]
+        
+        title_suffix = f" (Run: {run_id})"
+    else:
+        # 1. Identification
+        # Sum fetched from runs
+        total_fetched_runs = 0
+        total_duplicates_runs = 0
+        total_rubric_rejected_runs = 0
+        
+        for row in conn.execute("SELECT report_json FROM runs"):
+            try:
+                report = json.loads(row["report_json"])
+                total_fetched_runs += report.get("fetched", 0)
+                total_duplicates_runs += report.get("duplicates", 0)
+                total_rubric_rejected_runs += report.get("rejected_by_rubric", 0)
+            except Exception:
+                pass
+                
+        # Fallback to events
+        fetched_events = conn.execute("SELECT COUNT(*) n FROM events WHERE event_type = 'FETCHED'").fetchone()["n"]
+        identified = max(total_fetched_runs, fetched_events)
+        
+        # Duplicates
+        dup_events = conn.execute(
+            "SELECT COUNT(*) n FROM events WHERE event_type IN ('DUPLICATE_ID', 'DUPLICATE_FUZZY')"
+        ).fetchone()["n"]
+        duplicates_removed = max(total_duplicates_runs, dup_events)
+        
+        # Rubric rejected
+        rubric_events = conn.execute(
+            "SELECT COUNT(*) n FROM events WHERE event_type = 'REJECTED' AND detail LIKE '%rubric%'"
+        ).fetchone()["n"]
+        # Also fallback to status REJECTED if no events
+        rubric_docs = conn.execute(
+            "SELECT COUNT(*) n FROM documents WHERE status = 'rejected' AND uid NOT IN (SELECT DISTINCT uid FROM screening)"
+        ).fetchone()["n"]
+        rubric_rejected = max(total_rubric_rejected_runs, rubric_events, rubric_docs)
+        
+        # 2. Screening
+        # Screened: documents that have screening verdicts
+        screened = conn.execute("SELECT COUNT(DISTINCT uid) n FROM screening").fetchone()["n"]
+        
+        # Excluded by screening:
+        # Let's count unique uids where verdict is 'exclude'
+        excluded = conn.execute(
+            "SELECT COUNT(DISTINCT uid) n FROM screening WHERE verdict = 'exclude'"
+        ).fetchone()["n"]
+        
+        # Excluded reasons
+        exclusion_reasons = {}
+        for r in conn.execute(
+            "SELECT criterion_id, COUNT(DISTINCT uid) n FROM screening WHERE verdict = 'exclude' GROUP BY criterion_id"
+        ):
+            cid = r["criterion_id"] or "Unknown"
+            exclusion_reasons[cid] = r["n"]
+            
+        # 3. Eligibility (full-text)
+        # Assessed for eligibility: count event ELIG_INCLUDED + ELIG_EXCLUDED
+        eligible = conn.execute(
+            "SELECT COUNT(DISTINCT uid) n FROM events WHERE event_type IN ('ELIG_INCLUDED', 'ELIG_EXCLUDED')"
+        ).fetchone()["n"]
+        
+        # Excluded at eligibility (full-text): count event ELIG_EXCLUDED
+        full_text_excluded = conn.execute(
+            "SELECT COUNT(DISTINCT uid) n FROM events WHERE event_type = 'ELIG_EXCLUDED'"
+        ).fetchone()["n"]
+        
+        # Excluded-with-reasons group by criterion in detail of ELIG_EXCLUDED
+        full_text_reasons = {}
+        for r in conn.execute(
+            "SELECT detail, COUNT(DISTINCT uid) n FROM events WHERE event_type = 'ELIG_EXCLUDED' GROUP BY detail"
+        ):
+            cid = r["detail"] or "Unknown"
+            full_text_reasons[cid] = r["n"]
+            
+        # 4. Included
+        # Included: status = APPROVED or APPROVED_LOCAL
+        included = conn.execute(
+            "SELECT COUNT(*) n FROM documents WHERE status IN ('approved', 'approved_local')"
+        ).fetchone()["n"]
+        
+        # Abstract-only: count of ELIG_ABSTRACT_ONLY events
+        abstract_only = conn.execute(
+            "SELECT COUNT(DISTINCT uid) n FROM events WHERE event_type = 'ELIG_ABSTRACT_ONLY'"
+        ).fetchone()["n"]
+        
+        title_suffix = " (legacy/all-history)"
             
     # Format report
     report_lines = [
-        "# PRISMA 2020 Flow Diagram",
+        f"# PRISMA 2020 Flow Diagram{title_suffix}",
         "",
         "## 1. Identification",
         f"- **Records identified from databases**: {identified}",
@@ -157,11 +235,12 @@ def generate_prisma_report(store: StagingStore) -> str:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="PRISMA Flowchart Report Generator")
     ap.add_argument("--db", type=Path, help="Override DB path (SQLite)")
+    ap.add_argument("--run", help="Scope report to a specific run_id")
     args = ap.parse_args(argv)
     
     store_path = args.db if args.db else None
     with StagingStore(store_path) if store_path else StagingStore() as store:
-        report = generate_prisma_report(store)
+        report = generate_prisma_report(store, args.run)
         print(report)
         
     return 0

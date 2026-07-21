@@ -10,23 +10,33 @@ import os
 import re
 from pathlib import Path
 
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv
 
-load_dotenv()
+    load_dotenv()
+except ImportError:
+    pass
 
 # --- Định danh nguồn & quy tắc ID tĩnh -------------------------------------
-# Phạm vi CS-only. Nguồn A: IEEE Xplore (CS Transactions) — document ID 8 chữ số.
-# Nguồn B: arXiv — 'arxiv:YYMM.NNNNN'. Hoãn mọi nguồn trung gian khác để giữ
-# staging đồng nhất tuyệt đối.
+# Nguồn A: IEEE Xplore (CS Transactions) — document ID 8 chữ số.
+# Nguồn B: arXiv — 'arxiv:YYMM.NNNNN'.
+# Nguồn C: Europe PMC — y văn peer-review + preprint; ID chuẩn hóa
+# 'europepmc:<SRC>:<num>' với SRC ∈ {MED (MEDLINE/PubMed), PMC, PPR (preprint)}.
+# Prefix tường minh bắt buộc để KHÔNG nhập nhằng với ieee (8 số trần). Hoãn mọi
+# nguồn trung gian khác để giữ staging đồng nhất tuyệt đối.
 ID_PATTERNS: dict[str, re.Pattern[str]] = {
     "ieee": re.compile(r"^\d{8}$"),
     "arxiv": re.compile(r"^arxiv:\d{4}\.\d{4,5}$"),
+    "europepmc": re.compile(r"^europepmc:(MED|PMC|PPR):\d+$"),
 }
 
 # Authority tier: số nhỏ = uy tín cao. Dùng cho tầng 3 của D34.
+# Europe PMC trộn MEDLINE/PMC (peer-review, tier 1) và preprint PPR (tier 2);
+# adapter override xuống 2 cho PPR ngay lúc parse — mặc định ở đây là 1.
 AUTHORITY_TIERS: dict[str, int] = {
-    "ieee": 1,   # peer-reviewed transactions/journals
-    "arxiv": 2,  # preprint
+    "ieee": 1,        # peer-reviewed transactions/journals
+    "arxiv": 2,       # preprint
+    "europepmc": 1,   # MEDLINE/PMC peer-review (PPR preprint bị hạ xuống 2 khi parse)
 }
 
 # --- Hàng đợi duyệt thủ công ------------------------------------------------

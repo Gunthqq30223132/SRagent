@@ -8,13 +8,14 @@ vẫn phải qua Pydantic validation lần cuối; fail -> SchemaValidationError
 
 from __future__ import annotations
 
+import os
 from typing import TypeVar
 
 import httpx
 from pydantic import BaseModel, ValidationError
 
 from sr_agent.config import OLLAMA_BASE_URL, OLLAMA_MODEL
-from sr_agent.errors import NetworkError, SchemaValidationError
+from sr_agent.errors import NetworkError, SchemaValidationError, ContextOverflowError
 from sr_agent.ingest.base import http_retry, raise_for_transient
 
 T = TypeVar("T", bound=BaseModel)
@@ -46,8 +47,26 @@ class OllamaClient:
         system_prompt: str,
         user_prompt: str,
         schema_model: type[T],
+        num_ctx: int | None = None,
     ) -> T:
         """Gọi LLM và ép kết quả khớp 100% Pydantic schema."""
+        if num_ctx is None:
+            env_val = os.environ.get("SR_NUM_CTX")
+            if env_val is not None:
+                try:
+                    num_ctx = int(env_val)
+                except ValueError:
+                    num_ctx = 16384
+            else:
+                num_ctx = 16384
+
+        token_estimate = (len(system_prompt) + len(user_prompt)) // 3
+        if token_estimate > num_ctx:
+            raise ContextOverflowError(
+                f"Văn bản vượt quá giới hạn ngữ cảnh: {token_estimate} > {num_ctx}",
+                token_estimate=token_estimate
+            )
+
         payload = {
             "model": self.model,
             "messages": [
@@ -55,7 +74,7 @@ class OllamaClient:
                 {"role": "user", "content": user_prompt},
             ],
             "format": schema_model.model_json_schema(),
-            "options": {"temperature": 0},
+            "options": {"temperature": 0, "num_ctx": num_ctx},
             "stream": False,
         }
         response = self._chat(payload)
