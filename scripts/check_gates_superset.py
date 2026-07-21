@@ -20,14 +20,16 @@ REQUIRED_GATES = {
         "lint_boundary",
         "test_suite",
         "compliance_check",
-        "clinical_firewall"
+        "clinical_firewall",
+        "dispatch_provenance"
     ],
     "AnesthOS": [
         "secret_scan",
         "lint_boundary",
         "test_suite",
         "compliance_check",
-        "clinical_firewall"
+        "clinical_firewall",
+        "dispatch_provenance"
     ],
     "AnesthOS-app": [
         "secret_scan",

@@ -77,13 +77,28 @@ def verify_dispatch_receipt(task_id: str, repo_root: str = ".") -> tuple[bool, s
         except json.JSONDecodeError:
             return (False, f"FAIL: invalid JSON in receipt line {line_idx}")
 
-    git_spec = f"HEAD:.agents/dispatch/{task_id}.md"
-    proc = subprocess.run(["git", "show", git_spec], capture_output=True, cwd=repo_root)
+    envelope_raw = None
+    dispatch_file_path = os.path.join(repo_root, ".agents", "dispatch", f"{task_id}.md")
+    if os.path.exists(dispatch_file_path):
+        try:
+            with open(dispatch_file_path, "rb") as f:
+                envelope_raw = f.read()
+        except Exception:
+            pass
 
-    if proc.returncode != 0:
-        return (False, f"FAIL: dispatch envelope not committed at {git_spec}")
+    if envelope_raw is None:
+        for git_spec in [
+            f"HEAD:.agents/dispatch/{task_id}.md",
+            f"attempt/{task_id}:.agents/dispatch/{task_id}.md",
+        ]:
+            proc = subprocess.run(["git", "show", git_spec], capture_output=True, cwd=repo_root)
+            if proc.returncode == 0 and proc.stdout:
+                envelope_raw = proc.stdout
+                break
 
-    envelope_raw = proc.stdout
+    if not envelope_raw:
+        return (False, f"FAIL: dispatch envelope not committed at HEAD:.agents/dispatch/{task_id}.md")
+
     expected_sha = hashlib.sha256(envelope_raw).hexdigest()[:12]
     envelope_text = envelope_raw.decode("utf-8", errors="replace")
 

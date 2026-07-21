@@ -43,3 +43,45 @@ jobs:
       - name: Run D32 Gate Verification
         run: |
           bash scripts/gate_d32.sh
+
+  dispatch-provenance-gate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Verify Dispatch Provenance
+        run: |
+          BRANCH_NAME="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+          TASK_ID=""
+
+          if [[ "$BRANCH_NAME" == attempt/* ]]; then
+            TASK_ID="${BRANCH_NAME#attempt/}"
+          else
+            for f in .agents/dispatch/*.md; do
+              if [ -f "$f" ]; then
+                tid=$(basename "$f" .md)
+                if [ -f ".agents/traces/$tid/dispatch.jsonl" ]; then
+                  TASK_ID="$tid"
+                  break
+                fi
+              fi
+            done
+          fi
+
+          if [ -z "$TASK_ID" ]; then
+            echo "Not a dispatch attempt — skipping provenance verifier"
+            exit 0
+          fi
+
+          echo "Found dispatch task ID: $TASK_ID"
+          python3 -c "from sr_agent.store.dispatch_verifier import verify_dispatch_receipt as v; ok,m=v('${TASK_ID}','.'); print(m); import sys; sys.exit(0 if ok else 1)"
+

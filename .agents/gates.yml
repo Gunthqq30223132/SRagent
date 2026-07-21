@@ -8,6 +8,8 @@ quality_gates:
   lint_boundary: "bash scripts/gate_m6.sh"
   test_suite: "python3 -m pytest"
   compliance_check: "bash scripts/gate_d32.sh"
+  dispatch_provenance: "python3 -c \"from sr_agent.store.dispatch_verifier import verify_dispatch_receipt as v; import os, glob; tasks = [os.path.basename(p)[:-3] for p in glob.glob('.agents/dispatch/*.md')]; ok, m = (v(tasks[0], '.') if tasks else (True, 'SKIP: no dispatch tasks')); print(m); import sys; sys.exit(0 if ok else 1)\""
+
 
 # Numeric Firewall gate for clinical mathematical calculations
 # $Dose = C \times Weight$
