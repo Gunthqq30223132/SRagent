@@ -194,12 +194,17 @@ def main():
     os.makedirs(trace_dir, exist_ok=True)
     dispatch_jsonl_path = os.path.join(trace_dir, "dispatch.jsonl")
 
+    provider = target_model_raw.split("/", 1)[0] if "/" in target_model_raw else ""
+    req_model = model_requested
+
     utc_now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     record = {
         "timestamp": utc_now,
         "task_id": task_id,
         "capsule_sha256": capsule_sha256,
         "completion_sha256": completion_sha256,
+        "provider": provider,
+        "req_model": req_model,
         "model_requested": model_requested,
         "target_model_raw": target_model_raw,
         "model_returned": model_returned,

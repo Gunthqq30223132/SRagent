@@ -3,7 +3,18 @@
 import hashlib
 import json
 import os
+import re
 import subprocess
+
+
+VERIFIED_MODELS = {
+    "kiro/claude-sonnet-4.5",
+    "kr/claude-sonnet-4.5",
+    "kiro/claude-sonnet-4.5-thinking",
+    "kr/claude-sonnet-4.5-thinking",
+}
+
+MODEL_PREFIX_REGEX = re.compile(r"^[a-zA-Z0-9_-]+/[a-zA-Z0-9_.-]+$")
 
 
 def normalize_model_name(raw_model: str) -> str:
@@ -80,6 +91,21 @@ def verify_dispatch_receipt(task_id: str, repo_root: str = ".") -> tuple[bool, s
             break
     normalized_target = normalize_model_name(target_from_envelope) if target_from_envelope else ""
 
+    if target_from_envelope:
+        if not MODEL_PREFIX_REGEX.match(target_from_envelope):
+            return (
+                False,
+                "FAIL: target model missing provider prefix or is an unverified bare combo name",
+            )
+        if (
+            target_from_envelope not in VERIFIED_MODELS
+            and normalized_target not in VERIFIED_MODELS
+        ):
+            return (
+                False,
+                "FAIL: target model missing provider prefix or is an unverified bare combo name",
+            )
+
     target_content_bytes = get_target_file_content(task_id, repo_root)
     file_sha256 = hashlib.sha256(target_content_bytes).hexdigest()[:12] if target_content_bytes is not None else None
 
@@ -100,15 +126,36 @@ def verify_dispatch_receipt(task_id: str, repo_root: str = ".") -> tuple[bool, s
                 f"FAIL: completion_sha256 mismatch (expected {file_sha256}, got {rec_completion_sha})",
             )
 
-        # 2. Verify Model Pin
+        # 2. Verify Model Pin & Provider Prefix / Verified Models
+        req_model = record.get("req_model") or record.get("model_requested") or ""
+        target_model_raw = record.get("target_model_raw") or ""
+
+        has_valid_prefix = bool(
+            MODEL_PREFIX_REGEX.match(req_model) or MODEL_PREFIX_REGEX.match(target_model_raw)
+        )
+        if not has_valid_prefix:
+            return (
+                False,
+                "FAIL: target model missing provider prefix or is an unverified bare combo name",
+            )
+
         if target_from_envelope:
             raw_match = record.get("target_model_raw") == target_from_envelope
-            req_match = record.get("model_requested") == normalized_target
+            req_match = (record.get("req_model") or record.get("model_requested")) == normalized_target
             if not (raw_match or req_match):
                 return (
                     False,
                     f"FAIL: target model pin mismatch (envelope target '{target_from_envelope}', record raw '{record.get('target_model_raw')}', record req '{record.get('model_requested')}')",
                 )
+
+        is_verified_model = (
+            req_model in VERIFIED_MODELS or target_model_raw in VERIFIED_MODELS
+        )
+        if not is_verified_model:
+            return (
+                False,
+                "FAIL: target model missing provider prefix or is an unverified bare combo name",
+            )
 
         model_returned = record.get("model_returned")
         if not model_returned:

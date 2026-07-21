@@ -49,6 +49,17 @@ if ! git cat-file -e "HEAD:$DISPATCH_REL_PATH" 2>/dev/null; then
     exit 1
 fi
 
+# ── Validate TARGET in dispatch envelope ─────────────────────────────
+TARGET=$(git show "HEAD:$DISPATCH_REL_PATH" 2>/dev/null | grep '^TARGET:' | head -n 1 | sed 's/^TARGET:[[:space:]]*//')
+case "$TARGET" in
+    */*)
+        ;;
+    *)
+        echo "Error: TARGET '$TARGET' in dispatch envelope missing provider prefix (must be provider/model)." >&2
+        exit 1
+        ;;
+esac
+
 # Calculate SHA-256 of the COMMITTED version (HEAD), fallback shasum / sha256sum
 if command -v shasum >/dev/null 2>&1; then
     CAPSULE_SHA=$(git show "HEAD:$DISPATCH_REL_PATH" | shasum -a 256 | cut -c1-12)

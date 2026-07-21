@@ -40,6 +40,8 @@ class TestNewAttemptAdversarial:
         """Create and commit a dispatch envelope file."""
         envelope_path = repo / ".agents" / "dispatch" / f"{task_id}.md"
         envelope_path.parent.mkdir(parents=True, exist_ok=True)
+        if "TARGET:" not in content:
+            content = "TARGET: kiro/claude-sonnet-4.5-thinking\n" + content
         envelope_path.write_text(content)
         
         subprocess.run(["git", "add", str(envelope_path)], cwd=repo, check=True, capture_output=True)

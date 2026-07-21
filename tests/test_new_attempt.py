@@ -55,7 +55,7 @@ class TestNewAttemptHappyPath:
         os.makedirs(dispatch_dir, exist_ok=True)
         dispatch_file = os.path.join(dispatch_dir, "test-task-001.md")
         with open(dispatch_file, "w") as f:
-            f.write("# Dispatch envelope for test-task-001\n")
+            f.write("TARGET: kiro/claude-sonnet-4.5-thinking\n# Dispatch envelope for test-task-001\n")
         _git(["add", "."], cwd=repo_dir)
         _git(["commit", "-m", "add dispatch envelope"], cwd=repo_dir)
 
@@ -167,7 +167,7 @@ class TestNewAttemptErrors:
         dispatch_dir = os.path.join(repo_dir, ".agents", "dispatch")
         os.makedirs(dispatch_dir, exist_ok=True)
         with open(os.path.join(dispatch_dir, "dup-task.md"), "w") as f:
-            f.write("# Dup task dispatch\n")
+            f.write("TARGET: kiro/claude-sonnet-4.5-thinking\n# Dup task dispatch\n")
         _git(["add", "."], cwd=repo_dir)
         _git(["commit", "-m", "add dup dispatch"], cwd=repo_dir)
 
@@ -207,4 +207,25 @@ class TestNewAttemptErrors:
 
         assert result.returncode != 0
         assert "not inside a git repository" in result.stderr
+
+    def test_target_missing_provider_prefix_exits_nonzero(self, tmp_path):
+        repo_dir = str(tmp_path / "repo")
+        _init_repo(repo_dir)
+
+        dispatch_dir = os.path.join(repo_dir, ".agents", "dispatch")
+        os.makedirs(dispatch_dir, exist_ok=True)
+        with open(os.path.join(dispatch_dir, "bare-combo-task.md"), "w") as f:
+            f.write("TARGET: claude-sonnet-4.5\n# Bare combo dispatch\n")
+        _git(["add", "."], cwd=repo_dir)
+        _git(["commit", "-m", "add bare combo dispatch"], cwd=repo_dir)
+
+        result = subprocess.run(
+            ["sh", SCRIPT_PATH, "bare-combo-task"],
+            cwd=repo_dir,
+            capture_output=True,
+            text=True,
+        )
+
+        assert result.returncode != 0
+        assert "Error: TARGET 'claude-sonnet-4.5' in dispatch envelope missing provider prefix (must be provider/model)." in result.stderr
 

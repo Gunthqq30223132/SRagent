@@ -254,3 +254,84 @@ def test_http_error_receipt_fails(tmp_path):
     assert ok is False
     assert msg.startswith("FAIL:")
     assert "status_code must be 200" in msg
+
+
+def test_bare_unprefixed_combo_name_fails(tmp_path):
+    task_id = "test-task-bare-combo"
+    envelope_content = b"TARGET: claude-sonnet-4.5\nEnvelope content"
+    expected_capsule_sha = hashlib.sha256(envelope_content).hexdigest()[:12]
+    expected_completion_sha = setup_target_patch_file(tmp_path, task_id)
+
+    trace_dir = tmp_path / ".agents" / "traces" / task_id
+    trace_dir.mkdir(parents=True, exist_ok=True)
+    jsonl_file = trace_dir / "dispatch.jsonl"
+
+    record = {
+        "timestamp": "2026-07-20T15:15:00Z",
+        "task_id": task_id,
+        "capsule_sha256": expected_capsule_sha,
+        "completion_sha256": expected_completion_sha,
+        "provider": "",
+        "req_model": "claude-sonnet-4.5",
+        "model_requested": "claude-sonnet-4.5",
+        "target_model_raw": "claude-sonnet-4.5",
+        "model_returned": "claude-sonnet-4.5",
+        "prompt_tokens": 100,
+        "completion_tokens": 50,
+        "total_tokens": 150,
+        "latency_ms": 500,
+        "status_code": 200,
+    }
+    jsonl_file.write_text(json.dumps(record) + "\n", encoding="utf-8")
+
+    def mock_run(cmd, capture_output=False, cwd=None):
+        if cmd[:2] == ["git", "show"] and cmd[2] == f"HEAD:.agents/dispatch/{task_id}.md":
+            return subprocess.CompletedProcess(cmd, 0, stdout=envelope_content, stderr=b"")
+        return subprocess.CompletedProcess(cmd, 1, stdout=b"", stderr=b"Not found")
+
+    with patch("subprocess.run", side_effect=mock_run):
+        ok, msg = verify_dispatch_receipt(task_id, repo_root=str(tmp_path))
+
+    assert ok is False
+    assert msg == "FAIL: target model missing provider prefix or is an unverified bare combo name"
+
+
+def test_valid_provider_prefixed_leaf_model_passes(tmp_path):
+    task_id = "test-task-leaf-valid"
+    envelope_content = b"TARGET: kiro/claude-sonnet-4.5\nSample dispatch envelope content"
+    expected_capsule_sha = hashlib.sha256(envelope_content).hexdigest()[:12]
+    expected_completion_sha = setup_target_patch_file(tmp_path, task_id)
+
+    trace_dir = tmp_path / ".agents" / "traces" / task_id
+    trace_dir.mkdir(parents=True, exist_ok=True)
+    jsonl_file = trace_dir / "dispatch.jsonl"
+
+    record = {
+        "timestamp": "2026-07-20T15:15:00Z",
+        "task_id": task_id,
+        "capsule_sha256": expected_capsule_sha,
+        "completion_sha256": expected_completion_sha,
+        "provider": "kiro",
+        "req_model": "kr/claude-sonnet-4.5",
+        "model_requested": "kr/claude-sonnet-4.5",
+        "target_model_raw": "kiro/claude-sonnet-4.5",
+        "model_returned": "claude-sonnet-4.5",
+        "prompt_tokens": 1000,
+        "completion_tokens": 100,
+        "total_tokens": 1100,
+        "latency_ms": 800,
+        "status_code": 200,
+    }
+    jsonl_file.write_text(json.dumps(record) + "\n", encoding="utf-8")
+
+    def mock_run(cmd, capture_output=False, cwd=None):
+        if cmd[:2] == ["git", "show"] and cmd[2] == f"HEAD:.agents/dispatch/{task_id}.md":
+            return subprocess.CompletedProcess(cmd, 0, stdout=envelope_content, stderr=b"")
+        return subprocess.CompletedProcess(cmd, 1, stdout=b"", stderr=b"Not found")
+
+    with patch("subprocess.run", side_effect=mock_run):
+        ok, msg = verify_dispatch_receipt(task_id, repo_root=str(tmp_path))
+
+    assert ok is True
+    assert msg == "PASS: valid dispatch receipt with 1100 tokens"
+
