@@ -1,10 +1,11 @@
-"""Dispatch receipt verifier module."""
+"""Pure stdlib dispatch receipt verifier module."""
 
 import hashlib
 import json
 import os
 import re
 import subprocess
+import sys
 
 
 VERIFIED_MODELS = {
@@ -189,7 +190,6 @@ def verify_dispatch_receipt(task_id: str, repo_root: str = ".") -> tuple[bool, s
         if normalized_target:
             base_target = normalized_target.split("/")[-1]
             if base_target not in model_returned:
-                import sys
                 sys.stderr.write(
                     f"Warning: model_returned '{model_returned}' diverges from base model '{base_target}'\n"
                 )

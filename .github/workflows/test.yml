@@ -83,5 +83,6 @@ jobs:
           fi
 
           echo "Found dispatch task ID: $TASK_ID"
-          python3 -c "from sr_agent.store.dispatch_verifier import verify_dispatch_receipt as v; ok,m=v('${TASK_ID}','.'); print(m); import sys; sys.exit(0 if ok else 1)"
+          python3 -c "from sr_agent.verifier import verify_dispatch_receipt as v; ok,m=v('${TASK_ID}','.'); print(m); import sys; sys.exit(0 if ok else 1)"
+
 

@@ -6,7 +6,8 @@ import subprocess
 from unittest.mock import patch
 import pytest
 
-from sr_agent.store.dispatch_verifier import verify_dispatch_receipt
+from sr_agent.verifier import verify_dispatch_receipt
+
 
 
 def setup_target_patch_file(tmp_path, task_id, content=b"def test_foo(): pass\n"):

@@ -13,6 +13,9 @@ import time
 import urllib.error
 import urllib.request
 
+from sr_agent.verifier import verify_dispatch_receipt
+
+
 
 def get_git_repo_root() -> str:
     proc = subprocess.run(
