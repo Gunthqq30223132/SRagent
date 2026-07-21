@@ -179,16 +179,22 @@ def main():
     completion_sha256 = ""
     if completion_text:
         import re
+        param_path_match = re.search(r'<parameter name="(?:path|target_file|file_path)">(.*?)</parameter>', completion_text, re.DOTALL)
+        param_content_match = re.search(r'<parameter name="(?:content|contents|code_content)">(.*?)</parameter>', completion_text, re.DOTALL)
         write_match = re.search(r"<write_file>\s*<path>(.*?)</path>\s*<contents?>(.*?)</contents?>", completion_text, re.DOTALL)
         if write_match:
             rel_target_path = write_match.group(1).strip()
             extracted_code = write_match.group(2)
-            if extracted_code.startswith("\n"):
-                extracted_code = extracted_code[1:]
+        elif param_path_match and param_content_match:
+            rel_target_path = param_path_match.group(1).strip()
+            extracted_code = param_content_match.group(1)
         else:
             extracted_code = extract_code_block(completion_text)
-            path_match = re.search(r"<path>(.*?)</path>", completion_text)
+            path_match = re.search(r"<path>(.*?)</path>", completion_text) or param_path_match
             rel_target_path = path_match.group(1).strip() if path_match else os.path.join("tests", "test_new_attempt_adversarial.py")
+
+        if extracted_code.startswith("\n"):
+            extracted_code = extracted_code[1:]
 
         if os.path.basename(repo_root) == task_id or "/attempts/" in repo_root:
             target_file_path = os.path.join(repo_root, rel_target_path)
