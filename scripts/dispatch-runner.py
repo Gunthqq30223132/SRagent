@@ -212,12 +212,15 @@ def main():
     provider = target_model_raw.split("/", 1)[0] if "/" in target_model_raw else ""
     req_model = model_requested
 
+    rel_target_path_final = rel_target_path if 'rel_target_path' in locals() and rel_target_path else "tests/test_new_attempt_adversarial.py"
+
     utc_now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     record = {
         "timestamp": utc_now,
         "task_id": task_id,
         "capsule_sha256": capsule_sha256,
         "completion_sha256": completion_sha256,
+        "target_path": rel_target_path_final,
         "provider": provider,
         "req_model": req_model,
         "model_requested": model_requested,

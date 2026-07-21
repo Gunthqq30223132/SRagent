@@ -26,14 +26,11 @@ def normalize_model_name(raw_model: str) -> str:
     return model
 
 
-def get_target_file_content(task_id: str, repo_root: str) -> bytes | None:
+def get_target_file_content(task_id: str, repo_root: str, target_path: str = "tests/test_new_attempt_adversarial.py") -> bytes | None:
     candidate_paths = [
-        os.path.join(repo_root, "..", "attempts", task_id, "tools", "consensus_ledger.py"),
-        os.path.join(repo_root, "attempts", task_id, "tools", "consensus_ledger.py"),
-        os.path.join(repo_root, "tools", "consensus_ledger.py"),
-        os.path.join(repo_root, "..", "attempts", task_id, "tests", "test_new_attempt_adversarial.py"),
-        os.path.join(repo_root, "attempts", task_id, "tests", "test_new_attempt_adversarial.py"),
-        os.path.join(repo_root, "tests", "test_new_attempt_adversarial.py"),
+        os.path.join(repo_root, "..", "attempts", task_id, target_path),
+        os.path.join(repo_root, "attempts", task_id, target_path),
+        os.path.join(repo_root, target_path),
     ]
     for path in candidate_paths:
         if os.path.exists(path):
@@ -44,9 +41,8 @@ def get_target_file_content(task_id: str, repo_root: str) -> bytes | None:
                 pass
 
     for git_ref in [
-        f"attempt/{task_id}:tools/consensus_ledger.py",
-        f"attempt/{task_id}:tests/test_new_attempt_adversarial.py",
-        "HEAD:tests/test_new_attempt_adversarial.py",
+        f"attempt/{task_id}:{target_path}",
+        f"HEAD:{target_path}",
     ]:
         proc = subprocess.run(["git", "show", git_ref], capture_output=True, cwd=repo_root)
         if proc.returncode == 0 and proc.stdout:
@@ -113,9 +109,6 @@ def verify_dispatch_receipt(task_id: str, repo_root: str = ".") -> tuple[bool, s
                 "FAIL: target model missing provider prefix or is an unverified bare combo name",
             )
 
-    target_content_bytes = get_target_file_content(task_id, repo_root)
-    file_sha256 = hashlib.sha256(target_content_bytes).hexdigest()[:12] if target_content_bytes is not None else None
-
     total_tokens = 0
     for record in parsed_records:
         capsule_sha = record.get("capsule_sha256")
@@ -124,6 +117,16 @@ def verify_dispatch_receipt(task_id: str, repo_root: str = ".") -> tuple[bool, s
                 False,
                 f"FAIL: capsule SHA mismatch (expected {expected_sha}, got {capsule_sha})",
             )
+
+        target_path = record.get("target_path") or "tests/test_new_attempt_adversarial.py"
+        target_content_bytes = get_target_file_content(task_id, repo_root, target_path)
+        if target_content_bytes is None:
+            return (
+                False,
+                f"FAIL: target file '{target_path}' not found in attempt/{task_id} or filesystem",
+            )
+
+        file_sha256 = hashlib.sha256(target_content_bytes).hexdigest()[:12]
 
         # 1. Verify completion_sha256
         rec_completion_sha = record.get("completion_sha256")

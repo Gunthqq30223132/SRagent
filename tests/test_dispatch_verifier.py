@@ -335,3 +335,133 @@ def test_valid_provider_prefixed_leaf_model_passes(tmp_path):
     assert ok is True
     assert msg == "PASS: valid dispatch receipt with 1100 tokens"
 
+
+def test_dynamic_target_path_file_a_passes(tmp_path):
+    task_id = "test-task-file-a"
+    envelope_content = b"TARGET: kr/claude-sonnet-4.5\nEnvelope content"
+    expected_capsule_sha = hashlib.sha256(envelope_content).hexdigest()[:12]
+    
+    # Create target file A at tools/custom_tool_a.py
+    file_a = tmp_path / "attempts" / task_id / "tools" / "custom_tool_a.py"
+    file_a.parent.mkdir(parents=True, exist_ok=True)
+    content_a = b"print('Hello from tool A')\n"
+    file_a.write_bytes(content_a)
+    expected_sha_a = hashlib.sha256(content_a).hexdigest()[:12]
+
+    trace_dir = tmp_path / ".agents" / "traces" / task_id
+    trace_dir.mkdir(parents=True, exist_ok=True)
+    jsonl_file = trace_dir / "dispatch.jsonl"
+
+    record = {
+        "timestamp": "2026-07-21T10:00:00Z",
+        "task_id": task_id,
+        "capsule_sha256": expected_capsule_sha,
+        "completion_sha256": expected_sha_a,
+        "target_path": "tools/custom_tool_a.py",
+        "model_requested": "kr/claude-sonnet-4.5",
+        "target_model_raw": "kr/claude-sonnet-4.5",
+        "model_returned": "claude-sonnet-4.5",
+        "prompt_tokens": 500,
+        "completion_tokens": 100,
+        "total_tokens": 600,
+        "latency_ms": 400,
+        "status_code": 200,
+    }
+    jsonl_file.write_text(json.dumps(record) + "\n", encoding="utf-8")
+
+    def mock_run(cmd, capture_output=False, cwd=None):
+        if cmd[:2] == ["git", "show"] and cmd[2] == f"HEAD:.agents/dispatch/{task_id}.md":
+            return subprocess.CompletedProcess(cmd, 0, stdout=envelope_content, stderr=b"")
+        return subprocess.CompletedProcess(cmd, 1, stdout=b"", stderr=b"Not found")
+
+    with patch("subprocess.run", side_effect=mock_run):
+        ok, msg = verify_dispatch_receipt(task_id, repo_root=str(tmp_path))
+
+    assert ok is True
+    assert msg == "PASS: valid dispatch receipt with 600 tokens"
+
+
+def test_dynamic_target_path_file_b_passes_without_code_changes(tmp_path):
+    task_id = "test-task-file-b"
+    envelope_content = b"TARGET: kr/claude-sonnet-4.5\nEnvelope content"
+    expected_capsule_sha = hashlib.sha256(envelope_content).hexdigest()[:12]
+
+    # Create target file B at sr_agent/submodule/file_b.py
+    file_b = tmp_path / "attempts" / task_id / "sr_agent" / "submodule" / "file_b.py"
+    file_b.parent.mkdir(parents=True, exist_ok=True)
+    content_b = b"class ComponentB:\n    pass\n"
+    file_b.write_bytes(content_b)
+    expected_sha_b = hashlib.sha256(content_b).hexdigest()[:12]
+
+    trace_dir = tmp_path / ".agents" / "traces" / task_id
+    trace_dir.mkdir(parents=True, exist_ok=True)
+    jsonl_file = trace_dir / "dispatch.jsonl"
+
+    record = {
+        "timestamp": "2026-07-21T10:00:00Z",
+        "task_id": task_id,
+        "capsule_sha256": expected_capsule_sha,
+        "completion_sha256": expected_sha_b,
+        "target_path": "sr_agent/submodule/file_b.py",
+        "model_requested": "kr/claude-sonnet-4.5",
+        "target_model_raw": "kr/claude-sonnet-4.5",
+        "model_returned": "claude-sonnet-4.5",
+        "prompt_tokens": 600,
+        "completion_tokens": 150,
+        "total_tokens": 750,
+        "latency_ms": 450,
+        "status_code": 200,
+    }
+    jsonl_file.write_text(json.dumps(record) + "\n", encoding="utf-8")
+
+    def mock_run(cmd, capture_output=False, cwd=None):
+        if cmd[:2] == ["git", "show"] and cmd[2] == f"HEAD:.agents/dispatch/{task_id}.md":
+            return subprocess.CompletedProcess(cmd, 0, stdout=envelope_content, stderr=b"")
+        return subprocess.CompletedProcess(cmd, 1, stdout=b"", stderr=b"Not found")
+
+    with patch("subprocess.run", side_effect=mock_run):
+        ok, msg = verify_dispatch_receipt(task_id, repo_root=str(tmp_path))
+
+    assert ok is True
+    assert msg == "PASS: valid dispatch receipt with 750 tokens"
+
+
+def test_nonexistent_target_path_fails(tmp_path):
+    task_id = "test-task-nonexistent"
+    envelope_content = b"TARGET: kr/claude-sonnet-4.5\nEnvelope content"
+    expected_capsule_sha = hashlib.sha256(envelope_content).hexdigest()[:12]
+
+    trace_dir = tmp_path / ".agents" / "traces" / task_id
+    trace_dir.mkdir(parents=True, exist_ok=True)
+    jsonl_file = trace_dir / "dispatch.jsonl"
+
+    record = {
+        "timestamp": "2026-07-21T10:00:00Z",
+        "task_id": task_id,
+        "capsule_sha256": expected_capsule_sha,
+        "completion_sha256": "abcdef123456",
+        "target_path": "nonexistent/path/to/missing_file.py",
+        "model_requested": "kr/claude-sonnet-4.5",
+        "target_model_raw": "kr/claude-sonnet-4.5",
+        "model_returned": "claude-sonnet-4.5",
+        "prompt_tokens": 100,
+        "completion_tokens": 50,
+        "total_tokens": 150,
+        "latency_ms": 200,
+        "status_code": 200,
+    }
+    jsonl_file.write_text(json.dumps(record) + "\n", encoding="utf-8")
+
+    def mock_run(cmd, capture_output=False, cwd=None):
+        if cmd[:2] == ["git", "show"] and cmd[2] == f"HEAD:.agents/dispatch/{task_id}.md":
+            return subprocess.CompletedProcess(cmd, 0, stdout=envelope_content, stderr=b"")
+        return subprocess.CompletedProcess(cmd, 1, stdout=b"", stderr=b"Not found")
+
+    with patch("subprocess.run", side_effect=mock_run):
+        ok, msg = verify_dispatch_receipt(task_id, repo_root=str(tmp_path))
+
+    assert ok is False
+    assert msg.startswith("FAIL:")
+    assert "nonexistent/path/to/missing_file.py" in msg or "not found" in msg
+
+
