@@ -179,8 +179,11 @@ def main():
     completion_sha256 = ""
     if completion_text:
         extracted_code = extract_code_block(completion_text)
+        import re
+        path_match = re.search(r"<path>(.*?)</path>", completion_text)
+        rel_target_path = path_match.group(1).strip() if path_match else os.path.join("tests", "test_new_attempt_adversarial.py")
         target_file_path = os.path.join(
-            os.path.dirname(repo_root), "attempts", task_id, "tests", "test_new_attempt_adversarial.py"
+            os.path.dirname(repo_root), "attempts", task_id, rel_target_path
         )
         os.makedirs(os.path.dirname(target_file_path), exist_ok=True)
         with open(target_file_path, "w", encoding="utf-8") as f:

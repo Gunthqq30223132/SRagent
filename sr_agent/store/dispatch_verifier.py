@@ -28,6 +28,9 @@ def normalize_model_name(raw_model: str) -> str:
 
 def get_target_file_content(task_id: str, repo_root: str) -> bytes | None:
     candidate_paths = [
+        os.path.join(repo_root, "..", "attempts", task_id, "tools", "consensus_ledger.py"),
+        os.path.join(repo_root, "attempts", task_id, "tools", "consensus_ledger.py"),
+        os.path.join(repo_root, "tools", "consensus_ledger.py"),
         os.path.join(repo_root, "..", "attempts", task_id, "tests", "test_new_attempt_adversarial.py"),
         os.path.join(repo_root, "attempts", task_id, "tests", "test_new_attempt_adversarial.py"),
         os.path.join(repo_root, "tests", "test_new_attempt_adversarial.py"),
@@ -40,7 +43,11 @@ def get_target_file_content(task_id: str, repo_root: str) -> bytes | None:
             except Exception:
                 pass
 
-    for git_ref in [f"attempt/{task_id}:tests/test_new_attempt_adversarial.py", "HEAD:tests/test_new_attempt_adversarial.py"]:
+    for git_ref in [
+        f"attempt/{task_id}:tools/consensus_ledger.py",
+        f"attempt/{task_id}:tests/test_new_attempt_adversarial.py",
+        "HEAD:tests/test_new_attempt_adversarial.py",
+    ]:
         proc = subprocess.run(["git", "show", git_ref], capture_output=True, cwd=repo_root)
         if proc.returncode == 0 and proc.stdout:
             return proc.stdout
