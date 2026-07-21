@@ -179,7 +179,7 @@ def main():
     completion_sha256 = ""
     if completion_text:
         import re
-        write_match = re.search(r"<write_file>\s*<path>(.*?)</path>\s*<contents>(.*?)</contents>", completion_text, re.DOTALL)
+        write_match = re.search(r"<write_file>\s*<path>(.*?)</path>\s*<contents?>(.*?)</contents?>", completion_text, re.DOTALL)
         if write_match:
             rel_target_path = write_match.group(1).strip()
             extracted_code = write_match.group(2)
