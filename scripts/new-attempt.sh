@@ -52,10 +52,10 @@ fi
 # ── Validate TARGET in dispatch envelope ─────────────────────────────
 TARGET=$(git show "HEAD:$DISPATCH_REL_PATH" 2>/dev/null | grep '^TARGET:' | head -n 1 | sed 's/^TARGET:[[:space:]]*//')
 case "$TARGET" in
-    */*)
+    */*|claude-sonnet-4.5|claude-opus-4.8|deepseek-v4|qwen3-coder-next|gemini-3.1-pro)
         ;;
     *)
-        echo "Error: TARGET '$TARGET' in dispatch envelope missing provider prefix (must be provider/model)." >&2
+        echo "Error: TARGET '$TARGET' in dispatch envelope missing provider prefix (must be provider/model or recognized combo alias)." >&2
         exit 1
         ;;
 esac

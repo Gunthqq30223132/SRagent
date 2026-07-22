@@ -294,7 +294,7 @@ def test_bare_unprefixed_combo_name_fails(tmp_path):
         ok, msg = verify_dispatch_receipt(task_id, repo_root=str(tmp_path))
 
     assert ok is False
-    assert msg == "FAIL: target model missing provider prefix or is an unverified bare combo name"
+    assert msg == "FAIL: model_returned unresolved or is bare combo alias"
 
 
 def test_valid_provider_prefixed_leaf_model_passes(tmp_path):
@@ -464,5 +464,126 @@ def test_nonexistent_target_path_fails(tmp_path):
     assert ok is False
     assert msg.startswith("FAIL:")
     assert "nonexistent/path/to/missing_file.py" in msg or "not found" in msg
+
+
+def test_combo_fallback_verified_leaf_passes(tmp_path):
+    """Test (a1): Combo fallback with envelope TARGET 'claude-sonnet-4.5' and model_returned 'kr/claude-sonnet-4.5'."""
+    task_id = "test-task-combo-kr"
+    envelope_content = b"TARGET: claude-sonnet-4.5\nSample dispatch envelope content"
+    expected_capsule_sha = hashlib.sha256(envelope_content).hexdigest()[:12]
+    expected_completion_sha = setup_target_patch_file(tmp_path, task_id)
+
+    trace_dir = tmp_path / ".agents" / "traces" / task_id
+    trace_dir.mkdir(parents=True, exist_ok=True)
+    jsonl_file = trace_dir / "dispatch.jsonl"
+
+    record = {
+        "timestamp": "2026-07-20T15:15:00Z",
+        "task_id": task_id,
+        "capsule_sha256": expected_capsule_sha,
+        "completion_sha256": expected_completion_sha,
+        "req_model": "claude-sonnet-4.5",
+        "model_requested": "claude-sonnet-4.5",
+        "target_model_raw": "claude-sonnet-4.5",
+        "model_returned": "kr/claude-sonnet-4.5",
+        "prompt_tokens": 4000,
+        "completion_tokens": 150,
+        "total_tokens": 4150,
+        "latency_ms": 1200,
+        "status_code": 200,
+    }
+    jsonl_file.write_text(json.dumps(record) + "\n", encoding="utf-8")
+
+    def mock_run(cmd, capture_output=False, cwd=None):
+        if cmd[:2] == ["git", "show"] and cmd[2] == f"HEAD:.agents/dispatch/{task_id}.md":
+            return subprocess.CompletedProcess(cmd, 0, stdout=envelope_content, stderr=b"")
+        return subprocess.CompletedProcess(cmd, 1, stdout=b"", stderr=b"Not found")
+
+    with patch("subprocess.run", side_effect=mock_run):
+        ok, msg = verify_dispatch_receipt(task_id, repo_root=str(tmp_path))
+
+    assert ok is True
+    assert msg == "PASS: valid dispatch receipt with 4150 tokens"
+
+
+def test_combo_fallback_qwen_leaf_passes(tmp_path):
+    """Test (a2): Combo fallback with envelope TARGET 'claude-sonnet-4.5' and model_returned 'qwen3-coder-next'."""
+    task_id = "test-task-combo-qwen"
+    envelope_content = b"TARGET: claude-sonnet-4.5\nSample dispatch envelope content"
+    expected_capsule_sha = hashlib.sha256(envelope_content).hexdigest()[:12]
+    expected_completion_sha = setup_target_patch_file(tmp_path, task_id)
+
+    trace_dir = tmp_path / ".agents" / "traces" / task_id
+    trace_dir.mkdir(parents=True, exist_ok=True)
+    jsonl_file = trace_dir / "dispatch.jsonl"
+
+    record = {
+        "timestamp": "2026-07-20T15:15:00Z",
+        "task_id": task_id,
+        "capsule_sha256": expected_capsule_sha,
+        "completion_sha256": expected_completion_sha,
+        "req_model": "claude-sonnet-4.5",
+        "model_requested": "claude-sonnet-4.5",
+        "target_model_raw": "claude-sonnet-4.5",
+        "model_returned": "qwen3-coder-next",
+        "prompt_tokens": 1000,
+        "completion_tokens": 100,
+        "total_tokens": 1100,
+        "latency_ms": 800,
+        "status_code": 200,
+    }
+    jsonl_file.write_text(json.dumps(record) + "\n", encoding="utf-8")
+
+    def mock_run(cmd, capture_output=False, cwd=None):
+        if cmd[:2] == ["git", "show"] and cmd[2] == f"HEAD:.agents/dispatch/{task_id}.md":
+            return subprocess.CompletedProcess(cmd, 0, stdout=envelope_content, stderr=b"")
+        return subprocess.CompletedProcess(cmd, 1, stdout=b"", stderr=b"Not found")
+
+    with patch("subprocess.run", side_effect=mock_run):
+        ok, msg = verify_dispatch_receipt(task_id, repo_root=str(tmp_path))
+
+    assert ok is True
+    assert msg == "PASS: valid dispatch receipt with 1100 tokens"
+
+
+def test_fallback_unverified_model_fails(tmp_path):
+    """Test (b): Fallback where model_returned is 'unverified-cheap-model' -> FAIL."""
+    task_id = "test-task-unverified-model"
+    envelope_content = b"TARGET: claude-sonnet-4.5\nEnvelope content"
+    expected_capsule_sha = hashlib.sha256(envelope_content).hexdigest()[:12]
+    expected_completion_sha = setup_target_patch_file(tmp_path, task_id)
+
+    trace_dir = tmp_path / ".agents" / "traces" / task_id
+    trace_dir.mkdir(parents=True, exist_ok=True)
+    jsonl_file = trace_dir / "dispatch.jsonl"
+
+    record = {
+        "timestamp": "2026-07-20T15:15:00Z",
+        "task_id": task_id,
+        "capsule_sha256": expected_capsule_sha,
+        "completion_sha256": expected_completion_sha,
+        "req_model": "claude-sonnet-4.5",
+        "model_requested": "claude-sonnet-4.5",
+        "target_model_raw": "claude-sonnet-4.5",
+        "model_returned": "unverified-cheap-model",
+        "prompt_tokens": 100,
+        "completion_tokens": 50,
+        "total_tokens": 150,
+        "latency_ms": 500,
+        "status_code": 200,
+    }
+    jsonl_file.write_text(json.dumps(record) + "\n", encoding="utf-8")
+
+    def mock_run(cmd, capture_output=False, cwd=None):
+        if cmd[:2] == ["git", "show"] and cmd[2] == f"HEAD:.agents/dispatch/{task_id}.md":
+            return subprocess.CompletedProcess(cmd, 0, stdout=envelope_content, stderr=b"")
+        return subprocess.CompletedProcess(cmd, 1, stdout=b"", stderr=b"Not found")
+
+    with patch("subprocess.run", side_effect=mock_run):
+        ok, msg = verify_dispatch_receipt(task_id, repo_root=str(tmp_path))
+
+    assert ok is False
+    assert msg == "FAIL: model_returned 'unverified-cheap-model' is not a verified leaf model"
+
 
 

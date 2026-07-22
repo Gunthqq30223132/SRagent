@@ -208,7 +208,7 @@ class TestNewAttemptErrors:
         assert result.returncode != 0
         assert "not inside a git repository" in result.stderr
 
-    def test_target_missing_provider_prefix_exits_nonzero(self, tmp_path):
+    def test_combo_alias_target_succeeds(self, tmp_path):
         repo_dir = str(tmp_path / "repo")
         _init_repo(repo_dir)
 
@@ -226,6 +226,29 @@ class TestNewAttemptErrors:
             text=True,
         )
 
+        assert result.returncode == 0
+        worktree_dir = tmp_path / "attempts" / "bare-combo-task"
+        _git(["worktree", "remove", str(worktree_dir), "--force"], cwd=repo_dir)
+
+    def test_invalid_target_exits_nonzero(self, tmp_path):
+        repo_dir = str(tmp_path / "repo")
+        _init_repo(repo_dir)
+
+        dispatch_dir = os.path.join(repo_dir, ".agents", "dispatch")
+        os.makedirs(dispatch_dir, exist_ok=True)
+        with open(os.path.join(dispatch_dir, "invalid-target-task.md"), "w") as f:
+            f.write("TARGET: invalid-unverified-model\n# Invalid target dispatch\n")
+        _git(["add", "."], cwd=repo_dir)
+        _git(["commit", "-m", "add invalid target dispatch"], cwd=repo_dir)
+
+        result = subprocess.run(
+            ["sh", SCRIPT_PATH, "invalid-target-task"],
+            cwd=repo_dir,
+            capture_output=True,
+            text=True,
+        )
+
         assert result.returncode != 0
-        assert "Error: TARGET 'claude-sonnet-4.5' in dispatch envelope missing provider prefix (must be provider/model)." in result.stderr
+        assert "Error: TARGET 'invalid-unverified-model' in dispatch envelope missing provider prefix" in result.stderr
+
 

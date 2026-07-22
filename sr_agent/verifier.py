@@ -13,9 +13,18 @@ VERIFIED_MODELS = {
     "kr/claude-sonnet-4.5",
     "kiro/claude-sonnet-4.5-thinking",
     "kr/claude-sonnet-4.5-thinking",
+    "claude-sonnet-4.5",
+    "claude-opus-4.8",
+    "deepseek-v4",
+    "qwen3-coder-next",
+    "gemini-3.1-pro",
 }
 
 MODEL_PREFIX_REGEX = re.compile(r"^[a-zA-Z0-9_-]+/[a-zA-Z0-9_.-]+$")
+
+
+def is_bare_combo_alias(target: str) -> bool:
+    return bool(target and not MODEL_PREFIX_REGEX.match(target))
 
 
 def normalize_model_name(raw_model: str) -> str:
@@ -111,11 +120,6 @@ def verify_dispatch_receipt(task_id: str, repo_root: str = ".") -> tuple[bool, s
     normalized_target = normalize_model_name(target_from_envelope) if target_from_envelope else ""
 
     if target_from_envelope:
-        if not MODEL_PREFIX_REGEX.match(target_from_envelope):
-            return (
-                False,
-                "FAIL: target model missing provider prefix or is an unverified bare combo name",
-            )
         if (
             target_from_envelope not in VERIFIED_MODELS
             and normalized_target not in VERIFIED_MODELS
@@ -156,18 +160,9 @@ def verify_dispatch_receipt(task_id: str, repo_root: str = ".") -> tuple[bool, s
         req_model = record.get("req_model") or record.get("model_requested") or ""
         target_model_raw = record.get("target_model_raw") or ""
 
-        has_valid_prefix = bool(
-            MODEL_PREFIX_REGEX.match(req_model) or MODEL_PREFIX_REGEX.match(target_model_raw)
-        )
-        if not has_valid_prefix:
-            return (
-                False,
-                "FAIL: target model missing provider prefix or is an unverified bare combo name",
-            )
-
         if target_from_envelope:
             raw_match = record.get("target_model_raw") == target_from_envelope
-            req_match = (record.get("req_model") or record.get("model_requested")) == normalized_target
+            req_match = (record.get("req_model") or record.get("model_requested")) in (target_from_envelope, normalized_target)
             if not (raw_match or req_match):
                 return (
                     False,
@@ -175,7 +170,10 @@ def verify_dispatch_receipt(task_id: str, repo_root: str = ".") -> tuple[bool, s
                 )
 
         is_verified_model = (
-            req_model in VERIFIED_MODELS or target_model_raw in VERIFIED_MODELS
+            req_model in VERIFIED_MODELS
+            or target_model_raw in VERIFIED_MODELS
+            or normalize_model_name(req_model) in VERIFIED_MODELS
+            or normalize_model_name(target_model_raw) in VERIFIED_MODELS
         )
         if not is_verified_model:
             return (
@@ -186,6 +184,16 @@ def verify_dispatch_receipt(task_id: str, repo_root: str = ".") -> tuple[bool, s
         model_returned = record.get("model_returned")
         if not model_returned:
             return (False, "FAIL: model_returned is empty")
+
+        if (
+            (target_from_envelope and is_bare_combo_alias(target_from_envelope) and model_returned == target_from_envelope)
+            or (target_model_raw and is_bare_combo_alias(target_model_raw) and model_returned == target_model_raw)
+        ):
+            return (False, "FAIL: model_returned unresolved or is bare combo alias")
+
+        norm_returned = model_returned.split("/", 1)[1] if "/" in model_returned else model_returned
+        if model_returned not in VERIFIED_MODELS and norm_returned not in VERIFIED_MODELS:
+            return (False, f"FAIL: model_returned '{model_returned}' is not a verified leaf model")
 
         if normalized_target:
             base_target = normalized_target.split("/")[-1]
@@ -213,3 +221,4 @@ def verify_dispatch_receipt(task_id: str, repo_root: str = ".") -> tuple[bool, s
             total_tokens += int(prompt_tokens + completion_tokens)
 
     return (True, f"PASS: valid dispatch receipt with {total_tokens} tokens")
+
