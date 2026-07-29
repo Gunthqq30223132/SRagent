@@ -31,6 +31,7 @@ from __future__ import annotations
 import argparse
 import importlib
 import importlib.util
+import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -86,7 +87,6 @@ def _has_approved(store: StagingStore) -> bool:
 
 
 def is_consensus_approved(store: StagingStore) -> bool:
-    import os
     run_id = os.getenv("SR_RUN_ID")
     if not run_id:
         return False
@@ -149,7 +149,10 @@ def build_phases() -> list[Phase]:
             kind=AUTO,
             desc="Trích dữ liệu có thuế bằng chứng (evidenced extraction).",
             runner_ref=("tools.evidence_extract", "main"),
-            build_args=lambda a: ["--limit", str(a.limit)],
+            # D40: KHÔNG truyền --protocol thì evidence_extract rơi về
+            # LEGACY_EXTRACTION_FIELDS (taxonomy CS) — run y khoa sẽ trích nhầm
+            # has_code_repo/dataset_spec thay vì liều/kết cục. Phát hiện khi nối BS4.
+            build_args=lambda a: ["--protocol", str(a.protocol), "--limit", str(a.limit)],
         ),
         Phase(
             name="consensus_review",
@@ -164,7 +167,12 @@ def build_phases() -> list[Phase]:
             kind=AUTO,
             desc="Tổng hợp đồng thuận + firewall số (BS4).",
             runner_ref=("tools.consensus_run", "main"),
-            build_args=lambda a: ["--protocol", str(a.protocol)],
+            # run_id chỉ nằm trong env khi tạo run mới (args.run là None ở nhánh đó),
+            # nên đọc env trước — build_args được gọi lúc chạy phase, sau khi env đã set.
+            build_args=lambda a: [
+                "--protocol", str(a.protocol),
+                "--run", os.environ.get("SR_RUN_ID") or getattr(a, "run", "") or "",
+            ],
         ),
     ]
 
@@ -203,7 +211,6 @@ def cmd_plan(phases: list[Phase]) -> int:
 
 
 def cmd_status(store: StagingStore, phases: list[Phase], run_id: str | None = None) -> int:
-    import os
     if run_id:
         os.environ["SR_RUN_ID"] = run_id
         counts = _status_counts_for_run(store, run_id)
@@ -354,7 +361,6 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"❌ Không thể acquire writer lock — đang được giữ bởi: {lock_info}")
                 return 2
             try:
-                import os
                 import random
                 from datetime import datetime, timezone
                 

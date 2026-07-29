@@ -120,6 +120,24 @@ CREATE TABLE IF NOT EXISTS rob_assessment (
     created_at  TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_rob_assessment_uid ON rob_assessment(uid);
+
+-- BS4 §2 — sổ cái claim của consensus. Ledger là SỰ THẬT, narrative là dẫn xuất:
+-- mọi claim được ghi vào đây TRƯỚC khi sinh văn bản.
+CREATE TABLE IF NOT EXISTS consensus_claim (
+    claim_id       TEXT PRIMARY KEY,   -- "clm-<run_id>-<seq3>"
+    run_id         TEXT NOT NULL,
+    outcome_id     TEXT NOT NULL,      -- từ protocol.outcomes; "__unmapped__" nếu không khớp
+    uid            TEXT NOT NULL,
+    field          TEXT NOT NULL,
+    value          TEXT NOT NULL,      -- BYTE-EXACT từ bảng extraction, không format lại
+    quote          TEXT NOT NULL,
+    rob_overall    TEXT NOT NULL,      -- Low | Some concerns | High | VOID
+    weight         REAL NOT NULL,
+    direction      TEXT,               -- increase | decrease | no_difference | NULL
+    conflict_group TEXT,
+    created_at     TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_consensus_claim_run ON consensus_claim(run_id);
 """
 
 

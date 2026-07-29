@@ -38,6 +38,19 @@ class ExtractionField(BaseModel):
     value_hint: str | None = None
 
 
+class OutcomeSpec(BaseModel):
+    """BS4 §2 — một outcome của review, cùng cách nhận diện hướng tác dụng.
+
+    `direction_terms` TÙY CHỌN: vắng ⇒ direction luôn NULL, hai giá trị chỉ được
+    trưng bày cạnh nhau chứ không bao giờ bị phán cùng/khác hướng.
+    """
+
+    id: str
+    label_en: str
+    match_fields: list[str] = Field(default_factory=list)
+    direction_terms: dict[str, list[str]] = Field(default_factory=dict)
+
+
 class ReviewProtocol(BaseModel):
     topic_vi: str                        # ý định gốc — chỉ là nhãn/audit
     population: PicoConcept
@@ -49,6 +62,12 @@ class ReviewProtocol(BaseModel):
     study_types_excluded: list[str] = Field(default_factory=lambda: ["editorial", "poster", "thesis"])
     exclusion_criteria: list[str]        # tập con của ET1..ET7, EF1..EF4
     extraction_fields: list[ExtractionField] = Field(default_factory=list)
+    # D37 §4 — gợi ý stem theo domain RoB, phục vụ pertinence lint (opt-in).
+    rob_hints: dict[str, list[str]] = Field(default_factory=dict)
+    # BS4 §2 — outcome + từ điển đơn vị. Ngữ nghĩa miền nằm TRỌN ở protocol;
+    # core giữ topic-blind (bất biến CLAUDE.md #3).
+    outcomes: list[OutcomeSpec] = Field(default_factory=list)
+    unit_lexicon: list[str] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def validate_extraction_fields(self) -> ReviewProtocol:
@@ -60,6 +79,28 @@ class ReviewProtocol(BaseModel):
             if f.id in seen_ids:
                 raise ValueError(f"Duplicate extraction field ID: '{f.id}'")
             seen_ids.add(f.id)
+        return self
+
+    @model_validator(mode="after")
+    def validate_outcomes(self) -> ReviewProtocol:
+        """BS4 §3.4: một field thuộc TỐI ĐA một outcome — kiểm lúc nạp, không lúc chạy.
+
+        Nếu để lọt, cùng một con số sẽ nằm ở hai outcome và bảng ledger tự mâu thuẫn
+        với chính nó — hỏng ngay tại tầng dữ liệu, trước cả narrative.
+        """
+        seen_outcome_ids: set[str] = set()
+        field_owner: dict[str, str] = {}
+        for o in self.outcomes:
+            if o.id in seen_outcome_ids:
+                raise ValueError(f"Duplicate outcome ID: '{o.id}'")
+            seen_outcome_ids.add(o.id)
+            for f in o.match_fields:
+                if f in field_owner:
+                    raise ValueError(
+                        f"Field '{f}' bị hai outcome cùng nhận: "
+                        f"'{field_owner[f]}' và '{o.id}'"
+                    )
+                field_owner[f] = o.id
         return self
 
 
