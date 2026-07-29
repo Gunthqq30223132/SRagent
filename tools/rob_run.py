@@ -177,6 +177,24 @@ def compute_minors_overall(scores: Dict[str, str | int]) -> str:
     return str(sum(int(s) for s in scores.values()))
 
 
+def quote_lacks_pertinence(quote: str, stems: List[str]) -> bool:
+    """D37 §4 — quote đúng nguồn nhưng nghi lạc domain.
+
+    FL-1 F4: `verify_quote` chỉ chứng minh NGUỒN GỐC, không chứng minh quote nói về
+    đúng domain (ví dụ quote chain-of-thought bị gán cho "randomization"). Không sửa
+    được bằng verification (cấm cosine/fuzzy — bất biến CLAUDE.md #2), nên sửa bằng
+    xếp hàng ưu tiên cho người: đánh cờ để console đẩy doc lên đầu.
+
+    So khớp: substring exact sau casefold. Informational tuyệt đối — hàm này KHÔNG
+    bao giờ đổi verdict và KHÔNG bao giờ tạo VOID.
+    Không có stems (protocol không khai `rob_hints`) ⇒ tính năng tắt hoàn toàn.
+    """
+    if not stems or not quote:
+        return False
+    q = quote.casefold()
+    return not any(s.casefold() in q for s in stems)
+
+
 def compute_agreement_stats(ratings_a: List[str], ratings_b: List[str]) -> Tuple[float, float, List[int]]:
     """Computes percentage agreement, Cohen's Kappa, and a list of mismatched indices."""
     n = len(ratings_a)
@@ -294,6 +312,8 @@ def run_rob_batch(store: StagingStore, protocol: Any, limit: int) -> int:
     # Read config from protocol dynamically
     overall_rule = getattr(protocol, "overall_rule", "rob2_standard")
     minors_threshold = getattr(protocol, "minors_threshold", None)
+    # D37 §4: opt-in per protocol — vắng khối này thì pertinence lint tắt hoàn toàn.
+    rob_hints: Dict[str, List[str]] = getattr(protocol, "rob_hints", None) or {}
 
     for uid in to_process[:limit]:
         doc = store.get(uid)
@@ -367,12 +387,16 @@ def run_rob_batch(store: StagingStore, protocol: Any, limit: int) -> int:
                         domains_a[domain_name] = ("VOID", da.evidence_quote)
                     else:
                         domains_a[domain_name] = (da.verdict, da.evidence_quote)
+                        if quote_lacks_pertinence(da.evidence_quote, rob_hints.get(domain_name, [])):
+                            store.log_event(uid, "ROB_PERTINENCE_FLAG", f"rob_a:{domain_name}")
 
                     # Model B check
                     if not db.evidence_quote or not verify_quote(full_text_str, db.evidence_quote):
                         domains_b[domain_name] = ("VOID", db.evidence_quote)
                     else:
                         domains_b[domain_name] = (db.verdict, db.evidence_quote)
+                        if quote_lacks_pertinence(db.evidence_quote, rob_hints.get(domain_name, [])):
+                            store.log_event(uid, "ROB_PERTINENCE_FLAG", f"rob_b:{domain_name}")
 
                 # Compute overall verdicts
                 overall_a = compute_rob2_overall(*(v[0] for v in domains_a.values()), rule=overall_rule)
@@ -455,6 +479,8 @@ def run_rob_batch(store: StagingStore, protocol: Any, limit: int) -> int:
                     else:
                         scores_a[item_name] = str(ia.score)
                         quotes_a[item_name] = ia.evidence_quote
+                        if quote_lacks_pertinence(ia.evidence_quote, rob_hints.get(item_name, [])):
+                            store.log_event(uid, "ROB_PERTINENCE_FLAG", f"rob_a:{item_name}")
 
                     # Model B verify
                     if not ib or not ib.evidence_quote or not verify_quote(full_text_str, ib.evidence_quote):
@@ -463,6 +489,8 @@ def run_rob_batch(store: StagingStore, protocol: Any, limit: int) -> int:
                     else:
                         scores_b[item_name] = str(ib.score)
                         quotes_b[item_name] = ib.evidence_quote
+                        if quote_lacks_pertinence(ib.evidence_quote, rob_hints.get(item_name, [])):
+                            store.log_event(uid, "ROB_PERTINENCE_FLAG", f"rob_b:{item_name}")
 
                 total_a = compute_minors_overall(scores_a)
                 total_b = compute_minors_overall(scores_b)

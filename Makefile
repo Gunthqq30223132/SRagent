@@ -53,6 +53,9 @@ enrich:             ## tái xử lý doc heuristic-only bằng LLM (cần Ollama
 ui:                 ## mở hàng đợi duyệt Streamlit (top-5 theo rubric)
 	.venv/bin/streamlit run ui/app.py
 
+sr-ui:              ## mở SR Console (D37): phân xử RoB + cổng consensus
+	.venv/bin/streamlit run ui/sr_console.py
+
 test:               ## chạy toàn bộ tests offline
 	$(PY) -m pytest
 
