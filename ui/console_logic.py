@@ -74,9 +74,13 @@ def get_run(store: StagingStore, run_id: str) -> dict[str, Any] | None:
     return dict(row) if row else None
 
 
+# Tên event phải khớp CHÍNH XÁC thứ các stage thực sự ghi ra. FL-SIM 2026-07-29:
+# funnel ban đầu đếm 'SCREEN_COMPLETED' (không tồn tại — stage ghi 'SCREENED') và
+# 'EXTRACT_COMPLETED' (khi đó chưa được ghi ở đâu cả) ⇒ dashboard hiện 0 ở hai bậc,
+# im lặng và sai. Đây là loại lỗi chỉ lộ khi cho cả chuỗi chạy thật một lần.
 FUNNEL_STAGES = [
     ("fetched", "FETCHED"),
-    ("screened", "SCREEN_COMPLETED"),
+    ("screened", "SCREENED"),
     ("eligible", "ELIG_INCLUDED"),
     ("rob_done", "ROB_COMPLETED"),
     ("extracted", "EXTRACT_COMPLETED"),

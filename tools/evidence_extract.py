@@ -199,7 +199,11 @@ def run_extraction_batch(store: StagingStore, limit: int, protocol = None) -> in
                         verified = 0
                         
                 store.add_extraction(uid, field, value, quote, section, verified)
-                
+
+            # Dấu vết "stage đã chạy xong trên doc này". Trước FL-SIM 2026-07-29
+            # extract KHÔNG để lại event thành công nào — nên funnel của SR Console
+            # và PRISMA per-run luôn đếm 0 ở bậc extracted, im lặng và sai.
+            store.log_event(uid, "EXTRACT_COMPLETED", f"fields={len(fields_map)}")
             processed_count += 1
         except ContextOverflowError as exc:
             store.log_event(uid, "LLM_CONTEXT_OVERFLOW", f"stage=extract token_estimate={exc.token_estimate}")
