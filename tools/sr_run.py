@@ -52,6 +52,13 @@ _APPROVED_STATES = (DocStatus.APPROVED.value, DocStatus.APPROVED_LOCAL.value)
 AUTO = "auto"
 HUMAN_GATE = "human_gate"
 
+# Trạng thái run mà `--run <id>` được phép chạy tiếp.
+# CONSENSUS_READY BẮT BUỘC có mặt: đó chính là trạng thái người tạo ra khi bấm chốt
+# ở SR Console (D37). Nếu chỉ nhận OPEN thì đúng luồng mà D37+BS4 sinh ra để phục vụ
+# — người duyệt xong rồi chạy tiếp `--from consensus` — lại bị từ chối (FL-SIM 2026-07-29).
+# CLOSED và ABANDONED vắng mặt có chủ đích: báo cáo là bất biến sau khi chốt.
+RESUMABLE_STATES = frozenset({"OPEN", "CONSENSUS_READY"})
+
 
 @dataclass
 class Phase:
@@ -349,6 +356,12 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "plan":
         return cmd_plan(phases)
 
+    # `--db` phải chi phối CẢ TUYẾN, không riêng store của orchestrator: mỗi phase
+    # con tự mở `StagingStore()` trong tiến trình này, nên truyền qua env là đường
+    # duy nhất tới được chúng. Thiếu dòng này thì orchestrator ghi một DB còn các
+    # stage ghi DB khác — im lặng, không lỗi, và mọi số đếm đều sai.
+    if getattr(args, "db", None):
+        os.environ["SR_AGENT_DB"] = str(args.db)
     db_kwargs = {"db_path": args.db} if getattr(args, "db", None) else {}
     with StagingStore(**db_kwargs) as store:
         if args.cmd == "status":
@@ -371,7 +384,7 @@ def main(argv: list[str] | None = None) -> int:
                     if not run_row:
                         print(f"❌ Lỗi: Không tìm thấy run_id={run_id!r} trong sr_runs.")
                         return 2
-                    if run_row["state"] != "OPEN":
+                    if run_row["state"] not in RESUMABLE_STATES:
                         print(f"❌ Lỗi: Run {run_id} đang ở trạng thái {run_row['state']!r}, không thể resume.")
                         return 2
                     if not args.protocol or not args.protocol.exists():

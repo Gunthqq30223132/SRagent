@@ -13,6 +13,7 @@ lần cập nhật cuối sẽ bị đánh EXPIRED rồi xóa. APPROVED/REJECTED
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -145,9 +146,25 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def resolve_db_path(db_path: str | Path | None = None) -> Path:
+    """Quyết định đường DB tại THỜI ĐIỂM GỌI, không phải lúc import.
+
+    Sẹo cùng họ với `writer_lock._resolve` (OPS-1 2026-07-20): dùng `DB_PATH` làm
+    giá trị mặc định của tham số thì nó bị bind lúc định nghĩa hàm, nên mọi thay
+    đổi env sau khi import đều VÔ HIỆU. Hệ quả cụ thể: `sr_run --db <path>` chỉ
+    đổi được store của chính orchestrator, còn từng phase con tự mở
+    `StagingStore()` trỏ vào staging thật — orchestrator ghi một DB, các stage ghi
+    DB khác. Đọc lại env ở đây khiến `--db` chạy thông suốt cả tuyến.
+    """
+    if db_path is not None:
+        return Path(db_path)
+    env = os.getenv("SR_AGENT_DB")
+    return Path(env) if env else DB_PATH
+
+
 class StagingStore:
-    def __init__(self, db_path: str | Path = DB_PATH):
-        self.db_path = Path(db_path)
+    def __init__(self, db_path: str | Path | None = None):
+        self.db_path = resolve_db_path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.conn = sqlite3.connect(self.db_path)
         self.conn.row_factory = sqlite3.Row
