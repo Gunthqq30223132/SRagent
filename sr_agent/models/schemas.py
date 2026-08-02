@@ -44,6 +44,23 @@ class CanonicalRole(str, Enum):
     IMPLICATIONS = "implications"  # A: Discussion   | B: Conclusion
 
 
+class Polarity(str, Enum):
+    POSITIVE = "POSITIVE"
+    NEGATIVE = "NEGATIVE"
+    MAX_LIMIT = "MAX_LIMIT"
+    MIN_LIMIT = "MIN_LIMIT"
+
+
+class ClinicalPayloadItem(BaseModel):
+    """Mô hình dữ liệu lâm sàng phục vụ kiểm tra polarity và điều kiện áp dụng."""
+
+    value: float | int | str
+    unit: str | None = ""
+    polarity: Polarity = Polarity.POSITIVE
+    applicability_condition: str | None = None
+
+
+
 class Section(BaseModel):
     heading_raw: str = ""
     content: str

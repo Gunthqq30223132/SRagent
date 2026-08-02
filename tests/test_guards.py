@@ -54,8 +54,13 @@ class TestFirewallVerdicts:
         assert verdict.passed is False
 
     def test_no_anchor_output_passes_with_zero_checked(self):
-        verdict = check_output("The paper proposes a novel retrieval method.", [SOURCE])
+        verdict = check_output("The paper proposes a novel retrieval method.", [SOURCE], allow_vacuous=True)
         assert verdict.passed is True and verdict.anchors_checked == 0
+
+    def test_no_anchor_output_raises_vacuous_pass_error(self):
+        from sr_agent.errors import VacuousPassError
+        with pytest.raises(VacuousPassError):
+            check_output("The paper proposes a novel retrieval method.", [SOURCE])
 
     def test_whitespace_difference_still_matches(self):
         # Chuẩn hóa nhẹ chỉ vượt khác biệt trình bày, không vượt sai số
@@ -148,3 +153,31 @@ class TestRedact:
 
     def test_redact_on_clean_text_is_identity(self):
         assert redact(CLEAN_ACADEMIC) == CLEAN_ACADEMIC
+
+
+class TestCompoundUnitsAndBoundaries:
+    @pytest.mark.parametrize("text", [
+        "Bệnh nhân dùng 5 mcg/dL levothyroxine",
+        "Nồng độ 5 ng/mL",
+        "Liều 100 mg/m²",
+        "Tốc độ truyền 2 mL/kg/h",
+        "Nồng độ 15 ug/dL",
+    ])
+    def test_compound_units_pass_verdict(self, text):
+        verdict = check_output(text, [text])
+        assert verdict.passed is True
+        assert verdict.anchors_checked == 1
+
+    def test_leading_dot_boundary_lookbehind(self):
+        from tools.guard.firewall import is_strict_substring
+        assert is_strict_substring(".5", "10.5 mg") is False
+        assert is_strict_substring(".5 mg", "10.5 mg") is False
+        assert is_strict_substring(".5 mg", "Bệnh nhân dùng .5 mg") is True
+
+    def test_leading_dot_firewall_verdict_blocks_partial_match(self):
+        source = ["Bệnh nhân dùng 10.5 mg Paracetamol."]
+        attack_output = "Bệnh nhân dùng .5 mg Paracetamol."
+        verdict = check_output(attack_output, source)
+        assert verdict.passed is False
+        assert len(verdict.violations) > 0
+

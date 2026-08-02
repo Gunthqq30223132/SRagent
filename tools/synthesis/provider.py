@@ -157,7 +157,7 @@ def _finalize(
     Học thuyết: "LLM đề xuất, verifier tất định định đoạt". Con số bịa ⇒ verdict
     void; văn bản gốc giữ nguyên (không sửa cho khớp — đó sẽ là ngụy tạo bằng chứng).
     """
-    verdict = check_output(text, [s.markdown for s in sources], strict=True)
+    verdict = check_output(text, [s.markdown for s in sources], strict=True, allow_vacuous=True)
     if schema_model is not None and verdict.passed:
         # Cổng kiểm định bổ sung (tùy chọn): answer phải khớp schema của caller.
         try:

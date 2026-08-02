@@ -51,3 +51,8 @@ class ContextOverflowError(PermanentError):
         super().__init__(message)
         self.token_estimate = token_estimate
 
+
+class VacuousPassError(PermanentError):
+    """Lỗi khi không có mỏ neo số (anchors_checked == 0) trong kiểm tra firewall."""
+
+
