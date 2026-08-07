@@ -84,6 +84,25 @@ def _normalize(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
+def _matches_verbatim(needle: str, source: str) -> bool:
+    """So khớp nguyên văn nhưng TỪ CHỐI khi needle nằm lọt bên trong một số lớn hơn.
+
+    TẠI SAO: `needle in source` thuần substring cho PASS SAI — '5 mg' được "chứng thực"
+    bởi nguồn '25 mg' (thiếu 5 lần), '9.9%' bởi '99.9%' (sai 10 lần). Con số nhỏ hơn
+    không bao giờ được phép mượn chữ số của con số lớn hơn để hợp lệ hóa.
+
+    Ranh giới chỉ chặn ĐÚNG trường hợp chữ số liền kề (hoặc dấu thập phân/phân cách
+    nghìn nối tiếp bằng chữ số) — không chặn dấu phẩy liệt kê: trong 'port 8080, 8081'
+    thì '8080' vẫn khớp, vì sau dấu ',' là khoảng trắng chứ không phải chữ số.
+    """
+    pattern = (
+        r"(?<![\d])(?<![\d][.,])"      # trước: không phải chữ số, không phải <số><.,>
+        + re.escape(needle)
+        + r"(?![\d])(?![.,]\d)"        # sau: không phải chữ số, không phải <.,><số>
+    )
+    return re.search(pattern, source) is not None
+
+
 def extract_anchors(text: str) -> list[NumericAnchor]:
     """Bóc mọi mỏ neo số; span chồng lấn thì giữ match dài hơn (IP thắng port...)."""
     found: list[NumericAnchor] = []
@@ -109,8 +128,9 @@ def check_output(
 ) -> FirewallVerdict:
     """Đối chiếu từng anchor trong đầu ra LLM với kho nguồn Layer A.
 
-    Anchor "khớp" ⇔ dạng chuẩn hóa của nó là substring nguyên văn của ít nhất
-    một nguồn đã chuẩn hóa. Không có khái niệm "gần đúng".
+    Anchor "khớp" ⇔ dạng chuẩn hóa của nó xuất hiện nguyên văn trong ít nhất một
+    nguồn đã chuẩn hóa, VÀ không nằm lọt bên trong một số lớn hơn (xem
+    `_matches_verbatim`). Không có khái niệm "gần đúng".
     """
     anchors = extract_anchors(llm_output)
     norm_sources = [_normalize(s) for s in source_texts if s]
@@ -119,7 +139,7 @@ def check_output(
     warnings: list[Violation] = []
     for anchor in anchors:
         needle = _normalize(anchor.raw)
-        if any(needle in src for src in norm_sources):
+        if any(_matches_verbatim(needle, src) for src in norm_sources):
             continue
         v = Violation(
             anchor=anchor,

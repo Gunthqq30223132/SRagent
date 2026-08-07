@@ -70,6 +70,45 @@ class TestFirewallVerdicts:
         assert check_output("We use 32 GB of memory.", [SOURCE]).passed is False
 
 
+class TestFirewallNumericBoundary:
+    """Hồi quy cho lỗ hổng H2/D32 §1.2 — số nhỏ mượn chữ số của số lớn để hợp lệ hóa.
+
+    Trước khi sửa, `needle in source` thuần substring cho PASS SAI: '5 mg' khớp vào
+    '25 mg', '9.9%' khớp vào '99.9%'. Chữ số phải khớp trọn vẹn, không được lọt.
+    """
+
+    def test_smaller_number_not_validated_by_larger_one(self):
+        # '8080' KHÔNG được hợp lệ hóa bởi nguồn có '18080'
+        verdict = check_output("listens on port 8080.", ["bound to port 18080 only"])
+        assert verdict.passed is False
+
+    def test_percentage_prefix_of_larger_percentage_fails(self):
+        # '9.9%' nằm lọt trong '99.9%' của SOURCE — phải bị chặn
+        verdict = check_output("It reaches 9.9% top-1 accuracy.", [SOURCE])
+        assert verdict.passed is False
+        assert verdict.anchors_checked == 1
+
+    def test_decimal_suffix_mismatch_fails(self):
+        # '12 ms' không được hợp lệ hóa bởi '112 ms'
+        verdict = check_output("latency of 12 ms measured.", ["we saw 112 ms latency"])
+        assert verdict.passed is False
+
+    def test_exact_number_still_passes(self):
+        # chứng dương: khớp trọn vẹn vẫn phải qua
+        verdict = check_output("It reaches 99.9% top-1 accuracy.", [SOURCE])
+        assert verdict.passed is True
+
+    def test_list_separator_comma_does_not_block_match(self):
+        # dấu phẩy LIỆT KÊ (sau nó là khoảng trắng) không được coi là phần của số
+        verdict = check_output("uses port 8080.", ["open ports 8080, 8081 on host"])
+        assert verdict.passed is True
+
+    def test_thousand_separator_does_not_leak_partial_match(self):
+        # '000' không được hợp lệ hóa bởi '10,000'
+        verdict = check_output("The server listens on port 000.", ["dataset of 10,000 rows"])
+        assert verdict.passed is False
+
+
 CLEAN_ACADEMIC = (
     "The model achieves 99.9% accuracy using O(n log n) attention; "
     "see https://arxiv.org/abs/2401.12345 — dataset of 10,000 samples, version 2.1.0."

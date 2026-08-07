@@ -22,31 +22,38 @@ else
     FAILED=1
 fi
 
-BASE_REF="origin/claude/sr-agent-pipeline-design-rqtctp"
-if git rev-parse --verify "$BASE_REF" >/dev/null 2>&1; then
-    echo "--- G1: Checking git diff against design branch ($BASE_REF) ---"
-    
-    # Check core files zero-touch
-    CORE_DIFF=$(git diff "$BASE_REF" -- sr_agent/ingest/ sr_agent/config.py sr_agent/models/schemas.py sr_agent/pipeline.py)
-    if [ -z "$CORE_DIFF" ]; then
-        echo "[PASS] Core files zero-touch check"
-    else
-        echo "[FAIL] Core files zero-touch check - diff is not empty!"
-        echo "$CORE_DIFF"
-        FAILED=1
-    fi
+# Base ref để đối chiếu vùng cấm. Override khi cần: SR_GATE_BASE_REF=<ref> bash scripts/gate_m6.sh
+BASE_REF="${SR_GATE_BASE_REF:-origin/main}"
 
-    # Check pyproject.toml zero-touch
-    DEPS_DIFF=$(git diff "$BASE_REF" -- pyproject.toml)
-    if [ -z "$DEPS_DIFF" ]; then
-        echo "[PASS] Dependencies zero-touch check"
-    else
-        echo "[FAIL] Dependencies zero-touch check - pyproject.toml modified!"
-        echo "$DEPS_DIFF"
-        FAILED=1
-    fi
+# FAIL-CLOSED: không phân giải được base ref thì KHÔNG kiểm được vùng cấm.
+# Không kiểm được != đạt. Trước đây nhánh này 'skip' rồi vẫn cho PASS — cổng PASS rỗng.
+if ! git rev-parse --verify "$BASE_REF" >/dev/null 2>&1; then
+    echo "[FAIL] G1: base ref '$BASE_REF' không phân giải được."
+    echo "       Không kiểm được vùng cấm KHÔNG có nghĩa là đạt — cổng đóng."
+    echo "       Khắc phục: git fetch origin, hoặc đặt SR_GATE_BASE_REF=<ref hợp lệ>."
+    exit 1
+fi
+
+echo "--- G1: Checking git diff against base ref ($BASE_REF) ---"
+
+# Check core files zero-touch
+CORE_DIFF=$(git diff "$BASE_REF" -- sr_agent/ingest/ sr_agent/config.py sr_agent/models/schemas.py sr_agent/pipeline.py)
+if [ -z "$CORE_DIFF" ]; then
+    echo "[PASS] Core files zero-touch check"
 else
-    echo "--- G1: Base reference ($BASE_REF) not available, skipping git diff checks ---"
+    echo "[FAIL] Core files zero-touch check - diff is not empty!"
+    echo "$CORE_DIFF"
+    FAILED=1
+fi
+
+# Check pyproject.toml zero-touch
+DEPS_DIFF=$(git diff "$BASE_REF" -- pyproject.toml)
+if [ -z "$DEPS_DIFF" ]; then
+    echo "[PASS] Dependencies zero-touch check"
+else
+    echo "[FAIL] Dependencies zero-touch check - pyproject.toml modified!"
+    echo "$DEPS_DIFF"
+    FAILED=1
 fi
 
 # Check domain leaks into core
