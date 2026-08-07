@@ -20,7 +20,13 @@ Ba nguyên tắc xuyên suốt mọi quyết định thiết kế:
 2. **Tất định ở mọi tầng lọc** — ID regex tĩnh, threshold cố định, rubric là pure functions, LLM chạy temperature 0 + constrained decoding, output vẫn phải qua Pydantic lần cuối. Cùng input → cùng output, mọi quyết định lọc đều giải thích được.
 3. **Con người là chốt chặn cuối** — không tài liệu nào tự động vào Notion. WIP limit 5/ngày chống quá tải người duyệt; TTL 72h tự giải phóng hàng tồn không ai đụng đến.
 
-**Ràng buộc phạm vi (khóa cứng)**: chỉ xử lý tài liệu Computer Science. **Không có bất kỳ dữ liệu y sinh hoặc lâm sàng nào được xử lý trong toàn bộ dự án.**
+**Ràng buộc phạm vi** — ⚠️ ĐÃ THAY ĐỔI 2026-08-05, xem `docs/DECISIONS.md` mục 1:
+
+> ~~Chỉ xử lý tài liệu Computer Science. Không có bất kỳ dữ liệu y sinh hoặc lâm sàng nào
+> được xử lý trong toàn bộ dự án.~~ *(ràng buộc gốc từ pivot M1b — đã được chủ dự án gỡ)*
+
+Phạm vi hiện hành: **được phép xử lý chủ đề y sinh/lâm sàng**. Ngữ liệu là **bài báo đã
+xuất bản** — ranh giới còn giữ nguyên là **không xử lý dữ liệu bệnh nhân thật (PHI)**.
 
 ---
 

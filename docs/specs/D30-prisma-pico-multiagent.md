@@ -7,7 +7,13 @@
 
 ---
 
-## 0. Quyết định phạm vi PHẢI chốt trước khi hiện thực (D30-S1)
+## 0. Quyết định phạm vi (D30-S1) — ✅ ĐÃ CHỐT 2026-08-05: MỞ PHẠM VI Y SINH
+
+> **Trạng thái hiện hành**: chủ dự án đã gỡ ràng buộc CS-only. Xem `docs/DECISIONS.md` mục 1.
+> Mục 1.3 (dialect PubMed/Cochrane) **đã được kích hoạt**; Embase loại vì cần license trả phí.
+> Ranh giới còn giữ: ngữ liệu là bài báo đã xuất bản, **không xử lý dữ liệu bệnh nhân thật**.
+>
+> Phần văn bản dưới đây giữ nguyên làm dấu vết lý do — không còn là ràng buộc đang hiệu lực.
 
 Đề bài nhắc PubMed / Cochrane / Embase. Ràng buộc đứng của dự án (đặt từ pivot M1b) là:
 **"Không có bất kỳ dữ liệu y sinh hoặc lâm sàng nào được xử lý trong toàn bộ dự án này."**
