@@ -11,7 +11,7 @@
 ## ĐÃ CHỐT
 
 ### 1. Mở phạm vi y sinh — *mã cũ: D30-S1*
-**Chốt ngày**: 2026-08-05 · **Người chốt**: chủ dự án (Gun)
+**Chốt ngày**: 2026-08-16 · **Người chốt**: chủ dự án (Gun)
 
 SR-Agent **được phép** xử lý chủ đề và tài liệu y sinh/lâm sàng.
 
@@ -24,7 +24,7 @@ SR-Agent **được phép** xử lý chủ đề và tài liệu y sinh/lâm sà
   Ranh giới này giữ nguyên và cần giữ tường minh.
 
 ### 2. Mức chất lượng mục tiêu: "chuẩn Q1" là mức chất lượng, KHÔNG nộp tạp chí
-**Chốt ngày**: 2026-08-05
+**Chốt ngày**: 2026-08-16
 
 Bài systematic review viết ra nhắm **đạt mức chặt chẽ của tạp chí Q1**, nhưng không nhằm
 nộp đăng thực tế.
@@ -34,7 +34,7 @@ nộp đăng thực tế.
   Risk of Bias, GRADE, chiến lược tìm kiếm tái lập được. Đây là cái tạo ra chất lượng thật.
 
 ### 3. Nguồn dữ liệu: ưu tiên miễn phí
-**Chốt ngày**: 2026-08-05
+**Chốt ngày**: 2026-08-16
 
 | Nguồn | Trạng thái | Lý do |
 |---|---|---|
@@ -47,7 +47,7 @@ nộp đăng thực tế.
 tài liệu dược. Đây là hạn chế phải khai báo, không phải giấu.
 
 ### 4. Ưu tiên meta-analysis hơn narrative synthesis
-**Chốt ngày**: 2026-08-05
+**Chốt ngày**: 2026-08-16
 
 Khi dữ liệu cho phép gộp, **ưu tiên meta-analysis** vì bậc chứng cứ cao hơn.
 Narrative synthesis là phương án lui khi không đạt điều kiện đồng nhất.
@@ -59,7 +59,7 @@ Narrative synthesis là phương án lui khi không đạt điều kiện đồn
 - **Kéo theo khối lượng**: random/fixed effects, I², forest plot, funnel plot, Egger's test.
 
 ### 5. Ngôn ngữ bản thảo: song ngữ Anh — Việt
-**Chốt ngày**: 2026-08-05
+**Chốt ngày**: 2026-08-16
 
 Bản thảo sinh ra ở **cả hai ngôn ngữ**, tiếng Anh là bản chuẩn (thuật ngữ khoa học),
 tiếng Việt là bản song hành.
@@ -68,7 +68,7 @@ tiếng Việt là bản song hành.
   không bao giờ được sinh lại số. Số là slot, chữ là bản dịch.
 
 ### 6. Chủ đề bài SR đầu tiên
-**Chốt ngày**: 2026-08-05
+**Chốt ngày**: 2026-08-16
 
 > **"Tiếp cận quản lý chống đông trước, trong và sau mổ"**
 > (Perioperative anticoagulation management)
