@@ -83,10 +83,23 @@ def main() -> int:
         print("  Khắc phục: chạy lệnh này TỪ THƯ MỤC GỐC của repo SRagent.")
         return 1
 
-    print(f"Chủ đề tìm : {chu_de}")
-    print("Đang hỏi PubMed...\n")
+    import os
 
     fetcher = PubMedFetcher()
+    print(f"Chủ đề tìm : {chu_de}")
+    print(f"NCBI_EMAIL : {os.getenv('NCBI_EMAIL') or '⚠ CHƯA ĐIỀN — NCBI sẽ chặn'}")
+    print(f"NCBI_API_KEY: {'đã có' if os.getenv('NCBI_API_KEY') else '(chưa có, không bắt buộc)'}")
+
+    if not os.getenv("NCBI_EMAIL"):
+        print()
+        print("⚠ THIẾU EMAIL — gần như chắc chắn sẽ bị NCBI chặn.")
+        print("  Chính sách NCBI đòi mọi truy vấn tự động phải kèm email liên hệ.")
+        print("  Mở tệp .env trong thư mục này, thêm dòng:")
+        print("      NCBI_EMAIL=email-cua-anh@gmail.com")
+        print("  rồi chạy lại lệnh này.")
+        print()
+
+    print("Đang hỏi PubMed...\n")
     try:
         ids = fetcher.search(chu_de, max_results=5)
     except Exception as exc:  # noqa: BLE001 - gom mọi lỗi để in thân thiện

@@ -16,6 +16,7 @@ trong lõi không phải xử lý ngoại lệ nào.
 
 from __future__ import annotations
 
+import os
 import re
 from datetime import datetime, timezone
 from typing import Iterable
@@ -126,8 +127,12 @@ class PubMedFetcher:
 
     source = "pubmed"
 
-    def __init__(self, client: httpx.Client | None = None, api_key: str = "",
-                 email: str = ""):
+    def __init__(self, client: httpx.Client | None = None, api_key: str | None = None,
+                 email: str | None = None):
+        # Đọc từ .env khi không truyền tường minh — người dùng cuối chỉ điền .env
+        # một lần, không phải sửa mã.
+        api_key = os.getenv("NCBI_API_KEY", "") if api_key is None else api_key
+        email = os.getenv("NCBI_EMAIL", "") if email is None else email
         # NCBI yêu cầu công cụ tự định danh qua User-Agent; thiếu nó có thể bị
         # xếp vào nhóm lưu lượng ẩn danh và bị chặn mềm (HTTP 200 + trang chặn).
         self.client = client or httpx.Client(
@@ -177,6 +182,21 @@ class PubMedFetcher:
             raise LayoutParseError(
                 "esearch trả về THÂN RỖNG (0 byte). Thường do proxy/tường lửa "
                 "cắt kết nối, hoặc NCBI chặn tạm."
+            )
+        # NCBI chặn MỀM: vẫn trả HTTP 200 nhưng chuyển hướng sang trang lạm dụng.
+        # Không nhận diện riêng thì lỗi hiện ra là "không phải XML" — đúng về kỹ
+        # thuật, vô dụng về chẩn đoán. Nguyên nhân thật hầu như luôn là thiếu
+        # email theo chính sách NCBI, chứ không phải người dùng thực sự lạm dụng.
+        if "WWW Error Blocked Diagnostic" in body or "misuse.ncbi" in body:
+            raise LayoutParseError(
+                "NCBI TỪ CHỐI PHỤC VỤ IP NÀY (trang 'WWW Error Blocked Diagnostic').\n"
+                "       Đây KHÔNG phải lỗi mạng và KHÔNG phải lỗi mã — NCBI chủ động chặn.\n"
+                "       Nguyên nhân thường gặp nhất: truy vấn tự động thiếu email liên hệ.\n"
+                "       Khắc phục (2 phút):\n"
+                "         1. Mở .env, điền  NCBI_EMAIL=<email của anh>\n"
+                "         2. Lấy khóa miễn phí tại https://account.ncbi.nlm.nih.gov/settings/\n"
+                "            rồi điền     NCBI_API_KEY=<khóa>\n"
+                "       Khóa API còn tách anh khỏi IP dùng chung — hết bị vạ lây."
             )
         try:
             root = ET.fromstring(body)

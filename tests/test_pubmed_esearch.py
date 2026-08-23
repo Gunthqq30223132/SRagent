@@ -84,3 +84,55 @@ class TestKhongDungRetmodeJson:
     def test_tham_so_tim_kiem_khong_yeu_cau_json(self):
         f = PubMedFetcher()
         assert "retmode" not in f._common_params()
+
+
+class TestNhanDienTrangChanNCBI:
+    """NCBI chặn MỀM: HTTP 200 + chuyển hướng 302 sang misuse.ncbi.nlm.nih.gov.
+
+    Lần chạy thật thứ hai (2026-08-23) rơi đúng vào đây. Không nhận diện riêng
+    thì lỗi hiện ra là 'không phải XML' — đúng kỹ thuật, vô dụng để chẩn đoán.
+    """
+
+    TRANG_CHAN = (
+        '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN">'
+        "<html><head><title>NCBI - WWW Error Blocked Diagnostic</title>"
+        "</head><body>blocked</body></html>"
+    )
+
+    def test_nhan_dien_dung_la_bi_chan(self):
+        with pytest.raises(LayoutParseError, match="TỪ CHỐI PHỤC VỤ"):
+            PubMedFetcher.parse_esearch_xml(self.TRANG_CHAN)
+
+    def test_neu_ro_khong_phai_loi_mang_hay_loi_ma(self):
+        """Thông điệp phải chặn được kết luận sai — người dùng đã đổi 4G vô ích."""
+        with pytest.raises(LayoutParseError) as e:
+            PubMedFetcher.parse_esearch_xml(self.TRANG_CHAN)
+        assert "KHÔNG phải lỗi mạng" in str(e.value)
+
+    def test_chi_ra_cach_khac_phuc_cu_the(self):
+        with pytest.raises(LayoutParseError) as e:
+            PubMedFetcher.parse_esearch_xml(self.TRANG_CHAN)
+        assert "NCBI_EMAIL" in str(e.value) and "NCBI_API_KEY" in str(e.value)
+
+    def test_bat_ca_khi_chi_co_ten_mien_misuse(self):
+        with pytest.raises(LayoutParseError, match="TỪ CHỐI PHỤC VỤ"):
+            PubMedFetcher.parse_esearch_xml("<html>misuse.ncbi.nlm.nih.gov</html>")
+
+
+class TestChinhSachNCBI:
+    def test_email_duoc_gui_khi_co_trong_moi_truong(self, monkeypatch):
+        """Chính sách NCBI: mọi truy vấn tự động phải kèm tool + email."""
+        monkeypatch.setenv("NCBI_EMAIL", "bs@benhvien.vn")
+        assert PubMedFetcher()._common_params()["email"] == "bs@benhvien.vn"
+
+    def test_api_key_duoc_gui_khi_co(self, monkeypatch):
+        monkeypatch.setenv("NCBI_API_KEY", "khoa-abc")
+        assert PubMedFetcher()._common_params()["api_key"] == "khoa-abc"
+
+    def test_tham_so_truyen_thang_thang_bien_moi_truong(self, monkeypatch):
+        monkeypatch.setenv("NCBI_EMAIL", "moi-truong@x.vn")
+        f = PubMedFetcher(email="tuong-minh@y.vn")
+        assert f._common_params()["email"] == "tuong-minh@y.vn"
+
+    def test_tool_luon_duoc_gui(self):
+        assert PubMedFetcher(email="", api_key="")._common_params()["tool"] == "sr-agent"
