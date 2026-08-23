@@ -37,6 +37,35 @@ MOI_CHONG_DONG: dict[str, str] = {
 }
 
 
+def cau_truy_van_moi(truy_van: str, ma: str) -> str:
+    """MỘT chỗ duy nhất dựng câu dò bài mồi. Đừng dựng kiểu khác ở bất kỳ đâu.
+
+    VÌ SAO PHẢI TẬP TRUNG VỀ MỘT CHỖ — bài học trả giá bằng một lần chạy sai:
+
+    Trước đây có HAI đường mã cùng đo một thứ mà dựng truy vấn khác nhau. Đường
+    thứ nhất gộp cả bốn bài mồi vào một câu và bọc thêm ngoặc quanh truy vấn:
+
+        ((A) AND (B) AND SRC:MED) AND (EXT_ID:w OR EXT_ID:x OR EXT_ID:y OR EXT_ID:z)
+
+    -> 394 ký tự, lồng 4 tầng ngoặc, Europe PMC trả về RỖNG.
+
+    Đường thứ hai hỏi từng bài một:
+
+        EXT_ID:w AND (A)
+
+    -> 180 ký tự, 1 tầng ngoặc, chạy đúng cả 12/12 ô.
+
+    Kết quả: một đường báo 0/4, đường kia báo 4/4, cùng lúc, cùng truy vấn. Khi
+    hai phép đo cùng một thứ bất đồng thì KHÔNG rút ra được gì cả — không có căn
+    cứ nào phân xử, và ta mất luôn niềm tin vào cả hai.
+
+    Nên: một hàm dựng, dùng dạng đã chứng minh chạy được. Hỏi từng bài một tốn
+    thêm vài request nhưng đổi lại biết ĐÍCH DANH bài nào trượt, thay vì chỉ biết
+    "có gì đó sai".
+    """
+    return f"EXT_ID:{ma.rsplit(':', 1)[-1]} AND ({truy_van})"
+
+
 @dataclass
 class KetQuaNhay:
     """Kết quả một lần đo độ nhạy."""
@@ -83,6 +112,27 @@ def kiem_bai_moi(
     kq = KetQuaNhay(mo_ta=dict(moi))
     for ma in moi:
         (kq.tim_thay if ma in thu_duoc else kq.bo_sot).append(ma)
+    return kq
+
+
+def kiem_bai_moi_qua_mang(f, truy_van: str, moi: dict[str, str] | None = None) -> KetQuaNhay:
+    """Hỏi nguồn từng bài mồi MỘT LẦN MỘT, dùng chung bộ dựng câu với lưới soi.
+
+    Khác với kiem_bai_moi() — hàm đó so hai danh sách mã đã có sẵn, chạy ngoại
+    tuyến. Hàm này thật sự hỏi nguồn, nên nó trả lời được câu mà hàm kia không:
+    truy vấn NÀY có lôi được bài mồi về không.
+
+    Một bài mồi hỏi lỗi được tính là SÓT chứ không phải bỏ qua. Lỗi mạng lặng lẽ
+    biến thành 'đạt' là đúng kiểu hỏng im lặng mà cả cổng này dựng lên để chặn.
+    """
+    moi = MOI_CHONG_DONG if moi is None else moi
+    kq = KetQuaNhay(mo_ta=dict(moi))
+    for ma in moi:
+        try:
+            _, n = f.quet_toan_bo(cau_truy_van_moi(truy_van, ma), tran=1, page_size=1)
+        except Exception:  # noqa: BLE001
+            n = 0
+        (kq.tim_thay if n else kq.bo_sot).append(ma)
     return kq
 
 

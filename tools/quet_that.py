@@ -31,7 +31,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from tools.do_nhay import MOI_CHONG_DONG, bao_cao, kiem_bai_moi
+from tools.do_nhay import MOI_CHONG_DONG, bao_cao, kiem_bai_moi_qua_mang
 from tools.sources.europepmc import EuropePMCFetcher
 
 # Truy vấn dịch sang cú pháp Europe PMC từ bản PubMed Spark đã chạy.
@@ -94,20 +94,23 @@ def main(argv: list[str] | None = None) -> int:
     f = EuropePMCFetcher()
 
     _muc("BƯỚC 1 — ĐO ĐỘ NHẠY BẰNG BÀI MỒI")
-    print(f"  Đang lấy {len(MOI_CHONG_DONG)} bài mồi để xem truy vấn có lôi về được...")
+    print(f"  Đang hỏi {len(MOI_CHONG_DONG)} bài mồi, mỗi bài một câu...")
+
+    # Chốt tỉnh táo TRƯỚC: nguồn có gọi được không, bài mồi có tự tra ra không.
+    # Thiếu chốt này thì mọi 'sót' bên dưới đều lẫn lộn giữa 'truy vấn hụt' và
+    # 'mạng hỏng' — hai thứ cần hai cách sửa hoàn toàn khác nhau.
     try:
-        moi_docs, _ = f.quet_toan_bo(
-            f"({a.truy_van}) AND ("
-            + " OR ".join(f"EXT_ID:{m.split(':')[-1]}" for m in MOI_CHONG_DONG)
-            + ")",
-            tran=50,
-        )
+        _, song = f.quet_toan_bo("EXT_ID:26095867", tran=1, page_size=1)
     except Exception as exc:  # noqa: BLE001
         print(f"  ✗ Không gọi được Europe PMC: {type(exc).__name__}")
         print(f"    {str(exc).splitlines()[0]}")
         return 1
+    if not song:
+        print("  ✗ Nguồn trả lời nhưng không tra được bài mồi đã biết chắc có thật.")
+        print("    Dừng — mọi kết luận bên dưới sẽ sai.")
+        return 1
 
-    kq = kiem_bai_moi([d.source_id for d in moi_docs])
+    kq = kiem_bai_moi_qua_mang(f, a.truy_van)
     print()
     print(bao_cao(kq, "truy vấn Europe PMC"))
 

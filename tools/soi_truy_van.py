@@ -36,6 +36,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
+from tools.do_nhay import cau_truy_van_moi
 from tools.sources.europepmc import EuropePMCFetcher
 
 # Từng mệnh đề của truy vấn, tách rời để soi riêng. Gồm cả các BIẾN THỂ TÊN
@@ -138,9 +139,10 @@ def soi_nhom(f, moi: list[str], nhom: dict[str, str]) -> dict[str, dict[str, boo
     for ten, md in nhom.items():
         hang: dict[str, bool] = {}
         for ma in moi:
-            pmid = ma.rsplit(":", 1)[-1]
+            # Dùng CHUNG bộ dựng câu với phép đo độ nhạy. Hai chỗ dựng khác nhau
+            # từng làm hai phép đo cùng lúc báo 0/4 và 4/4 — xem cau_truy_van_moi.
             try:
-                _, n = f.quet_toan_bo(f"EXT_ID:{pmid} AND ({md})", tran=1, page_size=1)
+                _, n = f.quet_toan_bo(cau_truy_van_moi(md, ma), tran=1, page_size=1)
             except Exception:  # noqa: BLE001
                 n = 0
             hang[ma] = bool(n)
