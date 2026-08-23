@@ -75,3 +75,49 @@ class TestSoiHoiDuHaiCau:
                    | {f'EXT_ID:9 AND (M{i})': 0 for i in range(1, 4)})
         kq = soi(g, "9", {f"m{i}": f"M{i}" for i in range(1, 4)})
         assert [r.ten for r in kq] == ["m1", "m2", "m3"]
+
+
+class TestLuoiNhomXBaiMoi:
+    """Lưới trả lời câu đắt hơn soi từng mệnh đề: nhóm nào loại nhầm bài nào."""
+
+    @staticmethod
+    def _gia_lap(cho_qua: dict[str, set[str]]):
+        """cho_qua: tên nhóm -> tập PMID mà nhóm đó cho lọt."""
+        from tools.soi_truy_van import NHOM_TRUY_VAN
+
+        class G:
+            def quet_toan_bo(self, q, tran=1, page_size=1):
+                pmid = q.split("EXT_ID:")[1].split(" ")[0]
+                for ten, md in NHOM_TRUY_VAN.items():
+                    if md in q:
+                        return [], int(pmid in cho_qua.get(ten, set()))
+                return [], 0
+        return G()
+
+    def test_moi_nhom_qua_het_thi_khong_co_thu_pham(self, capsys):
+        from tools.soi_truy_van import NHAN_MOI, NHOM_TRUY_VAN, in_luoi, soi_nhom
+        moi = list(NHAN_MOI)
+        tat_ca = {m.rsplit(":", 1)[-1] for m in moi}
+        g = self._gia_lap({t: tat_ca for t in NHOM_TRUY_VAN})
+        assert in_luoi(soi_nhom(g, moi, NHOM_TRUY_VAN), moi) == []
+        assert "4/4" in capsys.readouterr().out
+
+    def test_neu_dung_ten_nhom_loai_nham(self, capsys):
+        from tools.soi_truy_van import NHAN_MOI, NHOM_TRUY_VAN, in_luoi, soi_nhom
+        moi = list(NHAN_MOI)
+        tat_ca = {m.rsplit(":", 1)[-1] for m in moi}
+        cho_qua = {t: tat_ca for t in NHOM_TRUY_VAN}
+        cho_qua["loại bài / bậc CC"] = tat_ca - {"40448969"}   # DOAC25 bị loại
+        thu_pham = in_luoi(soi_nhom(self._gia_lap(cho_qua), moi, NHOM_TRUY_VAN), moi)
+        assert thu_pham == ["loại bài / bậc CC"]
+        assert "3/4" in capsys.readouterr().out
+
+    def test_bai_phai_qua_MOI_nhom_moi_duoc_tinh(self):
+        """Truy vấn nối bằng AND — qua 3/4 nhóm vẫn là bị loại."""
+        from tools.soi_truy_van import NHAN_MOI, NHOM_TRUY_VAN, soi_nhom
+        moi = list(NHAN_MOI)
+        tat_ca = {m.rsplit(":", 1)[-1] for m in moi}
+        cho_qua = {t: tat_ca for t in NHOM_TRUY_VAN}
+        cho_qua["kho MEDLINE"] = tat_ca - {"26095867"}
+        luoi = soi_nhom(self._gia_lap(cho_qua), moi, NHOM_TRUY_VAN)
+        assert not all(h["pubmed:26095867"] for h in luoi.values())

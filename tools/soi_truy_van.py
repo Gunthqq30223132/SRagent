@@ -54,6 +54,36 @@ MENH_DE_MAC_DINH: dict[str, str] = {
 }
 
 
+# Ba nhóm mệnh đề của truy vấn thật, tách rời để biết nhóm nào loại bài nào.
+# Dùng KW: vì phép đo đã loại MESH: (đúng cú pháp nhưng không lôi được bài mồi).
+NHOM_TRUY_VAN: dict[str, str] = {
+    "thuốc chống đông": (
+        'KW:"Anticoagulants" OR KW:"Warfarin" '
+        'OR KW:"Heparin, Low-Molecular-Weight" OR KW:"Factor Xa Inhibitors" '
+        "OR rivaroxaban OR apixaban OR dabigatran OR enoxaparin"
+    ),
+    "giai đoạn chu phẫu": (
+        'KW:"Perioperative Care" OR KW:"Preoperative Care" '
+        'OR KW:"Postoperative Care" OR KW:"Perioperative Period" '
+        "OR perioperative OR bridging"
+    ),
+    "loại bài / bậc CC": (
+        'PUB_TYPE:"Meta-Analysis" OR PUB_TYPE:"Systematic Review" '
+        'OR PUB_TYPE:"Randomized Controlled Trial" '
+        'OR PUB_TYPE:"Practice Guideline"'
+    ),
+    "kho MEDLINE": "SRC:MED",
+}
+
+# Nhãn ngắn để in thành bảng. Mô tả đầy đủ nằm ở do_nhay.MOI_CHONG_DONG.
+NHAN_MOI: dict[str, str] = {
+    "pubmed:26095867": "BRIDGE",
+    "pubmed:34108229": "PERIOP2",
+    "pubmed:36462533": "CHEST",
+    "pubmed:40448969": "DOAC25",
+}
+
+
 @dataclass
 class KetQua:
     ten: str
@@ -87,6 +117,48 @@ def soi(f: EuropePMCFetcher, ma: str, menh_de: dict[str, str]) -> list[KetQua]:
             cung = 0
         ra.append(KetQua(ten, md, mot_minh, cung))
     return ra
+
+
+def soi_nhom(f, moi: list[str], nhom: dict[str, str]) -> dict[str, dict[str, bool]]:
+    """Lưới nhóm × bài mồi: nhóm nào loại mất bài nào.
+
+    Soi từng mệnh đề riêng lẻ chỉ trả lời được 'cú pháp có đúng không'. Lưới này
+    trả lời câu đắt hơn: sau khi cú pháp đã đúng, ĐIỀU KIỆN NÀO đang loại nhầm
+    bài nền tảng. Đó thường là bộ lọc loại bài — vì nó dựa trên nhãn do người
+    lập chỉ mục gán, mà nhãn thì không phải lúc nào cũng như ta đoán.
+    """
+    luoi: dict[str, dict[str, bool]] = {}
+    for ten, md in nhom.items():
+        hang: dict[str, bool] = {}
+        for ma in moi:
+            pmid = ma.rsplit(":", 1)[-1]
+            try:
+                _, n = f.quet_toan_bo(f"EXT_ID:{pmid} AND ({md})", tran=1, page_size=1)
+            except Exception:  # noqa: BLE001
+                n = 0
+            hang[ma] = bool(n)
+        luoi[ten] = hang
+    return luoi
+
+
+def in_luoi(luoi: dict[str, dict[str, bool]], moi: list[str]) -> list[str]:
+    """In lưới và trả về danh sách nhóm có loại nhầm bài mồi."""
+    nhan = [NHAN_MOI.get(m, m.rsplit(":", 1)[-1]) for m in moi]
+    print(f"\n{'NHÓM MỆNH ĐỀ':<22}" + "".join(f"{n:>10}" for n in nhan))
+    print("─" * (22 + 10 * len(nhan)))
+    thu_pham: list[str] = []
+    for ten, hang in luoi.items():
+        o = "".join(f"{'✓' if hang[m] else '✗':>10}" for m in moi)
+        print(f"{ten:<22}{o}")
+        if not all(hang.values()):
+            thu_pham.append(ten)
+
+    qua_het = [m for m in moi if all(h[m] for h in luoi.values())]
+    print("─" * (22 + 10 * len(nhan)))
+    o = "".join(f"{'✓' if m in qua_het else '✗':>10}" for m in moi)
+    print(f"{'TOÀN BỘ TRUY VẤN':<22}{o}")
+    print(f"\n  Độ nhạy dự kiến: {len(qua_het)}/{len(moi)}")
+    return thu_pham
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -135,6 +207,20 @@ def main(argv: list[str] | None = None) -> int:
         print("\nMỆNH ĐỀ DÙNG ĐƯỢC (lôi được bài mồi về):")
         for r in dung_duoc:
             print(f"  ✓ {r.menh_de}")
+
+    print("\n" + "=" * 74)
+    print("LƯỚI NHÓM × BÀI MỒI — nhóm nào đang loại nhầm bài nào")
+    print("=" * 74)
+    moi = list(NHAN_MOI)
+    thu_pham = in_luoi(soi_nhom(f, moi, NHOM_TRUY_VAN), moi)
+    if thu_pham:
+        print("\n  NHÓM LOẠI NHẦM BÀI NỀN TẢNG — phải nới, không được siết thêm:")
+        for t in thu_pham:
+            print(f"    ✗ {t}")
+        print("\n  Nhóm 'loại bài / bậc CC' hay là thủ phạm nhất: nó lọc theo nhãn")
+        print("  do người lập chỉ mục gán, mà nhãn không phải lúc nào cũng như ta đoán.")
+    else:
+        print("\n  ✓ Không nhóm nào loại nhầm. Truy vấn ghép lại sẽ đạt độ nhạy đủ.")
     return 0
 
 

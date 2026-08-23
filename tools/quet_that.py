@@ -35,15 +35,28 @@ from tools.do_nhay import MOI_CHONG_DONG, bao_cao, kiem_bai_moi
 from tools.sources.europepmc import EuropePMCFetcher
 
 # Truy vấn dịch sang cú pháp Europe PMC từ bản PubMed Spark đã chạy.
-# HAI THAY ĐỔI CÓ CHỦ Ý, cả hai đều phải qua phép đo độ nhạy mới được nhận:
-#   - BỎ  'surgery'      : quá rộng, đây là thứ kéo phình khối lượng lên 1.767
-#   - THÊM MESH "Perioperative Period" : khái niệm này có MeSH chuẩn mà bản cũ bỏ sót
+#
+# DÙNG 'KW:' CHỨ KHÔNG PHẢI 'MESH:' — quyết định này do phép đo, không do phán
+# đoán. Bản đầu dùng MESH: và cho độ nhạy 0/4. tools/soi_truy_van.py chỉ ra vì
+# sao, và đây là ca tinh vi: MESH:"Anticoagulants" KHÔNG sai cú pháp (đứng riêng
+# ra 4.814 kết quả) nhưng KHÔNG lôi được BRIDGE về. Cùng từ khoá đó, KW: ra
+# 100.177 — chênh 20 lần. Chỉ mục MESH: của Europe PMC không phải MeSH heading
+# của MEDLINE như đã giả định.
+#
+# ĐÁNH ĐỔI, nói thẳng: KW gồm cả từ khoá tác giả lẫn thuật ngữ chỉ mục, nên RỘNG
+# hơn và KÉM CHÍNH XÁC hơn MeSH thật. Với vòng sàng lọc thứ nhất thì đây là chiều
+# đánh đổi đúng — thà nhận thêm bài phải loại tay, còn hơn bỏ sót bài mà không ai
+# biết là đã bỏ sót. Bài bị loại có vết; bài chưa từng thấy thì không.
+#
+# HAI THAY ĐỔI KHÁC so với bản PubMed, cả hai phải qua phép đo độ nhạy mới nhận:
+#   - BỎ  'surgery'   : quá rộng, đây là thứ kéo phình khối lượng lên 1.767
+#   - THÊM "Perioperative Period" : khái niệm này có thuật ngữ chuẩn mà bản cũ sót
 TRUY_VAN = (
-    '(MESH:"Anticoagulants" OR MESH:"Warfarin" '
-    'OR MESH:"Heparin, Low-Molecular-Weight" OR MESH:"Factor Xa Inhibitors" '
+    '(KW:"Anticoagulants" OR KW:"Warfarin" '
+    'OR KW:"Heparin, Low-Molecular-Weight" OR KW:"Factor Xa Inhibitors" '
     'OR rivaroxaban OR apixaban OR dabigatran OR enoxaparin) '
-    'AND (MESH:"Perioperative Care" OR MESH:"Preoperative Care" '
-    'OR MESH:"Postoperative Care" OR MESH:"Perioperative Period" '
+    'AND (KW:"Perioperative Care" OR KW:"Preoperative Care" '
+    'OR KW:"Postoperative Care" OR KW:"Perioperative Period" '
     'OR perioperative OR bridging) '
     'AND (PUB_TYPE:"Meta-Analysis" OR PUB_TYPE:"Systematic Review" '
     'OR PUB_TYPE:"Randomized Controlled Trial" OR PUB_TYPE:"Practice Guideline") '
