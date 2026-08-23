@@ -50,3 +50,41 @@ class TestPhieuSparkThat:
         from tools.kiem_dinh import NGUONG_DO_PHU
         p = PhieuQuet.model_validate(json.loads(FIXTURE.read_text(encoding="utf-8")))
         assert p.so_da_sang / p.so_ket_qua_tho < NGUONG_DO_PHU
+
+
+class TestKhopMaQuaVetDinhDanh:
+    """Chống BÁO ĐỘNG GIẢ khi xác minh qua Europe PMC thay vì PubMed.
+
+    Phiếu ghi 'pubmed:26095867'; Europe PMC trả 'europepmc:MED:26095867'. So
+    thẳng hai chuỗi sẽ báo sót toàn bộ và kết tội Spark bịa mã, trong khi bài có
+    thật. Một cổng hay báo oan là cổng sẽ bị bỏ qua.
+    """
+
+    @staticmethod
+    def _doc(source_id: str, khac: list[str] | None = None):
+        from sr_agent.models.schemas import Document
+        return Document(uid="", source="europepmc", source_id=source_id,
+                        authority_tier=1, alternate_uids=khac or [], title="Bài")
+
+    def test_khop_qua_alternate_uids(self):
+        from tools.kiem_dinh import ma_khong_tim_thay
+        d = self._doc("europepmc:MED:26095867", ["pubmed:26095867"])
+        assert ma_khong_tim_thay(["pubmed:26095867"], [d]) == []
+
+    def test_khop_ca_khi_khong_co_alternate(self):
+        """Khớp phần số đuôi là lưới đỡ khi bản ghi thiếu vết định danh phụ."""
+        from tools.kiem_dinh import ma_khong_tim_thay
+        d = self._doc("europepmc:MED:26095867")
+        assert ma_khong_tim_thay(["pubmed:26095867"], [d]) == []
+
+    def test_ma_that_su_thieu_van_bi_bat(self):
+        """Nới lỏng khớp KHÔNG được làm mất khả năng bắt mã bịa."""
+        from tools.kiem_dinh import ma_khong_tim_thay
+        d = self._doc("europepmc:MED:26095867", ["pubmed:26095867"])
+        assert ma_khong_tim_thay(
+            ["pubmed:26095867", "pubmed:99999999"], [d]) == ["pubmed:99999999"]
+
+    def test_khong_co_ban_ghi_nao_thi_sot_het(self):
+        from tools.kiem_dinh import ma_khong_tim_thay
+        assert ma_khong_tim_thay(["pubmed:1", "pubmed:2"], []) == [
+            "pubmed:1", "pubmed:2"]

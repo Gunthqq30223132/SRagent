@@ -72,16 +72,48 @@ def tang2_do_phu(phieu: PhieuQuet) -> None:
         print(f"  ✓ Đạt ngưỡng độ phủ {NGUONG_DO_PHU:.0%}.")
 
 
+def ma_khong_tim_thay(ids_phieu: list[str], docs: list) -> list[str]:
+    """Mã nào trong phiếu KHÔNG có bản ghi tương ứng. Khớp qua mọi vết định danh.
+
+    VÌ SAO KHÔNG SO THẲNG HAI CHUỖI: phiếu ghi 'pubmed:26095867', Europe PMC trả
+    'europepmc:MED:26095867'. So thẳng sẽ báo SÓT TOÀN BỘ — báo động giả tệ nhất
+    có thể có ở đây, vì nó kết tội Spark bịa mã trong khi bài hoàn toàn có thật.
+    Một cổng kiểm định hay báo oan sẽ bị người dùng bỏ qua, và lúc đó nó không
+    còn chặn được gì nữa.
+
+    alternate_uids đã giữ sẵn 'pubmed:<pmid>' cho đúng việc này.
+    """
+    biet: set[str] = set()
+    for d in docs:
+        biet.add(d.source_id)
+        biet.add(d.source_id.rsplit(":", 1)[-1])
+        for phu in d.alternate_uids:
+            biet.add(phu)
+            biet.add(phu.rsplit(":", 1)[-1])
+    return [i for i in ids_phieu
+            if i not in biet and i.rsplit(":", 1)[-1] not in biet]
+
+
 def tang3_noi_dung(phieu: PhieuQuet) -> None:
-    """Tải bản gốc từ nguồn và đối chiếu. Spark là trinh sát, không phải nguồn."""
+    """Tải bản gốc từ nguồn và đối chiếu. Spark là trinh sát, không phải nguồn.
+
+    XÁC MINH QUA EUROPE PMC, không qua eutils của NCBI. Lý do là dữ kiện đo được
+    chứ không phải sở thích: eutils chặn cả máy Gun lẫn Spark (302 -> misuse.ncbi),
+    còn Europe PMC trả lời bình thường. Europe PMC là bản sao MEDLINE do EMBL-EBI
+    vận hành và tra được bằng chính PMID, nên nó xác minh được đúng thứ cần xác
+    minh: mã này có thật không, và có đúng là bài đó không.
+
+    Đây KHÔNG phải hạ chuẩn. Bản ghi MEDLINE qua Europe PMC vẫn là bản ghi
+    MEDLINE. Cái đổi là đường đi, không phải nguồn gốc dữ liệu.
+    """
     _muc(f"TẦNG 3 — XÁC MINH NỘI DUNG · {len(phieu.ids)} mã")
-    if phieu.nguon != "pubmed":
+    if phieu.nguon not in ("pubmed", "europepmc", "pubmed-qua-spark"):
         print(f"  (bỏ qua: chưa có bộ xác minh cho nguồn {phieu.nguon!r})")
         return
 
-    from tools.sources.pubmed import PubMedFetcher
+    from tools.sources.europepmc import EuropePMCFetcher
 
-    fetcher = PubMedFetcher()
+    fetcher = EuropePMCFetcher()
     try:
         docs = fetcher.fetch(phieu.ids)
     except Exception as exc:  # noqa: BLE001
@@ -93,16 +125,17 @@ def tang3_noi_dung(phieu: PhieuQuet) -> None:
         print("    LỜI KHAI của Spark, chưa phải dữ kiện. Không được dùng làm chứng cứ.")
         return
 
-    tim_thay = {d.source_id for d in docs}
-    thieu = [i for i in phieu.ids if i not in tim_thay]
+    thieu = ma_khong_tim_thay(phieu.ids, docs)
     for d in docs:
         nam = d.published_date.year if d.published_date else "?"
-        print(f"  ✓ {d.source_id:<18} [{nam}] bậc CC={d.evidence_level}")
+        print(f"  ✓ {d.source_id:<26} [{nam}] bậc CC={d.evidence_level}")
         print(f"      {d.title[:74]}")
     for i in thieu:
-        print(f"  ✗ {i:<18} KHÔNG TỒN TẠI trên PubMed — mã bịa hoặc gõ sai")
+        print(f"  ✗ {i:<26} KHÔNG TÌM THẤY — mã bịa hoặc gõ sai")
     print()
     print(f"  Xác minh được: {len(docs)}/{len(phieu.ids)}")
+    if docs:
+        print("  Nguồn xác minh: Europe PMC (bản sao MEDLINE, EMBL-EBI)")
 
 
 def main() -> int:
