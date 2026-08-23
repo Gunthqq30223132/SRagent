@@ -17,7 +17,7 @@ from typing import Annotated, Literal, Union
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from sr_agent.config import AUTHORITY_TIERS, ID_PATTERNS
+from sr_agent.config import AUTHORITY_TIERS, ID_PATTERNS, UNKNOWN_SOURCE_TIER
 
 
 class DocStatus(str, Enum):
@@ -158,12 +158,11 @@ class Document(BaseModel):
     """Bản ghi chuẩn hóa duy nhất chảy xuyên suốt pipeline."""
 
     uid: str  # "ieee:12345678" | "arxiv:2401.12345" — computed từ source+source_id
-    # NGOẠI LỆ VÙNG CẤM (2026-08-23): thêm "pubmed" để mở phạm vi y sinh.
-    # Chỉ CỘNG một nhánh vào union, không đổi bất kỳ logic nào bên dưới:
-    # validator source_id dùng ID_PATTERNS.get(source) -> None cho nguồn mới nên
-    # tự bỏ qua; fetcher PubMed truyền authority_tier tường minh nên config.py
-    # KHÔNG cần sửa và vẫn khoá nguyên.
-    source: Literal["ieee", "arxiv", "pubmed"]
+    # MỞ KHÓA 2026-08-23: trước đây là Literal["ieee","arxiv"] — danh sách trắng
+    # đóng, thêm nguồn phải sửa mã lõi. Nay là chuỗi tự do có chuẩn hóa, còn
+    # quy tắc riêng của từng nguồn nằm ở sổ đăng ký config.register_source().
+    # Lý do: SR-Agent phải tái dùng được cho mọi lĩnh vực, không riêng CS/y khoa.
+    source: str
     source_id: str
     authority_tier: int = Field(ge=1)
     alternate_uids: list[str] = []  # bản trùng bị merge (giữ vết, không vứt)
@@ -190,6 +189,19 @@ class Document(BaseModel):
     status: DocStatus = DocStatus.FETCHED
     fetched_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     notion_page_id: str | None = None
+
+    @field_validator("source")
+    @classmethod
+    def _normalize_source(cls, v: str) -> str:
+        """Chuẩn hóa tên nguồn. Mọi nguồn đều được nhận — nhưng phải là một tên.
+
+        Chỉ chặn chuỗi rỗng/khoảng trắng: một Document không có nguồn thì không
+        truy vết được về đâu cả, mà truy vết nguồn là điều kiện sống của hệ thống.
+        """
+        v = (v or "").strip().lower()
+        if not v:
+            raise ValueError("source rỗng — tài liệu không truy vết được nguồn gốc")
+        return v
 
     @field_validator("source_id")
     @classmethod
@@ -227,4 +239,10 @@ def make_uid(source: str, source_id: str) -> str:
 
 
 def default_tier(source: str) -> int:
-    return AUTHORITY_TIERS[source]
+    """Tier của nguồn. Nguồn chưa đăng ký -> hạng thấp nhất, KHÔNG ném lỗi.
+
+    Trước đây hàm này ném KeyError cho nguồn lạ, biến "chưa thẩm định" thành
+    "hỏng". Nay nguồn lạ vẫn chạy được nhưng nhận tier thấp: chưa ai kiểm thì
+    không được hưởng uy tín, và cũng không được chặn đường người dùng.
+    """
+    return AUTHORITY_TIERS.get(source.strip().lower(), UNKNOWN_SOURCE_TIER)

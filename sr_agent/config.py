@@ -14,10 +14,23 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# --- Định danh nguồn & quy tắc ID tĩnh -------------------------------------
-# Phạm vi CS-only. Nguồn A: IEEE Xplore (CS Transactions) — document ID 8 chữ số.
-# Nguồn B: arXiv — 'arxiv:YYMM.NNNNN'. Hoãn mọi nguồn trung gian khác để giữ
-# staging đồng nhất tuyệt đối.
+# --- Sổ đăng ký nguồn (MỞ, không còn khóa cứng 2 nguồn) ----------------------
+# LỊCH SỬ: bản M0-M2 khóa cứng đúng 2 nguồn CS (IEEE + arXiv) để giữ staging
+# đồng nhất tuyệt đối trong lúc dựng pipeline. Ràng buộc đó đã hoàn thành vai
+# trò và bị GỠ ngày 2026-08-23 theo quyết định của chủ dự án.
+#
+# TẦM NHÌN ĐẰNG SAU: SR-Agent là bộ máy sinh chứng cứ, KHÔNG phải công cụ y
+# khoa. Cùng một lõi, đổi nguồn tham khảo là có một hệ tri thức hệ thống cho
+# bất kỳ lĩnh vực nào. Vì vậy nguồn phải là DỮ LIỆU ĐĂNG KÝ ĐƯỢC, không phải
+# hằng số biên dịch.
+#
+# HỢP ĐỒNG MỚI:
+# - Mọi chuỗi source đều được chấp nhận (không còn danh sách trắng đóng).
+# - Nguồn ĐÃ đăng ký: được kiểm quy tắc ID nghiêm ngặt + dùng tier khai báo.
+# - Nguồn CHƯA đăng ký: vẫn chạy được, nhưng bỏ qua kiểm ID và nhận
+#   UNKNOWN_SOURCE_TIER (hạng thấp nhất). Chưa thẩm định thì không được hưởng
+#   uy tín — mặc định thận trọng, không phải mặc định tin tưởng.
+
 ID_PATTERNS: dict[str, re.Pattern[str]] = {
     "ieee": re.compile(r"^\d{8}$"),
     "arxiv": re.compile(r"^arxiv:\d{4}\.\d{4,5}$"),
@@ -28,6 +41,49 @@ AUTHORITY_TIERS: dict[str, int] = {
     "ieee": 1,   # peer-reviewed transactions/journals
     "arxiv": 2,  # preprint
 }
+
+# Tier gán cho nguồn chưa đăng ký. Cố tình đặt thấp: một nguồn chưa ai thẩm
+# định không được phép thắng một tạp chí bình duyệt ở bước chống trùng.
+UNKNOWN_SOURCE_TIER = 5
+
+
+def register_source(
+    name: str,
+    *,
+    id_pattern: str | re.Pattern[str] | None = None,
+    authority_tier: int = UNKNOWN_SOURCE_TIER,
+    overwrite: bool = False,
+) -> None:
+    """Đăng ký một nguồn tài liệu mới lúc chạy.
+
+    Gọi ở module định nghĩa fetcher (xem tools/sources/pubmed.py) để nguồn tự
+    khai báo quy tắc của mình — không phải sửa tệp cấu hình mỗi lần thêm nguồn.
+
+    overwrite=False (mặc định) để hai nguồn không âm thầm giẫm lên quy tắc ID
+    của nhau: đăng ký trùng tên với quy tắc khác là lỗi lập trình, phải nổ ra
+    lúc nạp module chứ không phải lúc dữ liệu đã vào kho.
+    """
+    if not name or not name.strip():
+        raise ValueError("Tên nguồn không được rỗng")
+    name = name.strip().lower()
+    if not overwrite and name in AUTHORITY_TIERS:
+        if AUTHORITY_TIERS[name] != authority_tier:
+            raise ValueError(
+                f"Nguồn {name!r} đã đăng ký với tier {AUTHORITY_TIERS[name]}, "
+                f"nay lại đăng ký tier {authority_tier}. Dùng overwrite=True nếu cố ý."
+            )
+        return
+    AUTHORITY_TIERS[name] = int(authority_tier)
+    if id_pattern is not None:
+        ID_PATTERNS[name] = (
+            id_pattern if isinstance(id_pattern, re.Pattern)
+            else re.compile(id_pattern)
+        )
+
+
+def registered_sources() -> list[str]:
+    """Danh sách nguồn đã đăng ký, để CLI/UI hiển thị mà không phải đoán."""
+    return sorted(AUTHORITY_TIERS)
 
 # --- Hàng đợi duyệt thủ công ------------------------------------------------
 WIP_LIMIT = 5          # tài liệu/ngày hiển thị ở QC UI, xếp theo rubric giảm dần

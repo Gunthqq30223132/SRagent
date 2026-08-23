@@ -80,13 +80,50 @@ tiếng Việt là bản song hành.
   (`tools/guard/firewall.py`) **phải bổ sung cả đơn vị lâm sàng lẫn đơn vị thống kê**
   (mg, mcg, IU, mL, giờ, INR, OR, RR, HR, 95% CI, p, I²). Hiện chưa có đơn vị nào trong số đó.
 
+### 7. Kiến trúc: SR-Agent là BỘ MÁY SINH CHỨNG CỨ của AnesthOS
+**Chốt ngày**: 2026-08-23
+
+> AnesthOS đưa ra khuyến cáo lâm sàng. Khuyến cáo phải có chứng cứ.
+> **Chứng cứ đến từ SR-Agent.** SR-Agent tách riêng KHÔNG phải vì nó là sản phẩm
+> khác, mà vì nó **tái dùng được cho mọi lĩnh vực** — đổi nguồn tham khảo là có
+> một hệ tri thức hệ thống cho bất kỳ vấn đề nào.
+
+- **Đính chính khung hiểu cũ**: các tài liệu trước mô tả "hai sản phẩm riêng biệt".
+  Sai về quan hệ. Đúng là: **một chuỗi giá trị** — SR-Agent (sinh chứng cứ) nuôi
+  AnesthOS (ra khuyến cáo). Tách repo là quyết định kỹ thuật để tái dùng, không phải
+  ranh giới sản phẩm.
+- **Hệ quả trực tiếp lên thiết kế**: lõi SR-Agent phải **mù lĩnh vực**. Mọi thứ đặc
+  thù y khoa (nguồn PubMed, đơn vị lâm sàng, bậc chứng cứ) phải nằm ở tầng cắm thêm,
+  không được ngấm vào lõi. Đây là lý do `gate_m6.sh` có luật cấm rò thuật ngữ lĩnh
+  vực vào `sr_agent/` — luật đó giờ có căn cứ kiến trúc, không chỉ là quy ước.
+- **Thứ tự ưu tiên đi kèm**: hoàn thiện SR-Agent chạy thật trước. Lớp A/B/C của
+  AnesthOS **chỉ bộc lộ điểm yếu khi có chứng cứ thật chảy vào** — thiết kế thêm
+  lúc chưa chạy là đoán.
+
+### 8. Mở khóa danh sách nguồn — bỏ ràng buộc 2 nguồn
+**Chốt ngày**: 2026-08-23 · *(thay thế mục "ngoại lệ vùng cấm" đang chờ)*
+
+> Cho phép **tất cả** các nguồn. `config.py` không còn khóa cứng arXiv + IEEE.
+
+- **Trước**: `Document.source` là `Literal["ieee","arxiv"]`, `ID_PATTERNS` là hằng số.
+  Thêm một nguồn = sửa mã lõi = đụng vùng cấm. Ràng buộc này sinh ra ở chặng M0-M2
+  để giữ staging đồng nhất trong lúc dựng pipeline; nó đã xong vai trò.
+- **Sau**: sổ đăng ký mở qua `config.register_source()`. Nguồn tự khai quy tắc ID và
+  tier của mình tại module định nghĩa fetcher.
+- **Ranh giới còn giữ** (mở khóa không phải bỏ kiểm soát):
+  - Nguồn **đã đăng ký** → kiểm quy tắc ID nghiêm ngặt, dùng tier khai báo.
+  - Nguồn **chưa đăng ký** → vẫn chạy, nhưng nhận `UNKNOWN_SOURCE_TIER = 5` (hạng
+    thấp nhất). Chưa thẩm định thì không được hưởng uy tín — mặc định thận trọng.
+  - `source` rỗng vẫn bị từ chối: tài liệu không truy vết được nguồn thì vô giá trị.
+- **Kiểm chứng**: 266 test xanh; `ieee` vẫn bắt buộc 8 chữ số, `arxiv` vẫn bắt buộc
+  tiền tố — mở khóa không làm lỏng nguồn cũ.
+
 ---
 
 ## CHỜ CHỐT
 
 | # | Tên gọi | Vì sao cần chốt |
 |---|---|---|
-| 7 | **Ngoại lệ vùng cấm để tách kho** (*mã: D33 §5*) | Tách corpus khỏi hàng đợi buộc phải sửa `schemas.py`, `pipeline.py` — đang bị `gate_m6.sh` khoá |
 | 8 | **Protocol sửa thì tạo review mới hay sửa tại chỗ** (*mã: D33 Q-1*) | Bất biến nền tảng của schema; sửa sau rất đắt |
 | 9 | **Trần lưu giữ kho** (*mã: D33 Q-2*) | SQLite một file, corpus tăng đơn điệu |
 | 10 | **Vị trí tài liệu kiểm toán lâm sàng** (*D32 + probe*) | Sau quyết định #1 thì vấn đề này gần như tự tan, xem ghi chú bên dưới |

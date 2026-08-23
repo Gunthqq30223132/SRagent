@@ -23,6 +23,7 @@ from xml.etree import ElementTree as ET
 
 import httpx
 
+from sr_agent.config import register_source
 from sr_agent.errors import LayoutParseError
 from sr_agent.ingest.base import get_with_retry
 from sr_agent.models.schemas import DocStatus, Document
@@ -32,6 +33,9 @@ ESEARCH = f"{EUTILS}/esearch.fcgi"
 EFETCH = f"{EUTILS}/efetch.fcgi"
 
 PUBMED_ID_PATTERN = re.compile(r"^pubmed:\d{1,8}$")
+
+# Tự khai báo vào sổ đăng ký nguồn — không phải sửa config.py mỗi lần thêm nguồn.
+register_source("pubmed", id_pattern=PUBMED_ID_PATTERN, authority_tier=1)
 
 # PubMed là tạp chí đã bình duyệt -> ngang tier IEEE. Truyền tường minh thay vì
 # gọi default_tier() để không phải thêm khóa vào config.py (giữ vùng cấm sạch).
@@ -124,7 +128,12 @@ class PubMedFetcher:
 
     def __init__(self, client: httpx.Client | None = None, api_key: str = "",
                  email: str = ""):
-        self.client = client or httpx.Client(timeout=30, follow_redirects=True)
+        # NCBI yêu cầu công cụ tự định danh qua User-Agent; thiếu nó có thể bị
+        # xếp vào nhóm lưu lượng ẩn danh và bị chặn mềm (HTTP 200 + trang chặn).
+        self.client = client or httpx.Client(
+            timeout=30, follow_redirects=True,
+            headers={"User-Agent": "sr-agent/0.1 (+https://github.com/Gunthqq30223132/SRagent)"},
+        )
         self.api_key = api_key
         self.email = email
         # Dữ liệu chỉ PubMed mới có, giữ ngoài Document (xem ghi chú ở parse).
@@ -140,16 +149,57 @@ class PubMedFetcher:
         return params
 
     def search(self, query: str, max_results: int = 20) -> list[str]:
+        """Tìm PMID theo từ khoá.
+
+        DÙNG XML, KHÔNG DÙNG JSON. Lần chạy thật đầu tiên trên máy Mac cho lỗi
+        'Expecting value: line 1 column 1' — HTTP thành công nhưng thân phản hồi
+        không phải JSON. retmode=json của E-utilities là chế độ phụ và trả về
+        HTML/rỗng trong vài tình huống (chuyển hướng, trang chặn, biến động
+        phía NCBI). Định dạng XML là mặc định của E-utilities, ổn định hàng chục
+        năm, và ta đã có sẵn bộ phân tích XML ngay dưới đây.
+        """
         params = self._common_params() | {
-            "term": query, "retmax": str(max_results), "retmode": "json",
-            "sort": "relevance",
+            "term": query, "retmax": str(max_results), "sort": "relevance",
         }
         resp = get_with_retry(self.client, ESEARCH, params=params)
+        return self.parse_esearch_xml(resp.text)
+
+    @staticmethod
+    def parse_esearch_xml(xml_text: str) -> list[str]:
+        """<eSearchResult><IdList><Id>123</Id>...</IdList></eSearchResult> -> ids.
+
+        Lỗi phân tích PHẢI kèm nội dung thật NCBI trả về. Bản trước chỉ in thông
+        điệp của trình đọc JSON, giấu mất thân phản hồi — đúng thứ duy nhất cần
+        để chẩn đoán. Che dữ liệu chẩn đoán làm mất thêm một vòng thử.
+        """
+        body = (xml_text or "").strip()
+        if not body:
+            raise LayoutParseError(
+                "esearch trả về THÂN RỖNG (0 byte). Thường do proxy/tường lửa "
+                "cắt kết nối, hoặc NCBI chặn tạm."
+            )
         try:
-            ids = resp.json()["esearchresult"]["idlist"]
-        except (ValueError, KeyError) as exc:
-            raise LayoutParseError(f"esearch trả JSON không đúng dạng: {exc}") from exc
-        return [f"pubmed:{pmid}" for pmid in ids]
+            root = ET.fromstring(body)
+        except ET.ParseError as exc:
+            raise LayoutParseError(
+                f"esearch trả về nội dung không phải XML ({exc}). "
+                f"300 ký tự đầu NCBI thực sự trả về: {body[:300]!r}"
+            ) from exc
+        if root.tag == "ERROR" or root.find("ERROR") is not None:
+            loi = _text(root if root.tag == "ERROR" else root.find("ERROR"))
+            raise LayoutParseError(f"NCBI báo lỗi truy vấn: {loi}")
+        # Một trang HTML chặn ('<html><body>Access denied</body></html>') tình cờ
+        # cũng là XML hợp lệ. Không kiểm thẻ gốc thì nó lọt qua và trả DANH SÁCH
+        # RỖNG — người dùng đọc thành "không có bài nào khớp" thay vì "bị chặn".
+        # Bỏ sót thầm lặng nguy hiểm hơn báo lỗi ồn ào.
+        if root.tag != "eSearchResult":
+            raise LayoutParseError(
+                f"esearch trả về tài liệu lạ (thẻ gốc <{root.tag}>, cần "
+                f"<eSearchResult>). Nhiều khả năng là trang chặn của tường lửa/"
+                f"proxy. 300 ký tự đầu: {body[:300]!r}"
+            )
+        return [f"pubmed:{_text(node)}" for node in root.findall(".//IdList/Id")
+                if _text(node)]
 
     def fetch(self, source_ids: Iterable[str]) -> list[Document]:
         pmids = [sid.removeprefix("pubmed:") for sid in source_ids]

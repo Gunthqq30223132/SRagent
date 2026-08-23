@@ -3,16 +3,34 @@
 > **Cập nhật**: 2026-08-16 · SRagent `a11d14b` · AnesthOS-app `56f5a87`
 > **Nguồn sự thật**: GitHub. Bản trên Drive là bản sao chỉ đọc — nếu hai bên khác nhau, tin GitHub.
 
-## Đây là HAI sản phẩm, không phải một
+## MỘT chuỗi giá trị, hai kho mã
 
-Nhầm lẫn này đã từng làm lệch cả một kế hoạch, nên ghi rõ:
+> **Đính chính 2026-08-23.** Bản trước ghi "hai sản phẩm riêng biệt" — sai về quan hệ.
+
+```
+   SR-Agent  ──── chứng cứ ────►  AnesthOS  ──── khuyến cáo ────►  Bác sĩ
+   sinh chứng cứ                  ra quyết định
+```
+
+AnesthOS đưa ra khuyến cáo lâm sàng. **Khuyến cáo phải có chứng cứ, và chứng cứ đến từ
+SR-Agent.** SR-Agent được tách riêng KHÔNG phải vì nó là sản phẩm khác, mà vì nó **tái
+dùng được cho mọi lĩnh vực**: đổi nguồn tham khảo là có một hệ tri thức hệ thống cho
+bất kỳ vấn đề nào — y khoa chỉ là lĩnh vực đầu tiên.
 
 | Tiêu chí | SR-Agent | AnesthOS-app |
 |---|---|---|
-| Là gì | Hệ thống tự thu thập tài liệu khoa học rồi viết bài tổng quan hệ thống | Ứng dụng hỗ trợ quyết định lâm sàng gây mê |
+| Vai trò | **Bộ máy sinh chứng cứ** — dùng chung, mù lĩnh vực | **Bộ ra quyết định** — chuyên gây mê |
+| Là gì | Thu thập y văn → kho dữ liệu → bài tổng quan hệ thống | Ứng dụng hỗ trợ quyết định lâm sàng |
 | Công nghệ | Python, chạy local trên Mac | React + TypeScript |
 | Repo | `Gunthqq30223132/SRagent` | `Gunthqq30223132/AnesthOS-app` |
-| Trạng thái | Đang phát triển, phần thu thập đã chạy được | Mới có khung xương |
+| Trạng thái | Đang phát triển, thu thập chạy được, **chưa chạy dữ liệu sống** | Mới có khung xương |
+
+**Hệ quả lên thiết kế**: lõi `sr_agent/` phải mù lĩnh vực. Mọi thứ đặc thù y khoa —
+nguồn PubMed, đơn vị lâm sàng, bậc chứng cứ — nằm ở tầng cắm thêm (`tools/sources/`,
+`tools/profiles/`), không được ngấm vào lõi.
+
+**Hệ quả lên thứ tự làm**: hoàn thiện SR-Agent chạy thật trước. Lớp A/B/C của AnesthOS
+chỉ bộc lộ điểm yếu khi có chứng cứ thật chảy vào — thiết kế thêm lúc chưa chạy là đoán.
 
 ## SR-Agent làm gì
 
