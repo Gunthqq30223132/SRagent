@@ -173,7 +173,22 @@ def doc_hang_doi(thu_muc: Path) -> KetQuaDoc:
         )
         return ket_qua
 
+    # Google Docs KHÔNG đồng bộ nội dung xuống máy — Drive for Desktop chỉ tạo
+    # file stub .gdoc chứa một đường link. Nếu Spark lỡ tạo Doc thay vì tải lên
+    # file thật thì trên Mac sẽ chỉ thấy stub, và cả cơ chế đứt. Bắt riêng để
+    # thông điệp chỉ đúng nguyên nhân thay vì báo "JSON hỏng".
+    for stub in sorted(thu_muc.glob("*.gdoc")):
+        ket_qua.phieu_hong.append((
+            stub.name,
+            "Đây là Google Doc, KHÔNG phải file thật. Google Docs chỉ đồng bộ "
+            "xuống máy dưới dạng đường link nên không đọc được nội dung. "
+            "Spark phải TẢI LÊN file .json thuần, không được tạo Google Doc.",
+        ))
+
     for duong_dan in sorted(thu_muc.glob("*.json")):
+        # File bắt đầu bằng '_' là mẫu/ghi chú, không phải phiếu thật.
+        if duong_dan.name.startswith("_"):
+            continue
         try:
             du_lieu = json.loads(duong_dan.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, UnicodeDecodeError) as exc:

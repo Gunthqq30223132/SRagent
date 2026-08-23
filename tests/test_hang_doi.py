@@ -165,3 +165,26 @@ class TestPhatHienVANGMAT:
     def test_phieu_moi_khong_canh_bao(self, tmp_path):
         (tmp_path / "p.json").write_text(json.dumps(PHIEU_TOT), encoding="utf-8")
         assert kiem_do_tuoi(doc_hang_doi(tmp_path), hom_nay=date(2026, 8, 24)) is None
+
+
+class TestBatLoiGoogleDoc:
+    """Google Docs KHÔNG đồng bộ nội dung xuống Mac — chỉ tạo stub .gdoc.
+
+    Nếu Spark tạo Doc thay vì tải lên file thật thì cơ chế đứt hoàn toàn, mà
+    triệu chứng lại vô hại: thư mục trông như có file. Phải bắt riêng.
+    """
+
+    def test_gdoc_bi_bao_loi_dung_nguyen_nhan(self, tmp_path):
+        (tmp_path / "2026-08-24_chong-dong_pubmed.gdoc").write_text(
+            '{"url": "https://docs.google.com/..."}', encoding="utf-8")
+        kq = doc_hang_doi(tmp_path)
+        assert len(kq.phieu_hop_le) == 0
+        assert "Google Doc" in kq.phieu_hong[0][1]
+        assert "TẢI LÊN file .json" in kq.phieu_hong[0][1]
+
+    def test_file_mau_gach_duoi_bi_bo_qua(self, tmp_path):
+        """_MAU_PHIEU.json là mẫu để Spark bắt chước, không phải phiếu thật."""
+        (tmp_path / "_MAU_PHIEU.json").write_text("{khong phai json", encoding="utf-8")
+        (tmp_path / "that.json").write_text(json.dumps(PHIEU_TOT), encoding="utf-8")
+        kq = doc_hang_doi(tmp_path)
+        assert len(kq.phieu_hop_le) == 1 and len(kq.phieu_hong) == 0
