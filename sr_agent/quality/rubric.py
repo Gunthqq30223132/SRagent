@@ -147,12 +147,34 @@ def _rule_required_fields(doc: Document, params: dict) -> tuple[float, str]:
     return score, f"thiếu: {', '.join(sorted(missing)) or 'không'}"
 
 
+def _rule_evidence_rank(doc: Document, params: dict) -> tuple[float, str]:
+    """Chấm theo BẬC CHỨNG CỨ y khoa (1 = mạnh nhất). Tra bảng, không nội suy.
+
+    TẠI SAO CẦN LUẬT RIÊNG: mọi luật sẵn có đều chấm trên đặc điểm bề mặt
+    (tuổi bài, có repo code, độ dài abstract). Trong y học, thứ quyết định một
+    bài có được đưa vào tổng quan hệ thống hay không là THIẾT KẾ NGHIÊN CỨU —
+    một RCT năm 2015 có sức nặng hơn một bài tổng quan tường thuật năm nay.
+    Không có luật này thì rubric xếp bài theo độ mới, tức xếp ngược.
+
+    evidence_level=None nghĩa CHƯA PHÂN LOẠI. Trả về `unranked_score` (mặc định
+    50, tức trung tính) chứ KHÔNG trả 0 — cho điểm 0 sẽ âm thầm loại mọi tài
+    liệu đến từ nguồn không gán nhãn thiết kế (arXiv, IEEE), biến một khoảng
+    trống dữ liệu thành một phán quyết chất lượng.
+    """
+    if doc.evidence_level is None:
+        return float(params.get("unranked_score", 50)), "chưa phân loại thiết kế"
+    table = params.get("scores", {})
+    score = float(table.get(str(doc.evidence_level), 0))
+    return score, f"bậc chứng cứ={doc.evidence_level}"
+
+
 RULE_REGISTRY: dict[str, Callable[[Document, dict], tuple[float, str]]] = {
     "tier_lookup": _rule_tier_lookup,
     "linear_decay_years": _rule_linear_decay_years,
     "keyword_flags": _rule_keyword_flags,
     "length_range": _rule_length_range,
     "required_fields": _rule_required_fields,
+    "evidence_rank": _rule_evidence_rank,
 }
 
 

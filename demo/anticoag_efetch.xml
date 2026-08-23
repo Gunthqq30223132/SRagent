@@ -1,0 +1,169 @@
+<?xml version="1.0" ?>
+<!--
+  Bộ chạy thử chủ đề "quản lý chống đông trước, trong và sau mổ".
+
+  NGUỒN GỐC DỮ LIỆU (khai báo trung thực, đọc kỹ trước khi trích dẫn):
+  - PMID, tiêu đề, tạp chí, năm, loại bài: LẤY TỪ TRA CỨU THẬT, đã đối chiếu
+    trên pubmed.ncbi.nlm.nih.gov. Đây là các bài có thật.
+  - Abstract: rút gọn từ nội dung tra cứu trả về, KHÔNG phải nguyên văn abstract
+    của bài. Không được trích dẫn số liệu từ file này vào bất kỳ bản thảo nào —
+    phải fetch live để lấy abstract nguyên văn trước.
+  - 2 bản ghi cuối gắn nhãn _SYNTHETIC_ trong tiêu đề: dựng CÓ CHỦ Ý để kiểm
+    tầng chống trùng, không phải bài thật.
+
+  Cấu trúc XML theo đúng định dạng efetch của NCBI để chạy qua đúng parser thật.
+-->
+<PubmedArticleSet>
+
+ <PubmedArticle>
+  <MedlineCitation Status="MEDLINE">
+   <PMID Version="1">26095867</PMID>
+   <Article PubModel="Print-Electronic">
+    <Journal>
+     <JournalIssue><PubDate><Year>2015</Year><Month>Aug</Month><Day>27</Day></PubDate></JournalIssue>
+     <Title>The New England Journal of Medicine</Title>
+    </Journal>
+    <ArticleTitle>Perioperative Bridging Anticoagulation in Patients with Atrial Fibrillation.</ArticleTitle>
+    <Abstract>
+     <AbstractText Label="BACKGROUND">It is uncertain whether bridging anticoagulation is necessary for patients with atrial fibrillation who need an interruption in warfarin treatment for an elective operation or other elective invasive procedure.</AbstractText>
+     <AbstractText Label="CONCLUSIONS">Forgoing bridging anticoagulation was noninferior to perioperative bridging with low-molecular-weight heparin for the prevention of arterial thromboembolism and decreased the risk of major bleeding.</AbstractText>
+    </Abstract>
+    <AuthorList>
+     <Author><LastName>Douketis</LastName><ForeName>James D</ForeName></Author>
+     <Author><LastName>Spyropoulos</LastName><ForeName>Alex C</ForeName></Author>
+     <Author><LastName>Kaatz</LastName><ForeName>Scott</ForeName></Author>
+    </AuthorList>
+    <PublicationTypeList>
+     <PublicationType UI="D016428">Journal Article</PublicationType>
+     <PublicationType UI="D016449">Randomized Controlled Trial</PublicationType>
+    </PublicationTypeList>
+   </Article>
+  </MedlineCitation>
+ </PubmedArticle>
+
+ <PubmedArticle>
+  <MedlineCitation Status="MEDLINE">
+   <PMID Version="1">42247721</PMID>
+   <Article PubModel="Print-Electronic">
+    <Journal>
+     <JournalIssue><PubDate><Year>2026</Year><Month>Feb</Month></PubDate></JournalIssue>
+     <Title>Thrombosis Research</Title>
+    </Journal>
+    <ArticleTitle>Comparing perioperative heparin bridging strategies in mechanical heart valve patients undergoing surgery: A systematic review and Bayesian meta-analysis.</ArticleTitle>
+    <Abstract>
+     <AbstractText Label="METHODS">Bayesian meta-analysis of four studies comprising 1847 patients undergoing surgery with mechanical heart valves.</AbstractText>
+     <AbstractText Label="CONCLUSIONS">Bridging showed no clear thromboembolic benefit but a high probability of major bleeding harm, supporting individualized risk-adapted management over routine bridging.</AbstractText>
+    </Abstract>
+    <AuthorList>
+     <Author><CollectiveName>Bridging Strategies Study Group</CollectiveName></Author>
+    </AuthorList>
+    <PublicationTypeList>
+     <PublicationType UI="D016428">Journal Article</PublicationType>
+     <PublicationType UI="D017418">Meta-Analysis</PublicationType>
+     <PublicationType UI="D000078182">Systematic Review</PublicationType>
+    </PublicationTypeList>
+   </Article>
+  </MedlineCitation>
+ </PubmedArticle>
+
+ <PubmedArticle>
+  <MedlineCitation Status="MEDLINE">
+   <PMID Version="1">41073233</PMID>
+   <Article PubModel="Print-Electronic">
+    <Journal>
+     <JournalIssue><PubDate><MedlineDate>2025 Oct-Nov</MedlineDate></PubDate></JournalIssue>
+     <Title>British Journal of Anaesthesia</Title>
+    </Journal>
+    <ArticleTitle>Direct oral anticoagulant management for neuraxial anaesthesia and deep peripheral nerve blocks.</ArticleTitle>
+    <Abstract>
+     <AbstractText>Direct oral anticoagulants increase the risk of bleeding in patients who receive neuraxial analgesia or deep peripheral nerve blocks. Clinicians must balance the risks of thromboembolic complications and spinal epidural haematoma. ASRA guidelines recommend a conservative approach with prolonged DOAC interruption and DOAC level testing in certain circumstances, whereas the PAUSE protocol offers a simplified pharmacokinetics-based strategy without routine testing.</AbstractText>
+    </Abstract>
+    <AuthorList>
+     <Author><LastName>Douketis</LastName><ForeName>James D</ForeName></Author>
+    </AuthorList>
+    <PublicationTypeList>
+     <PublicationType UI="D016454">Review</PublicationType>
+    </PublicationTypeList>
+   </Article>
+  </MedlineCitation>
+ </PubmedArticle>
+
+ <PubmedArticle>
+  <MedlineCitation Status="MEDLINE">
+   <PMID Version="1">29212129</PMID>
+   <Article PubModel="Print-Electronic">
+    <Journal>
+     <JournalIssue><PubDate><Year>2017</Year><Month>Dec</Month></PubDate></JournalIssue>
+     <Title>Thrombosis and Haemostasis</Title>
+    </Journal>
+    <ArticleTitle>The Perioperative Anticoagulant Use for Surgery Evaluation (PAUSE) Study for Patients on a Direct Oral Anticoagulant Who Need an Elective Surgery or Procedure: Design and Rationale.</ArticleTitle>
+    <Abstract>
+     <AbstractText>Design and rationale of a prospective cohort management study establishing a standardised perioperative management plan for patients with atrial fibrillation receiving a direct oral anticoagulant who require an elective surgery or procedure.</AbstractText>
+    </Abstract>
+    <AuthorList>
+     <Author><LastName>Douketis</LastName><ForeName>James D</ForeName></Author>
+     <Author><LastName>Spyropoulos</LastName><ForeName>Alex C</ForeName></Author>
+    </AuthorList>
+    <PublicationTypeList>
+     <PublicationType UI="D016428">Journal Article</PublicationType>
+     <PublicationType UI="D016430">Clinical Trial</PublicationType>
+    </PublicationTypeList>
+   </Article>
+  </MedlineCitation>
+ </PubmedArticle>
+
+ <PubmedArticle>
+  <MedlineCitation Status="MEDLINE">
+   <PMID Version="1">26567057</PMID>
+   <Article PubModel="Print">
+    <Journal>
+     <JournalIssue><PubDate><Year>2015</Year><Month>Nov</Month></PubDate></JournalIssue>
+     <Title>Journal of Clinical Review</Title>
+    </Journal>
+    <ArticleTitle>Review of article: Perioperative bridging anticoagulation in patients with atrial fibrillation by James D. Douketis, Alex C. Spyropoulos, Scott Kaatz, et al.</ArticleTitle>
+    <Abstract>
+     <AbstractText>Commentary and critical appraisal of the BRIDGE randomized trial examining bridging anticoagulation in atrial fibrillation.</AbstractText>
+    </Abstract>
+    <AuthorList>
+     <Author><LastName>Reviewer</LastName><ForeName>Editorial</ForeName></Author>
+    </AuthorList>
+    <PublicationTypeList>
+     <PublicationType UI="D016454">Review</PublicationType>
+    </PublicationTypeList>
+   </Article>
+  </MedlineCitation>
+ </PubmedArticle>
+
+ <PubmedArticle>
+  <MedlineCitation Status="MEDLINE">
+   <PMID Version="1">26095867</PMID>
+   <Article PubModel="Print-Electronic">
+    <Journal>
+     <JournalIssue><PubDate><Year>2015</Year><Month>Aug</Month><Day>27</Day></PubDate></JournalIssue>
+     <Title>The New England Journal of Medicine</Title>
+    </Journal>
+    <ArticleTitle>Perioperative Bridging Anticoagulation in Patients with Atrial Fibrillation.</ArticleTitle>
+    <Abstract><AbstractText>_SYNTHETIC_ bản ghi lặp nguyên PMID, dựng để kiểm tầng 1 chống trùng theo ID chính xác.</AbstractText></Abstract>
+    <AuthorList><Author><LastName>Douketis</LastName><ForeName>James D</ForeName></Author></AuthorList>
+    <PublicationTypeList><PublicationType UI="D016449">Randomized Controlled Trial</PublicationType></PublicationTypeList>
+   </Article>
+  </MedlineCitation>
+ </PubmedArticle>
+
+ <PubmedArticle>
+  <MedlineCitation Status="MEDLINE">
+   <PMID Version="1">99999001</PMID>
+   <Article PubModel="Print">
+    <Journal>
+     <JournalIssue><PubDate><Year>2026</Year><Month>Mar</Month></PubDate></JournalIssue>
+     <Title>Thrombosis Research</Title>
+    </Journal>
+    <ArticleTitle>_SYNTHETIC_ Comparing perioperative heparin bridging strategies in mechanical heart valve patients undergoing surgery - a systematic review and Bayesian meta analysis</ArticleTitle>
+    <Abstract><AbstractText>_SYNTHETIC_ bản ghi lệch dấu câu so với PMID 42247721, dựng để kiểm tầng 2 chống trùng theo so khớp mờ tiêu đề.</AbstractText></Abstract>
+    <AuthorList><Author><CollectiveName>Bridging Strategies Study Group</CollectiveName></Author></AuthorList>
+    <PublicationTypeList><PublicationType UI="D017418">Meta-Analysis</PublicationType></PublicationTypeList>
+   </Article>
+  </MedlineCitation>
+ </PubmedArticle>
+
+</PubmedArticleSet>

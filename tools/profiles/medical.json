@@ -1,0 +1,63 @@
+{
+  "version": "1.0-medical",
+  "_ghi_chu": [
+    "Rubric cho chủ đề Y KHOA. Dựng sau khi chạy thử chủ đề chống đông chu phẫu",
+    "cho thấy rubric mặc định (CS) LOẠI thử nghiệm BRIDGE (RCT của NEJM, PMID",
+    "26095867) với 45.16 điểm, và xếp một bài tổng quan tường thuật CAO HƠN một",
+    "phân tích gộp. Ba nguyên nhân, đã sửa cả ba:",
+    "",
+    "1. artifact_availability chiếm 25% và tìm github/zenodo — bài y khoa gần như",
+    "   không bao giờ có, nên MỌI bài y khoa mất trắng 25 điểm. Đã BỎ tiêu chí này.",
+    "2. recency về 0 điểm ở mốc 10 năm — trong y học một RCT nền tảng còn giá trị",
+    "   hàng chục năm. Đã nới: đủ điểm trong 10 năm, về 0 ở mốc 40 năm.",
+    "3. Không có tiêu chí nào nhìn THIẾT KẾ NGHIÊN CỨU — thứ quyết định nhất.",
+    "   Đã thêm evidence_rank làm tiêu chí nặng nhất (35%).",
+    "",
+    "Ngưỡng đạt giữ 60 như bản CS để so sánh được giữa hai miền."
+  ],
+  "pass_threshold": 60.0,
+  "criteria": [
+    {
+      "key": "evidence_rank",
+      "weight": 35,
+      "rule": "evidence_rank",
+      "params": {
+        "scores": {
+          "1": 100,
+          "2": 92,
+          "3": 85,
+          "4": 70,
+          "5": 60,
+          "6": 45,
+          "7": 35,
+          "9": 15
+        },
+        "unranked_score": 50
+      }
+    },
+    {
+      "key": "source_authority",
+      "weight": 20,
+      "rule": "tier_lookup",
+      "params": {"1": 100, "2": 70}
+    },
+    {
+      "key": "recency",
+      "weight": 15,
+      "rule": "linear_decay_years",
+      "params": {"full_score_within": 10, "zero_at": 40}
+    },
+    {
+      "key": "abstract_completeness",
+      "weight": 20,
+      "rule": "length_range",
+      "params": {"min_words": 60, "ideal_words": 220}
+    },
+    {
+      "key": "metadata_integrity",
+      "weight": 10,
+      "rule": "required_fields",
+      "params": {"fields": ["title", "authors", "published_date"]}
+    }
+  ]
+}

@@ -158,7 +158,12 @@ class Document(BaseModel):
     """Bản ghi chuẩn hóa duy nhất chảy xuyên suốt pipeline."""
 
     uid: str  # "ieee:12345678" | "arxiv:2401.12345" — computed từ source+source_id
-    source: Literal["ieee", "arxiv"]
+    # NGOẠI LỆ VÙNG CẤM (2026-08-23): thêm "pubmed" để mở phạm vi y sinh.
+    # Chỉ CỘNG một nhánh vào union, không đổi bất kỳ logic nào bên dưới:
+    # validator source_id dùng ID_PATTERNS.get(source) -> None cho nguồn mới nên
+    # tự bỏ qua; fetcher PubMed truyền authority_tier tường minh nên config.py
+    # KHÔNG cần sửa và vẫn khoá nguyên.
+    source: Literal["ieee", "arxiv", "pubmed"]
     source_id: str
     authority_tier: int = Field(ge=1)
     alternate_uids: list[str] = []  # bản trùng bị merge (giữ vết, không vứt)
@@ -170,6 +175,12 @@ class Document(BaseModel):
     published_date: datetime | None = None
     url: str | None = None
     full_text: str | None = None
+
+    # NGOẠI LỆ VÙNG CẤM (2026-08-23), phần 2: bậc chứng cứ y khoa.
+    # Số NHỎ = mạnh hơn (1 = meta-analysis). None = CHƯA PHÂN LOẠI, khác hẳn
+    # với "đã phân loại là yếu" — tầng trên phải hiển thị hai thứ này khác nhau.
+    # Trường tuỳ chọn, mặc định None ⇒ mọi Document CS hiện có không đổi hành vi.
+    evidence_level: int | None = Field(default=None, ge=1)
 
     sections: AnySections | None = None
     tech_meta: TechnicalMetadata | None = None
