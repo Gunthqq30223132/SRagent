@@ -86,7 +86,7 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Quét toàn bộ kho qua Europe PMC")
     ap.add_argument("--truy-van", default=TRUY_VAN)
     ap.add_argument("--ra", default="kho_chong_dong.json", type=Path)
-    ap.add_argument("--tran", type=int, default=5000)
+    ap.add_argument("--tran", type=int, default=20000)
     ap.add_argument("--bo-qua-do-nhay", action="store_true",
                     help="quét dù truy vấn thủng — chỉ dùng khi đang thử nghiệm")
     a = ap.parse_args(argv)
@@ -143,23 +143,41 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  Đã TẢI VỀ được   : {len(docs):,}".replace(",", "."))
     print(f"  Độ phủ tải về    : {phu:.1%}")
     if len(docs) < tong:
-        print(f"  ⚠ Thiếu {tong - len(docs)} bản ghi — chạm trần {a.tran}? Tăng --tran.")
+        print(f"  ⚠ THIẾU {tong - len(docs):,} bản ghi — chạm trần {a.tran:,}.".replace(",", "."))
+        print(f"     Chạy lại với --tran {tong + 1000} để lấy đủ.")
+        print("     Đừng sàng trên kho thiếu: bài chưa tải về cũng là bài chưa ai nhìn.")
 
     _muc("BƯỚC 3 — PHÂN BỐ BẬC CHỨNG CỨ")
     bac: dict[int | None, int] = {}
     for d in docs:
         bac[d.evidence_level] = bac.get(d.evidence_level, 0) + 1
     ten = {1: "phân tích gộp", 2: "tổng quan hệ thống", 3: "RCT / hướng dẫn",
-           4: "hướng dẫn", 5: "thử nghiệm lâm sàng", 6: "quan sát", 7: "tổng quan"}
+           4: "hướng dẫn", 5: "thử nghiệm lâm sàng", 6: "quan sát", 7: "tổng quan",
+           9: "báo cáo ca"}
     for k in sorted(bac, key=lambda x: (x is None, x)):
         nhan = "CHƯA PHÂN LOẠI" if k is None else f"bậc {k} — {ten.get(k, '')}"
         print(f"  {nhan:<34} {bac[k]:>5}")
     if None in bac:
         print("\n  'Chưa phân loại' KHÁC 'bậc thấp'. Không được gộp hai thứ này.")
 
+    # GIỮ LẠI NHÃN GỐC, không chỉ giữ bậc suy ra từ nó.
+    #
+    # Bản trước chỉ ghi evidence_level — tức là giữ KẾT LUẬN mà vứt CĂN CỨ. Lần
+    # chạy thật cho 2.459/5.000 bản ghi 'chưa phân loại', và không có cách nào
+    # biết vì sao trừ khi tải lại cả kho: nhãn gốc đã bị bỏ ngay lúc đọc.
+    #
+    # Nguyên tắc rút ra: đừng bao giờ vứt tín hiệu thô mà mình vừa suy diễn từ đó.
+    # Bảng xếp bậc là GIẢ THIẾT của ta về dữ liệu, và giả thiết thì sẽ phải sửa.
+    # Sửa được hay không phụ thuộc vào việc còn giữ dữ liệu gốc hay không.
+    ban_ghi = []
+    for d in docs:
+        r = d.model_dump(mode="json")
+        r["loai_bai_goc"] = f.loai_bai.get(d.uid, [])
+        ban_ghi.append(r)
+
     a.ra.write_text(json.dumps(
         {"truy_van": a.truy_van, "kho_bao_co": tong, "da_tai_ve": len(docs),
-         "ban_ghi": [d.model_dump(mode="json") for d in docs]},
+         "ban_ghi": ban_ghi},
         ensure_ascii=False, indent=2), encoding="utf-8")
 
     _muc("KẾT LUẬN")
