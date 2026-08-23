@@ -1,0 +1,42 @@
+{
+  "ma_phieu": "2026-08-23_chong-dong_pubmed",
+  "ngay_quet": "2026-08-23",
+  "nguon": "pubmed",
+  "cau_hoi": "Quản lý chống đông trước, trong và sau mổ",
+  "chuoi_truy_van": "(\"Anticoagulants\"[Mesh] OR \"Warfarin\"[Mesh] OR \"Heparin, Low-Molecular-Weight\"[Mesh] OR \"Factor Xa Inhibitors\"[Mesh] OR rivaroxaban[tiab] OR apixaban[tiab] OR dabigatran[tiab] OR enoxaparin[tiab]) AND (\"Perioperative Care\"[Mesh] OR \"Preoperative Care\"[Mesh] OR \"Postoperative Care\"[Mesh] OR perioperative[tiab] OR bridging[tiab] OR \"surgery\"[tiab]) AND (\"Meta-Analysis\"[ptyp] OR \"Systematic Review\"[ptyp] OR \"Randomized Controlled Trial\"[ptyp] OR \"Practice Guideline\"[ptyp])",
+  "so_ket_qua_tho": 1767,
+  "so_da_sang": 10,
+  "ids": [
+    "pubmed:40448969",
+    "pubmed:34108229",
+    "pubmed:26095867",
+    "pubmed:36462533"
+  ],
+  "loai_tru": [
+    {
+      "id": "pubmed:28467526",
+      "ly_do": "Hướng dẫn phòng ngừa nhiễm trùng vết mổ của CDC, không tập trung vào quản lý chống đông chu phẫu"
+    },
+    {
+      "id": "pubmed:40888734",
+      "ly_do": "Nghiên cứu về điều trị duy trì kéo dài huyết khối tĩnh mạch, không tập trung vào xử trí thuốc chống đông chu phẫu"
+    },
+    {
+      "id": "pubmed:22315268",
+      "ly_do": "Hướng dẫn chung về điều trị thuyên tắc huyết khối tĩnh mạch, không chuyên biệt về quản lý chống đông chu phẫu"
+    },
+    {
+      "id": "pubmed:33368113",
+      "ly_do": "Tổng quan hệ thống về chỉnh liều thuốc chống đông ở bệnh nhân béo phì, không tập trung vào quản lý chu phẫu"
+    },
+    {
+      "id": "pubmed:35997730",
+      "ly_do": "Thử nghiệm so sánh dự phòng thuyên tắc huyết khối sau phẫu thuật thay khớp, không tập trung vào quản lý bệnh nhân đang dùng chống đông trước mổ"
+    },
+    {
+      "id": "pubmed:29132880",
+      "ly_do": "Thử nghiệm lâm sàng về điều trị bệnh động mạch ngoại vi mạn tính ổn định, không liên quan đến phẫu thuật hoặc chu phẫu"
+    }
+  ],
+  "ghi_chu": ""
+}
