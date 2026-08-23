@@ -107,10 +107,26 @@ class TestLuoiNhomXBaiMoi:
         moi = list(NHAN_MOI)
         tat_ca = {m.rsplit(":", 1)[-1] for m in moi}
         cho_qua = {t: tat_ca for t in NHOM_TRUY_VAN}
-        cho_qua["loại bài / bậc CC"] = tat_ca - {"40448969"}   # DOAC25 bị loại
+        cho_qua["giai đoạn chu phẫu"] = tat_ca - {"40448969"}   # DOAC25 bị loại
         thu_pham = in_luoi(soi_nhom(self._gia_lap(cho_qua), moi, NHOM_TRUY_VAN), moi)
-        assert thu_pham == ["loại bài / bậc CC"]
+        assert thu_pham == ["giai đoạn chu phẫu"]
         assert "3/4" in capsys.readouterr().out
+
+    def test_nhom_tham_khao_khong_duoc_tinh_vao_do_nhay(self):
+        """Nhóm đã bỏ khỏi truy vấn mà vẫn tính vào dòng tổng thì con số nói dối.
+
+        PUB_TYPE nay chỉ để ĐO xem giả định cũ sai tới đâu. Nếu nó lọt vào phép
+        tính độ nhạy, báo cáo sẽ mô tả một truy vấn không còn tồn tại.
+        """
+        from tools.soi_truy_van import NHOM_THAM_KHAO, NHOM_TRUY_VAN
+        assert "loại bài (đã bỏ)" in NHOM_THAM_KHAO
+        assert not any("PUB_TYPE" in md for md in NHOM_TRUY_VAN.values())
+
+    def test_truy_van_that_khong_con_loc_loai_bai(self):
+        """Chốt ở chính truy vấn sẽ chạy, không chỉ ở bảng chẩn đoán."""
+        from tools.quet_that import TRUY_VAN
+        assert "PUB_TYPE" not in TRUY_VAN
+        assert "SRC:MED" in TRUY_VAN and "MESH:" not in TRUY_VAN
 
     def test_bai_phai_qua_MOI_nhom_moi_duoc_tinh(self):
         """Truy vấn nối bằng AND — qua 3/4 nhóm vẫn là bị loại."""

@@ -67,12 +67,19 @@ NHOM_TRUY_VAN: dict[str, str] = {
         'OR KW:"Postoperative Care" OR KW:"Perioperative Period" '
         "OR perioperative OR bridging"
     ),
-    "loại bài / bậc CC": (
+    "kho MEDLINE": "SRC:MED",
+}
+
+# THAM KHẢO — KHÔNG còn nằm trong truy vấn thật, và không được tính vào dòng tổng.
+# Giữ lại để ĐO xem giả định cũ sai tới đâu: nếu nhóm này loại mất PERIOP2 hay
+# hướng dẫn DOAC 2025 thì đó là bằng chứng cho quyết định bỏ nó ra khỏi cửa tìm
+# kiếm. Xoá đi thì mất luôn bằng chứng, và quyết định lại trở thành ý kiến.
+NHOM_THAM_KHAO: dict[str, str] = {
+    "loại bài (đã bỏ)": (
         'PUB_TYPE:"Meta-Analysis" OR PUB_TYPE:"Systematic Review" '
         'OR PUB_TYPE:"Randomized Controlled Trial" '
         'OR PUB_TYPE:"Practice Guideline"'
     ),
-    "kho MEDLINE": "SRC:MED",
 }
 
 # Nhãn ngắn để in thành bảng. Mô tả đầy đủ nằm ở do_nhay.MOI_CHONG_DONG.
@@ -217,10 +224,27 @@ def main(argv: list[str] | None = None) -> int:
         print("\n  NHÓM LOẠI NHẦM BÀI NỀN TẢNG — phải nới, không được siết thêm:")
         for t in thu_pham:
             print(f"    ✗ {t}")
-        print("\n  Nhóm 'loại bài / bậc CC' hay là thủ phạm nhất: nó lọc theo nhãn")
-        print("  do người lập chỉ mục gán, mà nhãn không phải lúc nào cũng như ta đoán.")
     else:
         print("\n  ✓ Không nhóm nào loại nhầm. Truy vấn ghép lại sẽ đạt độ nhạy đủ.")
+
+    print("\n" + "─" * 74)
+    print("THAM KHẢO — nhóm ĐÃ BỎ khỏi truy vấn, đo để biết bỏ có đúng không")
+    print("─" * 74)
+    luoi_tk = soi_nhom(f, moi, NHOM_THAM_KHAO)
+    for ten, hang in luoi_tk.items():
+        o = "".join(f"{'✓' if hang[m] else '✗':>10}" for m in moi)
+        print(f"{ten:<22}{o}")
+    mat = [NHAN_MOI[m] for m in moi if not luoi_tk["loại bài (đã bỏ)"][m]]
+    print()
+    if mat:
+        print(f"  Bộ lọc loại bài sẽ LOẠI MẤT: {', '.join(mat)}")
+        print("  -> Bằng chứng cho việc bỏ nó khỏi cửa tìm kiếm là đúng.")
+        print("     Bậc chứng cứ vẫn được ghi vào từng bản ghi và dùng để xếp hạng;")
+        print("     chỉ khác là bài không bị chặn ở cửa vì cái nhãn nó được gắn.")
+    else:
+        print("  Bộ lọc này không loại mất bài mồi nào.")
+        print("  Vẫn để ngoài truy vấn: bài bị loại ở cửa tìm KHÔNG để lại vết,")
+        print("  không vào được sơ đồ PRISMA. Loại ở vòng sàng thì có mã, có lý do.")
     return 0
 
 

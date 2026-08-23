@@ -48,9 +48,25 @@ from tools.sources.europepmc import EuropePMCFetcher
 # đánh đổi đúng — thà nhận thêm bài phải loại tay, còn hơn bỏ sót bài mà không ai
 # biết là đã bỏ sót. Bài bị loại có vết; bài chưa từng thấy thì không.
 #
-# HAI THAY ĐỔI KHÁC so với bản PubMed, cả hai phải qua phép đo độ nhạy mới nhận:
-#   - BỎ  'surgery'   : quá rộng, đây là thứ kéo phình khối lượng lên 1.767
-#   - THÊM "Perioperative Period" : khái niệm này có thuật ngữ chuẩn mà bản cũ sót
+# BỎ HẲN BỘ LỌC PUB_TYPE KHỎI TRUY VẤN TÌM KIẾM — sai chỗ, không phải sai giá trị.
+#
+# Bản trước có AND (PUB_TYPE:"Meta-Analysis" OR ... OR "Practice Guideline"), tức
+# là biến thiết kế nghiên cứu thành ĐIỀU KIỆN LOẠI TRỪ NGAY Ở CỬA TÌM KIẾM. Ba lý
+# do khiến chỗ đó là sai chỗ:
+#
+#   1. Nhãn loại bài do người lập chỉ mục gán, và gán KHÔNG đều. Một hướng dẫn
+#      thực hành có thể chỉ mang nhãn 'Journal Article'. Lọc theo nhãn ở cửa tìm
+#      nghĩa là bài bị loại vì CÁCH NÓ ĐƯỢC DÁN NHÃN, không phải vì nó là gì.
+#   2. Bài bị loại ở cửa tìm thì KHÔNG ĐỂ LẠI VẾT. Nó không nằm trong tử số lẫn
+#      mẫu số, không vào sơ đồ PRISMA, không ai biết nó từng tồn tại. Còn bài bị
+#      loại ở vòng sàng thì có mã, có lý do, đếm được.
+#   3. Ta ĐÃ CÓ sẵn bộ phân loại thiết kế nghiên cứu tốt hơn: evidence_level đọc
+#      từ pubTypeList của từng bản ghi. Nó xếp hạng mà không vứt bỏ, và phân biệt
+#      'chưa phân loại' với 'phân loại là yếu'.
+#
+# Nên bậc chứng cứ chuyển vai: từ ĐIỀU KIỆN LOẠI TRỪ lúc tìm -> TIÊU CHÍ XẾP HẠNG
+# lúc sàng. Cái giá là kho to hơn. Nhưng kho to chưa bao giờ là vấn đề kể từ khi
+# quét được cả kho trong 2 request — nút thắt nằm ở đường truyền, không ở khối lượng.
 TRUY_VAN = (
     '(KW:"Anticoagulants" OR KW:"Warfarin" '
     'OR KW:"Heparin, Low-Molecular-Weight" OR KW:"Factor Xa Inhibitors" '
@@ -58,8 +74,6 @@ TRUY_VAN = (
     'AND (KW:"Perioperative Care" OR KW:"Preoperative Care" '
     'OR KW:"Postoperative Care" OR KW:"Perioperative Period" '
     'OR perioperative OR bridging) '
-    'AND (PUB_TYPE:"Meta-Analysis" OR PUB_TYPE:"Systematic Review" '
-    'OR PUB_TYPE:"Randomized Controlled Trial" OR PUB_TYPE:"Practice Guideline") '
     'AND SRC:MED'
 )
 
@@ -100,7 +114,21 @@ def main(argv: list[str] | None = None) -> int:
     if not kq.dat and not a.bo_qua_do_nhay:
         print()
         print("  DỪNG — không quét bằng truy vấn thủng.")
-        print("  Sửa truy vấn cho tới khi lấy đủ bài mồi, rồi chạy lại.")
+        # TỰ CHẨN ĐOÁN NGAY, không bắt người dùng chạy thêm một lệnh nữa. Công cụ
+        # nào dừng thì phải nói luôn vì sao nó dừng; báo 'thủng' rồi im lặng chỉ
+        # đẩy thêm một vòng đi-về mà thông tin thì hệ thống đã có sẵn trong tay.
+        print("  Đang soi xem nhóm mệnh đề nào loại nhầm bài mồi...")
+        try:
+            from tools.soi_truy_van import NHAN_MOI, NHOM_TRUY_VAN, in_luoi, soi_nhom
+            ds = list(NHAN_MOI)
+            thu_pham = in_luoi(soi_nhom(f, ds, NHOM_TRUY_VAN), ds)
+            if thu_pham:
+                print("\n  NHÓM LOẠI NHẦM BÀI NỀN TẢNG:")
+                for t in thu_pham:
+                    print(f"    ✗ {t}")
+        except Exception as exc:  # noqa: BLE001
+            print(f"  (không soi được: {type(exc).__name__})")
+        print("\n  Sửa truy vấn cho tới khi lấy đủ bài mồi, rồi chạy lại.")
         print("  (Muốn quét thử bất chấp: thêm --bo-qua-do-nhay)")
         return 1
 
