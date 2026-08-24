@@ -1,0 +1,147 @@
+{
+  "_doc": "Bản đồ chức năng AnesthOS -> chủ đề nghiên cứu cho SR-Agent. Mỗi chức năng là MỘT lần chạy tổng quan độc lập. Lược đồ này CỐ Ý trung lập lĩnh vực: đổi 'ho_so_tuyen_chon' và danh sách chuc_nang là dùng được cho dự án phi y khoa.",
+  "_nguon": "Suy ra từ src/domain/data/*.json nhánh feat/p1-domain của Gunthqq30223132/AnesthOS-app, đọc ngày 2026-08-24. KHÔNG phải danh sách mong muốn — là những gì đang có mã.",
+  "_gun_can_dien": "Trường 'bai_moi' của MỖI chức năng. Đó là đầu vào người KHÔNG thay thế được: 3-5 bài mà Gun biết chắc một tổng quan tử tế về chủ đề đó bắt buộc phải có. SR-Agent tự soạn tiêu chí, nhưng tiêu chí nào không lôi được bài mồi về thì bị TỪ CHỐI TỰ ĐỘNG trước khi Gun phải đọc.",
+
+  "du_an": "AnesthOS",
+  "linh_vuc": "y khoa lâm sàng — gây mê hồi sức",
+  "ho_so_tuyen_chon": "y_khoa",
+  "cap_nhat": "2026-08-24",
+
+  "chuc_nang": [
+    {
+      "ma": "chong-dong-chu-phau",
+      "ten": "Quản lý chống đông và kháng kết tập tiểu cầu chu phẫu",
+      "tep_du_lieu": ["src/domain/data/asra_guidelines.json"],
+      "pham_vi_hien_co": ["clopidogrel", "prasugrel", "ticagrelor", "warfarin"],
+      "lo_hong_da_biet": "Thiếu heparin, LMWH và nhóm DOAC (rivaroxaban/apixaban/dabigatran) — đã nêu trong lần kiểm toán đầu",
+      "loai_cau_hoi": "therapy",
+      "rui_ro_lam_sang": "cao",
+      "bai_moi": [
+        "pubmed:26095867",
+        "pubmed:34108229",
+        "pubmed:36462533",
+        "pubmed:40448969"
+      ],
+      "ghi_chu_bai_moi": "Bốn bài này ĐÃ xác minh độc lập mã <-> tiêu đề. Là bộ mồi duy nhất hiện có.",
+      "trang_thai": "kho đã tải — 13.173 bản ghi"
+    },
+    {
+      "ma": "xu-tri-khung-hoang",
+      "ten": "Phác đồ xử trí tình huống khủng hoảng trong gây mê",
+      "tep_du_lieu": ["src/domain/data/crisis_protocols.json"],
+      "pham_vi_hien_co": [
+        "phản vệ", "co thắt thanh quản", "không đặt được ống - không thông khí được",
+        "ngừng tuần hoàn", "ngộ độc thuốc tê toàn thân (LAST)",
+        "tăng thân nhiệt ác tính", "chảy máu ồ ạt", "hít sặc"
+      ],
+      "loai_cau_hoi": "therapy",
+      "rui_ro_lam_sang": "rất cao",
+      "ghi_chu_rui_ro": "Sai ở đây là chết người trong vài phút. Nhưng ĐÂY CŨNG LÀ CHỦ ĐỀ ÍT RCT NHẤT — không ai ngẫu nhiên hoá bệnh nhân ngừng tim. Tiêu chí phải nhận nghiên cứu quan sát, đăng ký ca bệnh, đồng thuận chuyên gia; nếu không kho sẽ rỗng.",
+      "bai_moi": [],
+      "trang_thai": "chưa quét"
+    },
+    {
+      "ma": "thuoc-man-tinh-chu-phau",
+      "ten": "Xử trí thuốc dùng mạn tính trong giai đoạn chu phẫu",
+      "tep_du_lieu": ["src/domain/data/chronic_meds.json"],
+      "pham_vi_hien_co": ["173 hoạt chất, mỗi hoạt chất có trường periop và interactions"],
+      "loai_cau_hoi": "therapy",
+      "rui_ro_lam_sang": "cao",
+      "ghi_chu_rui_ro": "Bề mặt LỚN NHẤT: 173 hoạt chất. Không quét từng thuốc một được. Phải gom theo nhóm dược lý, và cách gom nhóm chính là quyết định thiết kế đáng bàn nhất của chức năng này.",
+      "bai_moi": [],
+      "trang_thai": "chưa quét"
+    },
+    {
+      "ma": "gay-te-vung",
+      "ten": "Gây tê vùng và block thần kinh ngoại biên",
+      "tep_du_lieu": ["src/domain/data/nerve_blocks.json"],
+      "pham_vi_hien_co": [
+        "interscalene", "supraclavicular", "infraclavicular", "axillary",
+        "femoral", "adductor-canal", "fascia-iliaca", "sciatic"
+      ],
+      "loai_cau_hoi": "therapy",
+      "rui_ro_lam_sang": "trung bình",
+      "bai_moi": [],
+      "trang_thai": "chưa quét"
+    },
+    {
+      "ma": "thuoc-te-va-ngo-doc",
+      "ten": "Thuốc tê tại chỗ: liều tối đa và ngộ độc toàn thân",
+      "tep_du_lieu": ["src/domain/data/local_anesthetics.json"],
+      "pham_vi_hien_co": [
+        "lidocaine", "bupivacaine", "levobupivacaine", "ropivacaine",
+        "mepivacaine", "prilocaine", "chloroprocaine"
+      ],
+      "loai_cau_hoi": "harm",
+      "rui_ro_lam_sang": "rất cao",
+      "ghi_chu_rui_ro": "Câu hỏi dạng TÁC HẠI, không phải điều trị. Thiết kế tối ưu là nghiên cứu quan sát và đăng ký ca — lọc theo RCT sẽ ra kho gần rỗng.",
+      "bai_moi": [],
+      "trang_thai": "chưa quét"
+    },
+    {
+      "ma": "cap-cuu-noi-khoa",
+      "ten": "Luật cấp cứu nội khoa quanh cuộc mổ",
+      "tep_du_lieu": ["src/domain/data/sepsis_rules.json"],
+      "pham_vi_hien_co": ["nhiễm khuẩn huyết", "toan ceton đái tháo đường", "ngừng tuần hoàn", "hô hấp", "thận", "ngộ độc"],
+      "loai_cau_hoi": "therapy",
+      "rui_ro_lam_sang": "cao",
+      "bai_moi": [],
+      "trang_thai": "chưa quét"
+    },
+    {
+      "ma": "danh-gia-truoc-mo",
+      "ten": "Đánh giá nguy cơ trước mổ theo bệnh đồng mắc",
+      "tep_du_lieu": ["src/domain/data/comorbidities.json", "src/domain/data/surgeries.json"],
+      "loai_cau_hoi": "prognosis",
+      "rui_ro_lam_sang": "trung bình",
+      "ghi_chu_rui_ro": "Câu hỏi dạng TIÊN LƯỢNG: thường KHÔNG có nhóm đối chứng. Khung nào bắt buộc phải có C sẽ loại sạch đúng những nghiên cứu cần tìm.",
+      "bai_moi": [],
+      "trang_thai": "chưa quét"
+    },
+    {
+      "ma": "xet-nghiem-truoc-mo",
+      "ten": "Chỉ định và diễn giải xét nghiệm trước mổ",
+      "tep_du_lieu": ["src/domain/data/lab_tests.json"],
+      "loai_cau_hoi": "diagnosis",
+      "rui_ro_lam_sang": "trung bình",
+      "ghi_chu_rui_ro": "Câu hỏi dạng CHẨN ĐOÁN: cần tiêu chuẩn vàng tham chiếu, và C thường không bắt buộc.",
+      "bai_moi": [],
+      "trang_thai": "chưa quét"
+    },
+    {
+      "ma": "giai-gian-co",
+      "ten": "Giãn cơ và hoá giải giãn cơ",
+      "tep_du_lieu": ["src/domain/data/sugammadex_rules_vi.json"],
+      "loai_cau_hoi": "therapy",
+      "rui_ro_lam_sang": "cao",
+      "bai_moi": [],
+      "trang_thai": "chưa quét"
+    },
+    {
+      "ma": "gay-me-ngoai-phong-mo",
+      "ten": "Gây mê ngoài phòng mổ (NORA)",
+      "tep_du_lieu": ["src/domain/data/nora_locations.json"],
+      "loai_cau_hoi": "harm",
+      "rui_ro_lam_sang": "cao",
+      "bai_moi": [],
+      "trang_thai": "chưa quét"
+    },
+    {
+      "ma": "tinh-lieu-theo-can-nang",
+      "ten": "Tính liều theo cân nặng lý tưởng và cân nặng hiệu chỉnh",
+      "tep_du_lieu": ["src/domain/calculators/ibw.ts"],
+      "loai_cau_hoi": "therapy",
+      "rui_ro_lam_sang": "cao",
+      "lo_hong_da_biet": "Công thức IBW không hợp lệ ở trẻ sơ sinh — đã nêu trong lần kiểm toán đầu",
+      "bai_moi": [],
+      "trang_thai": "chưa quét"
+    }
+  ],
+
+  "thu_tu_de_xuat": {
+    "_can_cu": "rủi ro lâm sàng × mức AnesthOS đang phụ thuộc × lỗ hổng đã biết. KHÔNG quét cả 11 chức năng cùng lúc: 11 × ~13.000 bản ghi = ~140.000 bài, và mỗi lần quét đều cần Gun cấp bài mồi.",
+    "dot_1": ["chong-dong-chu-phau", "xu-tri-khung-hoang", "thuoc-te-va-ngo-doc"],
+    "ly_do_dot_1": "Chống đông đã có kho sẵn. Khủng hoảng và ngộ độc thuốc tê là hai chỗ sai-thì-chết-người, đồng thời là hai dạng câu hỏi KHÁC NHAU (therapy vs harm) nên chúng kiểm luôn xem khung tuyển chọn có thật sự đa dạng được hay chỉ hợp với therapy."
+  }
+}
