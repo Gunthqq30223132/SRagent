@@ -8,3 +8,6 @@ staging/
 ._*
 .DS_Store
 
+kho/
+kho_*.json
+*_quyet_dinh.jsonl
