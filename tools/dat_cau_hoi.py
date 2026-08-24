@@ -145,12 +145,9 @@ class KhungTuyenChon(BaseModel):
         Cũng không đưa THIET_KE_TOI_UU vào: thiết kế nghiên cứu là tiêu chí xếp
         hạng lúc sàng, không phải điều kiện loại trừ lúc tìm.
         """
-        def nhom(ds: list[str]) -> str:
-            return " OR ".join(t if ":" in t else f'"{t}"' for t in ds)
-
-        phan = [f"({nhom(self.pham_vi)})", f"({nhom(self.mat_khao_sat)})"]
+        phan = [f"({_nhom(self.pham_vi)})", f"({_nhom(self.mat_khao_sat)})"]
         if self.doi_chieu:
-            phan.append(f"({nhom(self.doi_chieu)})")
+            phan.append(f"({_nhom(self.doi_chieu)})")
         return " AND ".join(phan)
 
     def truy_van_mo_dau(self) -> str:
@@ -165,17 +162,32 @@ class KhungTuyenChon(BaseModel):
         giống. Rộng hơn là chủ ý: nếu nó hẹp bằng truy vấn chính thì hạt giống
         gặt được sẽ không kiểm được điểm mù của truy vấn chính.
         """
-        def nhom(ds: list[str]) -> str:
-            return " OR ".join(t if ":" in t else f'"{t}"' for t in ds)
-
         return (
-            f"({nhom(self.pham_vi)}) AND ({nhom(self.mat_khao_sat)}) "
+            f"({_nhom(self.pham_vi)}) AND ({_nhom(self.mat_khao_sat)}) "
             f'AND (PUB_TYPE:"Systematic Review" OR PUB_TYPE:"Meta-Analysis" '
             f'OR PUB_TYPE:"Practice Guideline" OR PUB_TYPE:"Guideline")'
         )
 
 
-_TU_NOI = re.compile(r"[_\-]+")
+def _nhom(ds: list[str]) -> str:
+    """Nối các cụm bằng OR, bọc nháy đúng MỘT lần.
+
+    Lỗi này lộ ra khi chạy trên bộ câu hỏi tiền mê thật: cụm trong tệp hồ sơ đã
+    mang sẵn nháy (`"fasting duration"`), bọc thêm lần nữa thành `""fasting
+    duration""` — Europe PMC không hiểu, và truy vấn hỏng theo kiểu IM LẶNG vì
+    nó vẫn là chuỗi hợp lệ, chỉ trả về kết quả sai.
+
+    Cụm mang thẻ trường (`KW:`, `PUB_TYPE:`) giữ nguyên, vì thẻ trường nằm ngoài
+    phần được bọc nháy.
+    """
+    ra: list[str] = []
+    for t in ds:
+        t = t.strip()
+        if ":" in t:
+            ra.append(t)
+        else:
+            ra.append(f'"{t.strip(chr(34))}"')
+    return " OR ".join(ra)
 
 
 def tu_luoc_do_dau_ra(luoc_do: dict[str, Any], tien_to: str = "") -> list[str]:

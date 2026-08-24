@@ -164,3 +164,69 @@ class TestDiemQuyetDinhPhaiCuThe:
                           dau_ra_can_co="có/không kèm ngưỡng nguy cơ huyết khối",
                           dang=DangCauHoi.DIEU_TRI)
         assert d.dang is DangCauHoi.DIEU_TRI
+
+
+class TestBocNhayDungMotLan:
+    """Lỗi lộ ra khi chạy trên bộ câu hỏi tiền mê THẬT, không phải giả định.
+
+    Cụm trong tệp hồ sơ đã mang sẵn nháy -> bọc thêm lần nữa thành nháy đôi.
+    Hỏng theo kiểu IM LẶNG: chuỗi vẫn hợp lệ, chỉ trả về kết quả sai.
+    """
+
+    def test_cum_da_co_nhay_khong_bi_boc_hai_lan(self):
+        q = khung(mat_khao_sat=['"fasting duration"']).thanh_truy_van()
+        assert '""' not in q and '"fasting duration"' in q
+
+    def test_cum_chua_co_nhay_thi_duoc_boc(self):
+        assert '"bridging"' in khung(mat_khao_sat=["bridging"]).thanh_truy_van()
+
+    def test_the_truong_giu_nguyen_khong_boc_nhay(self):
+        q = khung(pham_vi=['KW:"Anticoagulants"']).thanh_truy_van()
+        assert 'KW:"Anticoagulants"' in q and '"KW:' not in q
+
+    def test_tron_ca_ba_dang_trong_mot_nhom(self):
+        q = khung(mat_khao_sat=['KW:"Fasting"', '"clear fluids"', "bridging"]).thanh_truy_van()
+        assert '""' not in q
+        assert q.count('"clear fluids"') == 1 and '"bridging"' in q
+
+    def test_truy_van_mo_dau_cung_boc_dung(self):
+        assert '""' not in khung(pham_vi=['"preoperative fasting"']).truy_van_mo_dau()
+
+
+class TestBoCauHoiTienMeThat:
+    """Chạy toàn bộ hồ sơ tiền mê thật qua khung — không phải dữ liệu dựng cho vừa test."""
+
+    @staticmethod
+    def _ho_so():
+        import json
+        from pathlib import Path
+        p = Path(__file__).resolve().parent.parent / "tools/profiles/tien_me_cau_hoi.json"
+        return json.loads(p.read_text(encoding="utf-8"))["cau_hoi"]
+
+    @staticmethod
+    def _khung(c):
+        return KhungTuyenChon(
+            diem_quyet_dinh=c["ma"], dang=DangCauHoi(c["dang"]),
+            pham_vi=c["pham_vi"], mat_khao_sat=c["mat_khao_sat"],
+            doi_chieu=c["doi_chieu"], ket_cuc=c["ket_cuc"])
+
+    def test_moi_cau_hoi_dung_duoc_truy_van(self):
+        assert all(self._khung(c).thanh_truy_van() for c in self._ho_so())
+
+    def test_khong_truy_van_nao_co_nhay_doi(self):
+        for c in self._ho_so():
+            assert '""' not in self._khung(c).thanh_truy_van(), c["ma"]
+
+    def test_khong_truy_van_nao_loc_theo_thiet_ke_nghien_cuu(self):
+        """Thiết kế là tiêu chí xếp hạng lúc sàng, không phải bộ lọc lúc tìm."""
+        for c in self._ho_so():
+            assert "PUB_TYPE" not in self._khung(c).thanh_truy_van(), c["ma"]
+
+    def test_du_ca_bon_dang_cau_hoi(self):
+        """Bộ câu hỏi chỉ toàn 'điều trị' là dấu hiệu đã bóc sai."""
+        assert len({c["dang"] for c in self._ho_so()}) == 4
+
+    def test_cau_hoi_khong_can_doi_chieu_thi_de_trong(self):
+        for c in self._ho_so():
+            if not DOI_CHIEU_BAT_BUOC[DangCauHoi(c["dang"])] and not c["doi_chieu"]:
+                assert self._khung(c).thanh_truy_van().count(" AND ") == 1
