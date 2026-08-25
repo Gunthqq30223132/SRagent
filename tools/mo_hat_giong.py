@@ -14,8 +14,14 @@ NĂM BẬC NGUỒN HẠT GIỐNG, xếp theo mức ĐỘC LẬP với truy vấn
 Đây là trục quan trọng nhất, vì hạt giống lấy từ chính kết quả của truy vấn thì
 không kiểm được điểm mù của truy vấn đó — nó chỉ xác nhận cái đã tìm thấy.
 
+  Bậc 0  Danh mục tham khảo của NGUỒN TỔNG HỢP NGOÀI (UpToDate và tương đương)
+         -> ĐỘC LẬP CAO NHẤT: bài được tìm theo TÊN CHỦ ĐỀ, không qua truy vấn
+            nào của ta; biên tập viên dựng danh mục mà chưa từng thấy truy vấn
+            của ta. Xem `tools/nguon_tong_hop.py`.
   Bậc 1  Danh mục tham khảo của tổng quan hệ thống trong kho
-         -> ĐỘC LẬP CAO: trỏ RA NGOÀI kho, do người ngoài công bố. Cần mạng.
+         -> ĐỘC LẬP CAO nhưng KHÉP KÍN MỘT PHẦN: bài tổng quan đó được tìm ra
+            BẰNG CHÍNH truy vấn đang bị kiểm. Truy vấn có điểm mù thì ta không
+            gặp được bài sẽ phơi bày điểm mù đó. Cần mạng.
   Bậc 2  Trích dẫn có sẵn trong dữ liệu AnesthOS
          -> ĐỘC LẬP CAO: cam kết có trước, không do truy vấn sinh ra. KHÔNG cần mạng.
   Bậc 3  Giao của nhiều truy vấn diễn đạt khác nhau
@@ -48,6 +54,7 @@ from pydantic import BaseModel, Field, field_validator
 class BacNguon(IntEnum):
     """Số NHỎ = độc lập hơn với truy vấn đang bị kiểm."""
 
+    NGUON_TONG_HOP_NGOAI = 0
     THAM_KHAO_TONG_QUAN = 1
     TRICH_DAN_ANESTHOS = 2
     GIAO_NHIEU_TRUY_VAN = 3
@@ -56,6 +63,7 @@ class BacNguon(IntEnum):
 
 
 MO_TA_BAC: dict[BacNguon, str] = {
+    BacNguon.NGUON_TONG_HOP_NGOAI: "nguồn tổng hợp ngoài, chuyên gia biên tập (ĐỘC LẬP CAO NHẤT)",
     BacNguon.THAM_KHAO_TONG_QUAN: "danh mục tham khảo của tổng quan hệ thống (độc lập cao)",
     BacNguon.TRICH_DAN_ANESTHOS: "trích dẫn có sẵn trong AnesthOS (độc lập cao, offline)",
     BacNguon.GIAO_NHIEU_TRUY_VAN: "giao của nhiều cách hỏi (độc lập vừa)",

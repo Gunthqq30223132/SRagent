@@ -86,8 +86,23 @@ class TestBacDocLap:
     def test_trich_dan_anesthos_doc_lap_hon_bac_cao_trong_kho(self):
         assert BacNguon.TRICH_DAN_ANESTHOS < BacNguon.BAC_CAO_TRONG_KHO
 
-    def test_tham_khao_tong_quan_doc_lap_nhat(self):
-        assert BacNguon.THAM_KHAO_TONG_QUAN == min(BacNguon)
+    def test_nguon_tong_hop_ngoai_doc_lap_nhat(self):
+        """Đổi CÓ CHỦ Ý: trước đây bậc 1 được coi là độc lập nhất. Sai.
+
+        Bài tổng quan ở bậc 1 được tìm ra BẰNG CHÍNH truy vấn đang bị kiểm, nên
+        chuẩn vàng nằm ở HẠ NGUỒN của thứ nó kiểm — khép kín một phần. Truy vấn
+        có điểm mù thì ta không gặp được bài sẽ phơi bày điểm mù đó.
+
+        Nguồn tổng hợp ngoài được tìm theo TÊN CHỦ ĐỀ, không qua truy vấn nào
+        của ta -> chuẩn vàng nằm hoàn toàn ở THƯỢNG NGUỒN.
+        """
+        assert BacNguon.NGUON_TONG_HOP_NGOAI == min(BacNguon)
+        assert BacNguon.NGUON_TONG_HOP_NGOAI < BacNguon.THAM_KHAO_TONG_QUAN
+
+    def test_bac_1_phai_ghi_ro_la_khep_kin_mot_phan(self):
+        """Mức độc lập ghi sai thì mọi phép đo dựa lên nó bị đọc quá tin."""
+        import tools.mo_hat_giong as m
+        assert "KHÉP KÍN MỘT PHẦN" in m.__doc__
 
     def test_ung_vien_tu_manifest_mang_dung_bac_2(self, manifest):
         assert all(h.bac_nguon is BacNguon.TRICH_DAN_ANESTHOS

@@ -100,10 +100,61 @@ Số test chỉ được TĂNG hoặc giữ nguyên, không được giảm.
 
 ## 3. NHIỆM VỤ — theo thứ tự, không nhảy cóc
 
+### T0 · Chuẩn vàng từ nguồn tổng hợp ngoài — LÀM TRƯỚC T1
+
+> Thêm sau khi Gun chỉ ra bộ skill UpToDate của anh. Nó vá đúng lỗ hổng mà T1
+> chỉ vá được một nửa, nên T1 **không còn là việc số một**.
+
+**Vì sao T1 chưa đủ:** T1 lấy danh mục tham khảo của tổng quan hệ thống *trong
+kho* — mà bài tổng quan đó được tìm ra **bằng chính truy vấn đang bị kiểm**.
+Chuẩn vàng nằm ở **hạ nguồn** của thứ nó kiểm. Truy vấn có điểm mù thì ta không
+bao giờ gặp bài tổng quan sẽ phơi bày điểm mù đó → khép kín một phần.
+
+UpToDate phá vòng đó: bài được tìm theo **tên chủ đề**, không qua truy vấn nào
+của ta; biên tập viên dựng danh mục mà chưa từng thấy truy vấn của ta. Chuẩn
+vàng nằm **hoàn toàn ở thượng nguồn**. Đây là bậc 0 trong `mo_hat_giong.py`.
+
+**Đã dựng sẵn (offline, 17 test xanh):** `tools/nguon_tong_hop.py`
+— bóc danh mục tham khảo, nối lại mục bị ngắt dòng, đối chiếu với kho, ba trạng thái.
+
+**Việc của Antigravity** — chỉ phần cần mạng và cần máy Gun:
+
+1. Lấy văn bản danh mục tham khảo từ bài UpToDate Gun đã lưu (PDF trên Gun SSD
+   hoặc trang `/print` trong Chrome đã đăng nhập). **Chỉ lấy phần REFERENCES.**
+2. `tach_danh_muc()` → mục nào có PMID/DOI thì dùng được ngay.
+3. Mục **không** có định danh: tra qua Europe PMC bằng nhan đề dạng cụm từ.
+   **Khắt khe hay bỏ, không đoán** — một mục khớp NHẦM tệ hơn một mục không tra
+   được: không tra được thì lộ ra ở mẫu số, khớp nhầm thì âm thầm dịch cả tử số
+   lẫn mẫu số. Không chắc → để `khong_tra_duoc`.
+4. `doi_chieu_voi_kho()` → báo cáo.
+
+**Nghiệm thu**:
+
+1. Chạy được trên ≥1 chủ đề thật, in ra `bao_cao()`
+2. Mục không tra được **không** bị tính là sót (đã có test khoá)
+3. Dưới `TOI_THIEU_DE_KET_LUAN` mục tra được → **VÔ HIỆU**, độ phủ để trống
+4. Báo **đích danh** mã bài bị sót
+5. **Không commit** PDF, văn bản, hay khuyến cáo của UpToDate vào repo — chỉ mã bài
+
+**⚠ CẤM TUYỆT ĐỐI — dùng UpToDate để SÀNG:**
+
+Không được giữ bài vì UpToDate có trích, hay loại bài vì UpToDate không trích.
+Đó là sàng theo kết luận của người khác: vi phạm nguyên tắc mù kết cục, nhập
+luôn thiên lệch của UpToDate, và nếu đầu ra của SR-Agent = trích dẫn của
+UpToDate thì **SR-Agent không thêm được gì**.
+
+> UpToDate làm **đề thi** cho bộ sàng, không làm **bộ sàng**.
+
+Dùng đúng: chạy bộ sàng của ta lên các bài UpToDate trích. Bộ sàng loại nhầm một
+bài trong đó → cờ đỏ cho **bộ sàng**.
+
+---
+
 ### T1 · Lấy danh mục tham khảo từ Europe PMC
 
-**Vì sao đây là việc số một:** hệ hiện chưa đo được độ nhạy thật. Mọi phép đo
-đang có đều so hai truy vấn với nhau, nên **không thấy được điểm mù chung**.
+**Vì sao vẫn cần dù đã có T0:** T0 phụ thuộc thuê bao UpToDate và máy Gun, và
+chỉ phủ được lĩnh vực y. T1 chạy tự động hoàn toàn, phủ mọi chủ đề. Hai cái **bổ
+sung nhau**: T0 mạnh hơn nhưng hẹp, T1 yếu hơn nhưng chạy ở đâu cũng được.
 
 Danh mục tham khảo của một bài tổng quan hệ thống là tập bài mà chuyên gia trong
 ngành đã chọn — **trỏ ra NGOÀI kho của ta, độc lập với truy vấn của ta**. Đó là
