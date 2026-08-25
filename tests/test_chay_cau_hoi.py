@@ -58,30 +58,44 @@ class Gia:
 
 
 class TestPhepDoKhoiDongLanh:
-    def test_kho_giu_du_tong_quan_thi_dat(self):
+    """Sau khi gỡ mệnh đề đối chiếu, truy vấn mở đầu là TẬP CON CHẶT của truy
+    vấn chính, nên phép so chồng lấn luôn ra 100% và KHÔNG nói lên điều gì.
+
+    Bộ test này khoá đúng chỗ đó: con số độ phủ vẫn tính được, nhưng `dat` phải
+    là False vì phép đo vô hiệu. Báo '✓' cho một phép đo không thể thất bại là
+    đúng kiểu cột 'Verified' tự khai.
+    """
+
+    def test_do_phu_van_tinh_duoc(self):
         tq = [Doc("europepmc:MED:1", 2), Doc("europepmc:MED:2", 1)]
         kho = tq + [Doc(f"europepmc:MED:{i}") for i in range(10, 60)]
         kq, docs = chay_mot_cau(Gia(tq, kho), CAU)
-        assert kq.dat and kq.do_phu_tong_quan == 1.0 and len(docs) == 52
+        assert kq.do_phu_tong_quan == 1.0 and len(docs) == 52
 
-    def test_kho_sot_tong_quan_thi_thung(self):
-        """Bài tổng quan về đúng chủ đề mà kho chính bỏ sót = lỗ hổng đo được."""
+    def test_do_phu_100_van_KHONG_duoc_bao_dat(self):
+        """Đây là ràng buộc quan trọng nhất của cả bộ test này."""
+        tq = [Doc("europepmc:MED:1", 2)]
+        kq, _ = chay_mot_cau(Gia(tq, tq), CAU)
+        assert kq.do_phu_tong_quan == 1.0
+        assert not kq.co_hieu_luc and not kq.dat
+
+    def test_kho_sot_tong_quan_van_do_duoc_ty_le(self):
         tq = [Doc(f"europepmc:MED:{i}", 2) for i in range(1, 6)]
         kho = tq[:2] + [Doc("europepmc:MED:99")]        # sót 3/5
         kq, _ = chay_mot_cau(Gia(tq, kho), CAU)
         assert not kq.dat and kq.do_phu_tong_quan == 0.4
 
-    def test_nguong_dat_la_80_phan_tram(self):
-        tq = [Doc(f"europepmc:MED:{i}", 2) for i in range(1, 11)]
-        assert chay_mot_cau(Gia(tq, tq[:8]), CAU)[0].dat
-        assert not chay_mot_cau(Gia(tq, tq[:7]), CAU)[0].dat
-
-    def test_hai_truy_van_khac_nhau_duoc_goi(self):
-        """Phép đo chỉ có nghĩa khi hai truy vấn thật sự khác nhau."""
+    def test_chay_du_bon_truy_van(self):
+        """2 truy vấn chính + 2 truy vấn bỏ-một-mệnh-đề (phép đo thay thế)."""
         g = Gia([Doc("europepmc:MED:1", 2)], [Doc("europepmc:MED:1")])
         chay_mot_cau(g, CAU)
-        assert len(g.da_hoi) == 2 and g.da_hoi[0] != g.da_hoi[1]
+        assert len(g.da_hoi) == 4
         assert "PUB_TYPE" in g.da_hoi[0] and "PUB_TYPE" not in g.da_hoi[1]
+
+    def test_ghi_lai_ket_qua_bo_tung_menh_de(self):
+        g = Gia([Doc("europepmc:MED:1", 2)], [Doc("europepmc:MED:1")])
+        kq, _ = chay_mot_cau(g, CAU)
+        assert set(kq.thieu) == {"pham_vi", "mat_khao_sat"}
 
 
 class TestKhongCoGiDeDoThiKhongDuocBaoQua:
@@ -144,7 +158,24 @@ class TestChayThatTrenHoSoTienMe:
         c = [x for x in self._ho_so() if x["ma"] == "nhin-an-hit-sac"][0]
         tq = [Doc("europepmc:MED:1", 2)]
         kq, _ = chay_mot_cau(Gia(tq, tq + [Doc("europepmc:MED:2")]), c)
-        assert kq.dat and kq.dang == "harm"
+        assert kq.dang == "harm" and kq.da_tai == 2
+
+    def test_khong_cau_that_nao_con_loc_theo_doi_chieu(self):
+        """Đối chiếu đã thành tiêu chí sàng, không còn là bộ lọc lúc tìm.
+
+        Chốt bằng CẤU TRÚC chứ không bằng chuỗi: so chuỗi sẽ báo oan ở câu
+        tê-vùng-vs-mê-toàn-thân, nơi 'general anesthesia' vừa là MẶT KHẢO SÁT
+        vừa là ĐỐI CHIẾU. Cùng chữ, hai vai — đúng cái bẫy đã mắc một lần khi
+        kiểm mù kết cục.
+
+        Cách chốt đúng: đổi sạch danh sách đối chiếu, truy vấn không được đổi.
+        """
+        for c in self._ho_so():
+            goc = khung_tu_cau(c).thanh_truy_van()
+            if not (c.get("doi_chieu") or []):
+                continue
+            khac = khung_tu_cau({**c, "doi_chieu": ['"một cụm hoàn toàn khác"']})
+            assert khac.thanh_truy_van() == goc, c["ma"]
 
 
 class TestCLI:

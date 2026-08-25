@@ -230,3 +230,68 @@ class TestBoCauHoiTienMeThat:
         for c in self._ho_so():
             if not DOI_CHIEU_BAT_BUOC[DangCauHoi(c["dang"])] and not c["doi_chieu"]:
                 assert self._khung(c).thanh_truy_van().count(" AND ") == 1
+
+
+class TestDoiChieuGoRaKhoiTruyVan:
+    """Sửa theo ĐO ĐƯỢC: lần chạy thật 3 câu tiền mê cho thấy câu duy nhất
+    KHÔNG có mệnh đề đối chiếu đạt 43/43 (100%), hai câu có đối chiếu rụng
+    xuống 74/420 (18%) và 53/906 (6%).
+
+    Nguyên nhân: đối chiếu viết thành CỤM NGUYÊN VĂN. Thử nghiệm so nhịn ăn dài
+    với ngắn gần như không bao giờ viết đúng chữ 'prolonged fasting'. Bộ lọc đó
+    lọc theo CÁCH DIỄN ĐẠT, không phải theo KHÁI NIỆM.
+    """
+
+    def test_doi_chieu_khong_lot_vao_truy_van(self):
+        q = khung(doi_chieu=['"continued anticoagulation"', '"no interruption"']).thanh_truy_van()
+        assert "continued" not in q and "interruption" not in q
+
+    def test_doi_ha_doi_chieu_khong_lam_doi_truy_van(self):
+        a = khung(doi_chieu=["placebo"]).thanh_truy_van()
+        b = khung(doi_chieu=['"usual care"', '"no treatment"', '"standard"']).thanh_truy_van()
+        assert a == b
+
+    def test_doi_chieu_VAN_bat_buoc_khai(self):
+        """Gỡ khỏi truy vấn KHÁC với không cần khai — nó vẫn là tiêu chí sàng."""
+        with pytest.raises(ValidationError, match="cần nhóm đối chiếu"):
+            khung(DangCauHoi.DIEU_TRI, doi_chieu=[])
+
+    def test_truy_van_chinh_luon_dung_hai_menh_de(self):
+        for dang in DangCauHoi:
+            k = khung(dang, doi_chieu=["placebo"] if DOI_CHIEU_BAT_BUOC[dang] else [])
+            assert k.thanh_truy_van().count(" AND ") == 1
+
+
+class TestPhepDoVoHieuPhaiNoiThang:
+    """Báo '✓' cho một phép đo không thể thất bại = cột 'Verified' tự khai."""
+
+    def test_mo_dau_la_tap_con_chat_thi_phep_so_vo_hieu(self):
+        assert khung().phep_do_chong_lan_co_hieu_luc() is False
+
+    def test_mo_dau_thuc_su_chua_truy_van_chinh(self):
+        k = khung()
+        assert k.truy_van_mo_dau().startswith(k.thanh_truy_van())
+
+
+class TestTruyVanThieuMotMenhDe:
+    """Phép đo thay thế: bỏ hẳn một mệnh đề để biết nó cắt mất bao nhiêu."""
+
+    def test_bo_pham_vi_thi_chi_con_mat_khao_sat(self):
+        q = khung(pham_vi=["Anticoagulants"], mat_khao_sat=["bridging"]).truy_van_thieu("pham_vi")
+        assert '"bridging"' in q and "Anticoagulants" not in q
+
+    def test_bo_mat_khao_sat_thi_chi_con_pham_vi(self):
+        q = khung(pham_vi=["Anticoagulants"], mat_khao_sat=["bridging"]).truy_van_thieu("mat_khao_sat")
+        assert '"Anticoagulants"' in q and "bridging" not in q
+
+    def test_van_nham_vao_tong_quan(self):
+        assert "Systematic Review" in khung().truy_van_thieu("pham_vi")
+
+    def test_ten_menh_de_sai_bi_tu_choi(self):
+        with pytest.raises(ValueError, match="chỉ bỏ được"):
+            khung().truy_van_thieu("ket_cuc")
+
+    def test_khac_han_truy_van_chinh(self):
+        """Phải THẬT SỰ độc lập, không phải biến thể của cùng một ràng buộc."""
+        k = khung()
+        assert not k.truy_van_thieu("pham_vi").startswith(k.thanh_truy_van())

@@ -136,19 +136,34 @@ class KhungTuyenChon(BaseModel):
         return self
 
     def thanh_truy_van(self) -> str:
-        """Dựng truy vấn từ PHẠM VI và MẶT KHẢO SÁT. KHÔNG đọc `ket_cuc`.
+        """Dựng truy vấn CHỈ từ PHẠM VI và MẶT KHẢO SÁT.
 
-        ĐÂY LÀ CHỖ NGUYÊN TẮC MÙ KẾT CỤC ĐƯỢC BẢO ĐẢM BẰNG CẤU TRÚC. Hàm này
-        không tham chiếu tới self.ket_cuc, nên lọc theo kết cục không phải là
-        điều bị cấm — nó là điều không viết ra được ở đây.
+        BA THỨ CỐ Ý KHÔNG CÓ MẶT Ở ĐÂY, cùng một lý do:
 
-        Cũng không đưa THIET_KE_TOI_UU vào: thiết kế nghiên cứu là tiêu chí xếp
-        hạng lúc sàng, không phải điều kiện loại trừ lúc tìm.
+          ket_cuc      — mù kết cục: không loại theo thứ nghiên cứu TÌM THẤY
+          THIET_KE     — thiết kế là tiêu chí xếp hạng lúc sàng
+          doi_chieu    — xem dưới
+
+        VÌ SAO ĐỐI CHIẾU BỊ GỠ RA (đo được, không phải phán đoán): lần chạy thật
+        3 câu hỏi tiền mê cho thấy câu DUY NHẤT không có mệnh đề đối chiếu đạt
+        100% (43/43 bài tổng quan lọt vào kho), còn hai câu có đối chiếu rụng
+        xuống 18% và 6%.
+
+        Nguyên nhân: mệnh đề đối chiếu là các CỤM NGUYÊN VĂN. Một thử nghiệm so
+        nhịn ăn dài với nhịn ăn ngắn gần như không bao giờ viết đúng chữ
+        'prolonged fasting' trong tóm tắt. Bộ lọc đó không lọc theo KHÁI NIỆM —
+        nó lọc theo CÁCH DIỄN ĐẠT.
+
+        Và đó đúng ba lý do đã dùng để gỡ PUB_TYPE ra khỏi truy vấn: phụ thuộc
+        cách người khác diễn đạt, loại ở cửa tìm KHÔNG ĐỂ LẠI VẾT, và đã có chỗ
+        khác xử tốt hơn. Một nghiên cứu CÓ nhóm đối chứng hay không là thứ biết
+        được bằng cách ĐỌC nó, không phải bằng việc tóm tắt chứa cụm nào.
+
+        `doi_chieu` VẪN BẮT BUỘC KHAI cho dạng điều trị và tác hại — nó là một
+        phần định nghĩa câu hỏi, và là tiêu chí sàng. Chỉ khác: nó không còn là
+        bộ lọc lúc tìm.
         """
-        phan = [f"({_nhom(self.pham_vi)})", f"({_nhom(self.mat_khao_sat)})"]
-        if self.doi_chieu:
-            phan.append(f"({_nhom(self.doi_chieu)})")
-        return " AND ".join(phan)
+        return f"({_nhom(self.pham_vi)}) AND ({_nhom(self.mat_khao_sat)})"
 
     def truy_van_mo_dau(self) -> str:
         """Truy vấn RỘNG, nhắm vào tổng quan và hướng dẫn, để GẶT HẠT GIỐNG.
@@ -158,12 +173,46 @@ class KhungTuyenChon(BaseModel):
         danh mục tham khảo của chúng là tập bài mà chuyên gia trong ngành đã
         chọn sẵn — độc lập với ta.
 
-        Truy vấn này CỐ Ý rộng hơn truy vấn chính, và chỉ dùng để tìm nguồn hạt
-        giống. Rộng hơn là chủ ý: nếu nó hẹp bằng truy vấn chính thì hạt giống
-        gặt được sẽ không kiểm được điểm mù của truy vấn chính.
+        LƯU Ý QUAN TRỌNG sau khi gỡ mệnh đề đối chiếu khỏi truy vấn chính: câu
+        này nay là truy vấn chính CỘNG THÊM bộ lọc loại bài, tức là TẬP CON chặt
+        của truy vấn chính. Nên phép so 'tổng quan có lọt vào kho không' luôn ra
+        100% — xem `phep_do_chong_lan_co_hieu_luc()`.
         """
         return (
-            f"({_nhom(self.pham_vi)}) AND ({_nhom(self.mat_khao_sat)}) "
+            f"{self.thanh_truy_van()} "
+            f'AND (PUB_TYPE:"Systematic Review" OR PUB_TYPE:"Meta-Analysis" '
+            f'OR PUB_TYPE:"Practice Guideline" OR PUB_TYPE:"Guideline")'
+        )
+
+    def phep_do_chong_lan_co_hieu_luc(self) -> bool:
+        """Phép so mở-đầu-với-chính có nói lên điều gì không?
+
+        KHÔNG, khi truy vấn mở đầu chỉ là truy vấn chính cộng thêm ràng buộc:
+        lúc đó nó là tập con chặt, độ phủ luôn 100%, và báo '✓' là báo một
+        thành tích không tồn tại. Đúng kiểu cột 'Verified' tự khai mà cả hệ
+        thống này dựng lên để chặn.
+
+        Phép so chỉ có hiệu lực khi hai truy vấn KHÁC NHAU ở chỗ truy vấn chính
+        có ràng buộc mà mở đầu không có. Sau khi gỡ đối chiếu, điều đó không còn
+        đúng nữa — nên phải nói thẳng là vô hiệu, thay vì im lặng báo đạt.
+        """
+        return not self.truy_van_mo_dau().startswith(self.thanh_truy_van())
+
+    def truy_van_thieu(self, bo: str) -> str:
+        """Truy vấn BỎ HẲN một mệnh đề, để đo mệnh đề đó siết mất bao nhiêu.
+
+        Đây là phép đo thay thế cho phép so mở-đầu-với-chính đã mất hiệu lực.
+        Nó thật sự độc lập: bỏ phạm vi ra thì kết quả không còn bị phạm vi chặn,
+        nên bài tìm được mà kho chính không có chính là phần phạm vi đã cắt đi.
+
+        Cùng lối với lưới soi mệnh đề đã dùng cho truy vấn kháng đông: không hỏi
+        'truy vấn có tốt không' mà hỏi 'mệnh đề NÀO đang cắt mất cái gì'.
+        """
+        con = {"pham_vi": self.mat_khao_sat, "mat_khao_sat": self.pham_vi}
+        if bo not in con:
+            raise ValueError(f"chỉ bỏ được 'pham_vi' hoặc 'mat_khao_sat', không phải {bo!r}")
+        return (
+            f"({_nhom(con[bo])}) "
             f'AND (PUB_TYPE:"Systematic Review" OR PUB_TYPE:"Meta-Analysis" '
             f'OR PUB_TYPE:"Practice Guideline" OR PUB_TYPE:"Guideline")'
         )

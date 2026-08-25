@@ -63,6 +63,8 @@ class KetQuaCau:
         self.tong_quan_lot_kho = 0
         self.loi: str | None = None
         self.bac: dict[int | None, int] = {}
+        self.co_hieu_luc = True           # phép so mở-đầu-vs-chính có nói lên gì không
+        self.thieu: dict[str, tuple[int, int]] = {}   # mệnh đề -> (tìm được, lọt kho)
 
     @property
     def do_phu_tong_quan(self) -> float:
@@ -73,7 +75,10 @@ class KetQuaCau:
     def dat(self) -> bool:
         # Chưa tìm được bài tổng quan nào thì KHÔNG kết luận là đạt — không có
         # gì để đo thì im lặng, chứ không phải là qua.
-        return self.loi is None and self.so_tong_quan > 0 and self.do_phu_tong_quan >= 0.8
+        # Phép so vô hiệu thì KHÔNG được báo đạt: báo '✓' cho một phép đo không
+        # thể thất bại đúng là cột 'Verified' tự khai.
+        return (self.loi is None and self.co_hieu_luc
+                and self.so_tong_quan > 0 and self.do_phu_tong_quan >= 0.8)
 
 
 def chay_mot_cau(
@@ -87,9 +92,16 @@ def chay_mot_cau(
     """
     kq = KetQuaCau(c["ma"], c["dang"])
     k = khung_tu_cau(c)
+    kq.co_hieu_luc = k.phep_do_chong_lan_co_hieu_luc()
     try:
         tq, kq.so_tong_quan = f.quet_toan_bo(k.truy_van_mo_dau(), tran=tran_mo_dau)
         docs, kq.kho_bao_co = f.quet_toan_bo(k.thanh_truy_van(), tran=tran)
+        # Phép đo THAY THẾ khi phép so trên vô hiệu: bỏ hẳn từng mệnh đề để biết
+        # mệnh đề đó đang cắt mất bao nhiêu bài tổng quan.
+        trong = {d.source_id for d in docs}
+        for ten in ("pham_vi", "mat_khao_sat"):
+            ds, tong = f.quet_toan_bo(k.truy_van_thieu(ten), tran=tran_mo_dau)
+            kq.thieu[ten] = (tong, sum(1 for d in ds if d.source_id in trong))
     except Exception as exc:  # noqa: BLE001
         kq.loi = f"{type(exc).__name__}: {str(exc).splitlines()[0][:90]}"
         return kq, []
@@ -162,12 +174,23 @@ def main(argv: list[str] | None = None) -> int:
             print("\n  ⚠ Không gặt được bài tổng quan nào — KHÔNG kết luận được gì.")
             print("    Hoặc truy vấn mở đầu quá hẹp, hoặc chủ đề thật sự chưa ai tổng kết.")
             print("    Hai khả năng này cần hai cách xử khác nhau, phải phân biệt trước.")
+        elif not kq.co_hieu_luc:
+            print("\n  ⊘ PHÉP SO NÀY VÔ HIỆU — không phải đạt, cũng không phải trượt.")
+            print("    Truy vấn mở đầu nay chỉ là truy vấn chính cộng bộ lọc loại bài,")
+            print("    tức tập con chặt, nên độ phủ luôn 100%. Báo '✓' ở đây là báo")
+            print("    một thành tích không tồn tại. Xem phép đo thay thế bên dưới.")
         elif not kq.dat:
             print("\n  ✗ LỖ HỔNG ĐỘ NHẠY: kho chính bỏ sót bài tổng quan về đúng chủ đề.")
-            print("    Nhiều khả năng mệnh đề ĐỐI CHIẾU quá chặt — nới nó trước,")
-            print("    đừng nới phạm vi (nới phạm vi làm phình kho mà không vá lỗ).")
         else:
             print("\n  ✓ Kho chính giữ được phần lớn bài tổng quan đã gặt.")
+
+        if kq.thieu:
+            print("\n  BỎ HẲN MỘT MỆNH ĐỀ — mệnh đề đó đang cắt mất bao nhiêu:")
+            for ten, (tong, lot) in kq.thieu.items():
+                ty = lot / tong if tong else 0.0
+                dau = "✓" if ty >= 0.8 else "✗"
+                print(f"    bỏ {ten:<14} tổng quan {lot}/{tong} lọt kho ({ty:.0%}) {dau}")
+            print("    Tỷ lệ thấp = mệnh đề đó đang cắt mất bài tổng quan về đúng chủ đề.")
 
         if kq.bac:
             print("\n  Bậc chứng cứ:", "  ".join(
