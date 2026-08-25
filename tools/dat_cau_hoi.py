@@ -184,6 +184,22 @@ class KhungTuyenChon(BaseModel):
             f'OR PUB_TYPE:"Practice Guideline" OR PUB_TYPE:"Guideline")'
         )
 
+    def cum_trung_giua_hai_menh_de(self) -> set[str]:
+        """Cụm nào xuất hiện ở CẢ phạm vi lẫn mặt khảo sát.
+
+        Lỗi này lộ ra ở lần chạy thật: câu nhịn ăn cho kho 46.197 bài, gấp 27
+        lần câu đường thở. Vì `pham_vi` chứa KW:"Fasting" và `mat_khao_sat`
+        CŨNG chứa KW:"Fasting" — hai mệnh đề trùng khái niệm nên phép AND giữa
+        chúng gần như không thu hẹp gì.
+
+        Đây là lỗi IM LẶNG: truy vấn vẫn hợp lệ, vẫn trả kết quả, chỉ là kết quả
+        rộng gấp chục lần dự tính. Hai mệnh đề phải là HAI TRỤC KHÁC NHAU —
+        'ai/cái gì' và 'đang xét khía cạnh nào' — thì AND mới có nghĩa.
+        """
+        def chuan(ds):
+            return {t.strip().strip('"').split(":", 1)[-1].strip('"').lower() for t in ds}
+        return chuan(self.pham_vi) & chuan(self.mat_khao_sat)
+
     def phep_do_chong_lan_co_hieu_luc(self) -> bool:
         """Phép so mở-đầu-với-chính có nói lên điều gì không?
 
@@ -199,14 +215,21 @@ class KhungTuyenChon(BaseModel):
         return not self.truy_van_mo_dau().startswith(self.thanh_truy_van())
 
     def truy_van_thieu(self, bo: str) -> str:
-        """Truy vấn BỎ HẲN một mệnh đề, để đo mệnh đề đó siết mất bao nhiêu.
+        """Truy vấn BỎ HẲN một mệnh đề. CHỈ MÔ TẢ mức thu hẹp, KHÔNG đo độ nhạy.
 
-        Đây là phép đo thay thế cho phép so mở-đầu-với-chính đã mất hiệu lực.
-        Nó thật sự độc lập: bỏ phạm vi ra thì kết quả không còn bị phạm vi chặn,
-        nên bài tìm được mà kho chính không có chính là phần phạm vi đã cắt đi.
+        ĐÍNH CHÍNH — bản đầu của hàm này đi kèm một kết luận SAI, và lần chạy
+        thật đã lộ ra. Bỏ `pham_vi` khỏi câu kháng đông cho 20.740 bài tổng quan
+        nhưng chỉ 24 nằm trong kho (0%), và tôi in ra 'mệnh đề này đang cắt mất
+        bài đúng chủ đề'. Sai: bỏ phạm vi nghĩa là tìm MỌI bài tổng quan về chu
+        phẫu, phần lớn không liên quan kháng đông. Tỷ lệ thấp ở đây là mệnh đề
+        phạm vi ĐANG LÀM ĐÚNG VIỆC thu hẹp, không phải nó loại nhầm.
 
-        Cùng lối với lưới soi mệnh đề đã dùng cho truy vấn kháng đông: không hỏi
-        'truy vấn có tốt không' mà hỏi 'mệnh đề NÀO đang cắt mất cái gì'.
+        Gốc rễ: bỏ một mệnh đề làm ĐỔI LUÔN CHỦ ĐỀ, nên bài tìm được không còn
+        bảo đảm liên quan. Không suy ra được tính liên quan từ việc thuộc tập
+        nào. Phép này KHÔNG đo được độ nhạy, và không được gắn dấu đạt/trượt.
+
+        Đo độ nhạy thật cần một tập bài ĐÃ BIẾT là liên quan, lấy độc lập —
+        danh mục tham khảo của chính các bài tổng quan đã gặt. Đó là việc còn lại.
         """
         con = {"pham_vi": self.mat_khao_sat, "mat_khao_sat": self.pham_vi}
         if bo not in con:

@@ -295,3 +295,34 @@ class TestTruyVanThieuMotMenhDe:
         """Phải THẬT SỰ độc lập, không phải biến thể của cùng một ràng buộc."""
         k = khung()
         assert not k.truy_van_thieu("pham_vi").startswith(k.thanh_truy_van())
+
+
+class TestHaiMenhDePhaiLaHaiTruc:
+    """Lỗi IM LẶNG đo được: câu nhịn ăn cho kho 46.197, gấp 27 lần câu đường thở.
+
+    Vì 'Fasting' nằm ở CẢ phạm vi lẫn mặt khảo sát — hai mệnh đề trùng khái niệm
+    thì phép AND giữa chúng gần như không thu hẹp gì. Truy vấn vẫn hợp lệ, vẫn
+    trả kết quả, chỉ là rộng gấp chục lần dự tính.
+    """
+
+    def test_bat_duoc_cum_trung(self):
+        k = khung(pham_vi=['KW:"Fasting"', 'KW:"Preoperative Care"'],
+                  mat_khao_sat=['KW:"Fasting"'])
+        assert k.cum_trung_giua_hai_menh_de() == {"fasting"}
+
+    def test_hai_truc_khac_nhau_thi_sach(self):
+        k = khung(pham_vi=['KW:"Preoperative Care"'], mat_khao_sat=['KW:"Fasting"'])
+        assert k.cum_trung_giua_hai_menh_de() == set()
+
+    def test_bo_the_truong_va_nhay_truoc_khi_so(self):
+        """'KW:\"Fasting\"' và 'fasting' là cùng một khái niệm."""
+        k = khung(pham_vi=['KW:"Fasting"'], mat_khao_sat=["fasting"])
+        assert k.cum_trung_giua_hai_menh_de() == {"fasting"}
+
+    def test_ho_so_tien_me_that_khong_con_cau_nao_trung(self):
+        import json
+        from pathlib import Path
+        from tools.chay_cau_hoi import khung_tu_cau
+        p = Path(__file__).resolve().parent.parent / "tools/profiles/tien_me_cau_hoi.json"
+        for c in json.loads(p.read_text(encoding="utf-8"))["cau_hoi"]:
+            assert khung_tu_cau(c).cum_trung_giua_hai_menh_de() == set(), c["ma"]

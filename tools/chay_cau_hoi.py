@@ -185,12 +185,14 @@ def main(argv: list[str] | None = None) -> int:
             print("\n  ✓ Kho chính giữ được phần lớn bài tổng quan đã gặt.")
 
         if kq.thieu:
-            print("\n  BỎ HẲN MỘT MỆNH ĐỀ — mệnh đề đó đang cắt mất bao nhiêu:")
+            print("\n  MỨC THU HẸP CỦA TỪNG MỆNH ĐỀ (mô tả, KHÔNG phải đạt/trượt):")
             for ten, (tong, lot) in kq.thieu.items():
                 ty = lot / tong if tong else 0.0
-                dau = "✓" if ty >= 0.8 else "✗"
-                print(f"    bỏ {ten:<14} tổng quan {lot}/{tong} lọt kho ({ty:.0%}) {dau}")
-            print("    Tỷ lệ thấp = mệnh đề đó đang cắt mất bài tổng quan về đúng chủ đề.")
+                print(f"    bỏ {ten:<14} {tong:>7,} bài tổng quan, {lot} nằm trong kho ({ty:.0%})".replace(",", "."))
+            print("    Bỏ một mệnh đề làm ĐỔI LUÔN CHỦ ĐỀ, nên bài tìm được không còn")
+            print("    bảo đảm liên quan. Con số này CHỈ nói mệnh đề thu hẹp mạnh cỡ nào,")
+            print("    KHÔNG nói nó loại nhầm hay không. Đo độ nhạy thật cần danh mục")
+            print("    tham khảo của chính các bài tổng quan — chưa dựng.")
 
         if kq.bac:
             print("\n  Bậc chứng cứ:", "  ".join(
