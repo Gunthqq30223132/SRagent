@@ -73,6 +73,24 @@ giá trị của phép đo mà nó phục vụ.
 
 Số test chỉ được TĂNG hoặc giữ nguyên, không được giảm.
 
+**NGOẠI LỆ DUY NHẤT — bước 1 của AG-2 (viết kiểm thử trước khi có mã).**
+
+L6 được viết khi giả định MỘT tác nhân làm cả viết mã lẫn viết kiểm thử. Dưới
+mô hình tách vai (`docs/DAC_TA_V1_SO_PHU.md` §5), bước đầu tiên **bắt buộc phải
+đỏ**: kiểm thử viết ra trước khi tồn tại mã cài đặt thì không thể chỉ mô tả lại
+mã đó — đó chính là rào cản, không phải sự cố.
+
+Ngoại lệ này có ba điều kiện, thiếu một là vi phạm L6 thật:
+
+| # | Điều kiện |
+|---|---|
+| 1 | Chỉ commit của **AG-2**, và chỉ chạm `tests/**` |
+| 2 | Thông điệp commit ghi **chính xác số kiểm thử đỏ** và lý do |
+| 3 | Kiểm thử đỏ vì **thiếu mã**, không phải vì `skip`/`xfail`/`assert True` |
+
+Commit kế tiếp (AG-1 cài đặt) phải đưa toàn bộ về xanh. Đỏ kéo dài quá một
+commit là hỏng thật, không còn là ngoại lệ.
+
 ---
 
 ## 2. Bối cảnh kỹ thuật — đọc trước khi làm
