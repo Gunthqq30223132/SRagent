@@ -120,6 +120,66 @@ tiếng Việt là bản song hành.
 
 ---
 
+### 9. Tầng đồ thị là LỚP SUY RA, không phải kho lưu — và không rút bộ ba bằng LLM
+**Chốt ngày**: 2026-08-31 · **Người chốt**: chủ dự án (Gun)
+
+Đề xuất được xét: quy trình `LlamaIndex` → `NetworkX` → `PyVis` (nạp thư mục bằng
+`SimpleDirectoryReader`, lập `KnowledgeGraphIndex`, lưu `SimpleGraphStore`, truy vấn
+bằng `TreeSummarize`).
+
+**Đó không phải một quyết định mà là ba, bị gói chung trong một thư viện.** Tách ra:
+
+| Tầng | Là gì | Phán quyết |
+|---|---|---|
+| 1 · Mô hình dữ liệu — đồ thị nút/cạnh | biểu diễn bằng chứng thế nào | **NHẬN** |
+| 2 · Cách nạp — LLM sinh bộ ba từ văn bản | dữ kiện vào bằng đường nào | **BỎ** |
+| 3 · Cách truy vấn — `TreeSummarize` sinh văn xuôi | dữ kiện ra bằng đường nào | **BỎ** |
+
+**Chốt: lấy NetworkX và PyVis, bỏ LlamaIndex.**
+
+- **Vì sao bỏ tầng 2.** `KnowledgeGraphIndex` gọi `_llm_extract_triplets` cho **mọi
+  đoạn văn bản, ngay ở bước nạp** — **đảo ngược** nguyên tắc *"rẻ trước, đắt sau"* đã
+  ghi ở `docs/HANDOVER.md` §1. Ba hệ quả cụ thể:
+  - Bộ ba `(lidocaine, liều tối đa, 4,5 mg/kg)` do LLM sinh → **con số liều đi qua LLM**.
+  - Cùng nguồn + cùng mã rút → bộ ba **khác nhau mỗi lần chạy** → chữ ký khoá theo băm
+    mã rút **bảo chứng cho một thứ không lặp lại được**. Đây là hệ quả chết người nhất.
+  - Chỉ trỏ tới *đoạn văn bản*, không tới *trích dẫn tại chỗ nêu con số* → **không đo
+    được chung tổ tiên**, tức không phát hiện được bẫy đồng thuận ảo.
+  - Bản thân LlamaIndex đã thay `KnowledgeGraphIndex` bằng `PropertyGraphIndex`, nhận
+    rằng mô hình bộ ba thuần *"hạn chế về khả năng biểu đạt"*.
+- **Vì sao bỏ tầng 3.** `TreeSummarize` sinh văn xuôi **tổng hợp chéo nguồn** — đúng chỗ
+  ảo giác và trộn lẫn đồng thuận ảo phát sinh. Và AnesthOS **không chạy LLM lúc truy vấn
+  được** (BS-F: ngoại tuyến, <1s), nên mọi văn xuôi đều phải tiền tính và có người ký.
+- **Vì sao NHẬN tầng 1 — và vì sao không mâu thuẫn với việc từng bác đồ thị.** Ranh giới
+  khác nhau, không phải đổi ý:
+
+  | | Bác | Nhận |
+  |---|---|---|
+  | Đồ thị làm **kho lưu** thay JSON | ✗ | |
+  | Đồ thị **dựng lại từ JSON mỗi lần chạy, dùng xong vứt** | | ✓ |
+
+  JSON đã ký là **bản gốc duy nhất**. Đồ thị không được ký, không đẩy sang AnesthOS.
+  Đồ thị lệch JSON → **JSON đúng, mã dựng đồ thị sai**. Cùng kỷ luật đã dùng cho
+  `muc_phu` trong `tools/so_phu_bang_chung.py`: **suy ra, không có setter**.
+- **NetworkX kiếm chỗ đứng bằng đúng bài toán chung tổ tiên.** `ancestors(A) & ancestors(B)`
+  — tất định, không LLM. Tự viết phép duyệt nhiều chặng này là chỗ lỗi lệch-một **trả về
+  "độc lập" khi thực ra không** — hỏng im lặng, loại nguy hiểm nhất.
+  **Ranh giới**: áp chính nguyên tắc *rẻ trước, đắt sau* lên đề xuất này — bước A1
+  (54 khẳng định) chạy bằng **phép giao tập hợp thuần, chưa thêm thư viện**. NetworkX
+  chỉ vào ở A3 và **chỉ khi** A1 chứng minh có phả hệ nhiều chặng thật.
+- **PyVis** nhắm vào nút cổ chai thật — 8 giờ/tuần của một người. Bảng 2.271 dòng không
+  đọc nổi; đồ thị **nhìn thấy được** khẳng định mồ côi và cụm khẳng định cùng treo trên
+  một bài cũ. **Ranh giới**: PyVis mặc định nạp `vis.js` **từ CDN** — vi phạm ngoại
+  tuyến; bắt buộc dùng tài nguyên nội tuyến.
+- **LLM còn được dùng ở đâu**: **định vị** đoạn văn chứa con số (kèm `verify_quote()`
+  trong `tools/screen_run.py`), và soạn **nháp** lời giải thích cho người ký duyệt.
+  Không bao giờ **sinh** con số, không bao giờ tự đưa văn xuôi vào dữ liệu.
+- **Ghi chú về khối lượng**: nguồn lớn nhất — nhãn thuốc DailyMed — là **XML có cấu
+  trúc**, không phải văn xuôi. Bóc tất định thắng LLM ngay tại chỗ đề xuất kia mạnh nhất.
+- **Xem thêm**: `docs/LO_TRINH.md` §5.
+
+---
+
 ## CHỜ CHỐT
 
 | # | Tên gọi | Vì sao cần chốt |
