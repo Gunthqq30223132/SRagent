@@ -1,0 +1,24 @@
+# NỀN ĐỐI CHIẾU ĐÃ DUYỆT cho các tệp VÙNG CẤM
+#
+# Vấn đề tệp này giải: cổng hỏi "tệp vùng cấm có bị sửa không" bằng cách so với
+# BẢN GỐC (origin/main). Nhưng một số thay đổi ĐÃ ĐƯỢC DUYỆT bằng quyết định ghi
+# trong docs/DECISIONS.md. Không có tệp này thì cổng phạt mãi một việc đã duyệt,
+# và cổng lúc nào cũng đỏ thì không ai đọc nó nữa.
+#
+# Tệp này KHÔNG nới lỏng bảo vệ. Nó chỉ dời nền đối chiếu từ "bản gốc" sang
+# "bản đã duyệt gần nhất":
+#
+#   - tệp khác bản gốc, băm KHỚP dòng dưới đây  → qua, và in ra quyết định cho phép
+#   - tệp khác bản gốc, băm KHÔNG khớp          → TRƯỢT (có người sửa thêm sau khi duyệt)
+#   - tệp khác bản gốc, không có dòng nào       → TRƯỢT (chưa ai duyệt)
+#   - mất tệp này                               → TRƯỢT (không kiểm được ≠ đạt)
+#
+# CÁCH THÊM MỘT DÒNG: chỉ thêm SAU KHI có quyết định tương ứng trong
+# docs/DECISIONS.md. Lấy băm bằng:  sha256sum <đường dẫn tệp>
+# Thêm dòng mà chưa có quyết định là tự cấp phép cho chính mình.
+#
+# Định dạng, ba cột cách nhau bằng TAB:
+#   đường dẫn tệp <TAB> sha256 nội dung đã duyệt <TAB> quyết định cho phép
+
+sr_agent/config.py	4f25a1443462adc819d907c83c00686b4d8544340d9b94470b0991361c1f1143	DECISIONS.md #8 — mở khoá sổ đăng ký nguồn, bỏ ràng buộc 2 nguồn
+sr_agent/models/schemas.py	599ba5ae6049a786ed006d4c1cb7473578c57905e5b71797f55817d081b4b634	DECISIONS.md #8 — mở khoá sổ đăng ký nguồn, bỏ ràng buộc 2 nguồn
