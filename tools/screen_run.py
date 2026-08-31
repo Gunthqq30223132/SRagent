@@ -68,14 +68,62 @@ def verify_quote(source_text: str, quote: str) -> bool:
 # Deleted local compute_cohen_kappa (imported from health.py)
 
 
+# --- Mù kết cục ------------------------------------------------------------------------
+#
+# Loại một nghiên cứu vì NÓ NGHIÊN CỨU GÌ thì được. Loại nó vì NÓ BÁO CÁO ĐƯỢC GÌ thì
+# không: nghiên cứu có đo kết cục nhưng ra kết quả rỗng thường không báo cáo kết cục đó,
+# nên loại theo "không báo cáo outcome quan tâm" sẽ loại CÓ HỆ THỐNG các kết quả âm tính.
+#
+# Vì vậy mỗi mã tiêu chí phải tự khai nó là LÝ DO LOẠI hay NHÃN TRẠNG THÁI.
+
+LOAI_HOP_LE = ("ly_do_loai", "nhan_trang_thai")
+
+
+class ViPhamMuKetCuc(ValueError):
+    """Protocol khai một NHÃN TRẠNG THÁI làm lý do loại."""
+
+
+def nap_tieu_chi(tieu_chi: dict) -> dict:
+    """Kiểm bộ tiêu chí trước khi dùng. Thiếu `loai` là BÁO LỖI, không đoán.
+
+    Mục không khai `loai` là mục chưa ai quyết nó dùng để làm gì; đoán hộ ở đây
+    nghĩa là một nhãn trạng thái có thể lặng lẽ trở lại thành lý do loại.
+    """
+    for ma, muc in tieu_chi.items():
+        loai = muc.get("loai")
+        if loai is None:
+            raise ValueError(f"Tiêu chí {ma} không khai `loai` — phải là một trong {LOAI_HOP_LE}")
+        if loai not in LOAI_HOP_LE:
+            raise ValueError(f"Tiêu chí {ma} khai `loai` lạ: {loai!r} — phải là một trong {LOAI_HOP_LE}")
+    return tieu_chi
+
+
+def dong_tieu_chi(protocol: ReviewProtocol, criteria: dict) -> list[str]:
+    """Dựng các dòng tiêu chí loại trừ để đưa vào prompt.
+
+    Mã lạ (không có trong bộ tiêu chí) thì bỏ qua — giữ nguyên hành vi cũ.
+    Mã là NHÃN TRẠNG THÁI thì HỎNG TO: bỏ qua im lặng còn tệ hơn, vì người duyệt
+    sẽ tưởng tiêu chí đó đang được áp trong khi nó không hề được áp.
+    """
+    dong = []
+    for cid in protocol.exclusion_criteria:
+        muc = criteria.get(cid)
+        if muc is None:
+            continue
+        if muc.get("loai") == "nhan_trang_thai":
+            raise ViPhamMuKetCuc(
+                f"{cid} là NHÃN TRẠNG THÁI, không phải lý do loại — "
+                f"{muc.get('vi_sao', 'xem tools/criteria/default.json')}"
+            )
+        dong.append(f"- {cid}: {muc['label_vi']} ({muc['description_en']})")
+    return dong
+
+
 # --- Prompt Builders ------------------------------------------------------------------
 
 def build_screener_a_prompts(doc_title: str, doc_abstract: str, protocol: ReviewProtocol, criteria: dict) -> tuple[str, str]:
     # Thiên-giữ prompt context (burden of proof on exclusion)
-    criteria_lines = []
-    for cid in protocol.exclusion_criteria:
-        if cid in criteria:
-            criteria_lines.append(f"- {cid}: {criteria[cid]['label_vi']} ({criteria[cid]['description_en']})")
+    criteria_lines = dong_tieu_chi(protocol, criteria)
             
     system_prompt = (
         "You are an academic screening agent (screener_a) conducting a systematic literature review. "
@@ -104,10 +152,7 @@ def build_screener_a_prompts(doc_title: str, doc_abstract: str, protocol: Review
 
 def build_screener_b_prompts(doc_title: str, doc_abstract: str, protocol: ReviewProtocol, criteria: dict) -> tuple[str, str]:
     # Thiên-loại prompt context (checklist-based)
-    criteria_lines = []
-    for cid in protocol.exclusion_criteria:
-        if cid in criteria:
-            criteria_lines.append(f"- {cid}: {criteria[cid]['label_vi']} ({criteria[cid]['description_en']})")
+    criteria_lines = dong_tieu_chi(protocol, criteria)
             
     system_prompt = (
         "You are an academic screening agent (screener_b) conducting a systematic literature review. "
@@ -138,10 +183,7 @@ def build_screener_b_prompts(doc_title: str, doc_abstract: str, protocol: Review
 
 def build_tiebreaker_prompts(doc_title: str, doc_abstract: str, protocol: ReviewProtocol, criteria: dict,
                              v1_desc: str, v2_desc: str) -> tuple[str, str]:
-    criteria_lines = []
-    for cid in protocol.exclusion_criteria:
-        if cid in criteria:
-            criteria_lines.append(f"- {cid}: {criteria[cid]['label_vi']} ({criteria[cid]['description_en']})")
+    criteria_lines = dong_tieu_chi(protocol, criteria)
             
     system_prompt = (
         "You are a senior referee (tiebreaker) for a systematic literature review. "
@@ -459,7 +501,11 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Lỗi: Không tìm thấy criteria tại {args.criteria}", file=sys.stderr)
         return 1
         
-    criteria = json.loads(args.criteria.read_text(encoding="utf-8"))
+    try:
+        criteria = nap_tieu_chi(json.loads(args.criteria.read_text(encoding="utf-8")))
+    except ValueError as exc:
+        print(f"Lỗi bộ tiêu chí {args.criteria}: {exc}", file=sys.stderr)
+        return 1
     
     store_path = args.db if args.db else None
     with StagingStore(store_path) if store_path else StagingStore() as store:
