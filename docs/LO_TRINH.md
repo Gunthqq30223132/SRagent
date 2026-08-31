@@ -128,8 +128,8 @@ SR-Agent. Nhưng nó là **bước cuối**, không phải bước đầu (nguy�
 
 | Mã | Việc | Nghiệm thu | Trạng thái |
 |---|---|---|---|
-| **A‑0** | Đưa lộ trình vào kho (`docs/LO_TRINH.md`) + quyết định tầng đồ thị vào `DECISIONS.md`; kéo `cb86e3a`; giải chênh 629/644; sửa `EF2` | phiên mới đọc được lộ trình **không cần hỏi lại** | ⏳ đang làm |
-| **A0** | Lược đồ **cấp dòng** + băm bộ ba `(nguồn ‖ mã rút ‖ lược đồ)` + **bốn trạng thái đồng thuận** + tách mức phủ thành 4 mức | nguồn đổi **hoặc** mã rút đổi → khẳng định **tự rơi về chưa-thẩm-định** | ○ |
+| **A‑0** | Đưa lộ trình vào kho (`docs/LO_TRINH.md`) + quyết định tầng đồ thị vào `DECISIONS.md`; kéo `cb86e3a`; giải chênh 629/644; sửa `EF2`; **sửa cổng M6** | phiên mới đọc được lộ trình **không cần hỏi lại** | ✓ xong |
+| **A0** | Lược đồ **cấp dòng** + băm bộ ba `(nguồn ‖ mã rút ‖ lược đồ)` + **bốn trạng thái đồng thuận** + tách mức phủ thành 4 mức | nguồn đổi **hoặc** mã rút đổi → khẳng định **tự rơi về chưa-thẩm-định** | ⏳ **đặc tả xong** (`docs/DAC_TA_A0.md`) — chờ AG‑2 viết kiểm thử |
 | **A1** | **ĐO TỶ LỆ ĐO ĐƯỢC ĐỘC LẬP** trên 54 khẳng định thuốc tê — phép giao tập hợp thuần, **chưa thêm thư viện** | phân bố 4 trạng thái, tổng **= 54** | ○ |
 | **A2** | **Kiểm biên** — mọi liều đối chiếu trần nhãn DailyMed (XML, bóc tất định) | chạy trên **1.492** khẳng định; báo **đích danh** cái vượt trần | ○ |
 | **A3** | Xây `tools/sources/tham_khao.py`; kiểm phả hệ **cấp khẳng định**. NetworkX vào đây **có điều kiện** | với một con số: trả về bài gốc **mỗi nguồn** dẫn; bắt chung tổ tiên qua ≥2 chặng | ○ |
