@@ -112,6 +112,50 @@ Ghi số từ `pytest --collect-only`, không chỉ số đã qua. Chênh lệch
 được" và "xanh" là dấu hiệu môi trường chạy khác môi trường trong kho — đúng thứ
 đã xảy ra khi AG-1 báo 644 kiểm thử trong khi nhánh chỉ có 629.
 
+### L10. Mọi sản phẩm phải qua Critic agent TRƯỚC khi trình Gun
+
+**Vì sao có luật này.** Cho tới nay không tác nhân nào phản biện Claude trước khi
+kết quả tới Gun — nên Gun phải tự làm việc đó. Nhưng Gun là **bác sĩ gây mê, không
+phải kỹ sư**: bắt lỗi kỹ thuật đang bị đặt lên đúng người không có công cụ kỹ thuật
+để bắt, và **lấy mất thời gian của việc chỉ mình anh làm được là ký duyệt lâm sàng**.
+
+Đây cũng là hệ quả trực tiếp của nguyên tắc 6 — *không ai chấm bài của chính mình*.
+Claude đang tự chấm phần phản biện cho chính mình.
+
+**Quy trình bắt buộc, ba nhịp:**
+
+| Nhịp | Ai | Làm gì |
+|---|---|---|
+| 1 | **Critic agent** | đọc sản phẩm + nhật ký, **chỉ đặt câu hỏi** |
+| 2 | Điều phối | phân loại câu hỏi → chuyển đúng vai |
+| 3 | Claude | trả lời/sửa xong **rồi mới** viết giải thích cho Gun |
+
+**Giới hạn cứng của Critic agent** — phá một điều là mất tính độc lập:
+
+| # | Giới hạn |
+|---|---|
+| 1 | **Chỉ đọc.** Không sửa tệp, không chạy lệnh ghi, không commit |
+| 2 | **Chỉ đặt câu hỏi. Không đề xuất bản sửa** — đề xuất bản sửa biến Critic thành đồng tác giả, và không ai chấm được bài của chính mình nữa |
+| 3 | Mỗi câu hỏi phải kèm **bằng chứng cụ thể**: `tệp:dòng` hoặc con số đo được |
+| 4 | Câu nào tự kiểm được thì **kiểm trước rồi hãy hỏi** |
+| 5 | Không viết lời khen. Lời khen không đổi được quyết định nào |
+
+**Phân loại câu hỏi về đúng vai:**
+
+| Câu hỏi thuộc về | Chuyển tới |
+|---|---|
+| đặc tả sai, thiếu, hoặc mâu thuẫn | **kiến trúc** (Claude, sửa `docs/DAC_TA_*.md`) |
+| mã cài đặt sai | **cài đặt** (AG-1) |
+| kiểm thử bỏ sót, hoặc xanh vì lý do sai | **soát** (AG-2) |
+| số nghiệm thu lệch nhau | **Gun phân xử** — đó là bất đồng thật, không bên nào tự sửa cho khớp |
+
+**Nhịp 3 — viết cho Gun.** Chỉ sau khi câu hỏi của Critic đã được xử. Và viết theo
+đúng khuôn 「Nói đơn giản」: **giải thích cơ chế bằng ngôn ngữ lâm sàng, không bằng
+ngôn ngữ kỹ thuật.** Gun cần hiểu **cơ chế vận hành**, không cần đọc mã.
+
+> Luật này áp cho **mọi** sản phẩm: đặc tả, kiểm thử, mã, tài liệu. Không có ngoại lệ
+> "việc này nhỏ" — việc nhỏ là chỗ dễ bỏ qua phản biện nhất.
+
 ---
 
 ## 2. Bối cảnh kỹ thuật — đọc trước khi làm
