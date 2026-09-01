@@ -209,6 +209,48 @@ triển `M0…M6` (`gate_m6.sh` là cổng của M6), nhưng lại bị dùng l�
 
 ---
 
+### 11. Phác đồ do máy soạn nháp từ kho NotebookLM; NotebookLM là BỘ SOẠN NHÁP, không phải nguồn chân lý
+**Chốt ngày**: 2026-09-01 · **Người chốt**: chủ dự án (Gun)
+
+Gun đặt câu hỏi nền: *"mình có đang xây một thứ phức tạp trong khi thứ đơn giản có hiệu
+quả lại không làm không?"* — kèm bằng chứng: sau nhiều tháng, dự án có ~10 tài liệu và
+735 kiểm thử nhưng **0 sản phẩm dùng được tại giường bệnh**.
+
+**Chẩn đoán: đúng nửa TRÌNH TỰ, không đúng nửa CƠ CHẾ.**
+
+- Cơ chế không thừa — mỗi cái mua bằng một lỗi thật đã bắt được: 17 kiểm thử xanh giả ·
+  suýt nướng lỗi nghìn lần vào liều carvedilol `3,125` · hai lệnh cổng trượt trên chính
+  dữ liệu đúng · cổng dừng thiếu ô cho đúng kết quả đáng sợ nhất.
+- Trình tự sai — Chặng A như đã duyệt chạy cả chu kỳ trên **54 khẳng định dựng**, trong
+  khi việc Gun thật sự cần (phác đồ cá nhân, thư viện tham khảo) bị hoãn vô hạn.
+
+**Chốt: đảo trình tự, không bỏ cơ chế.** Phác đồ thật đi trước; máy chạy Chặng A trên
+chính phác đồ đó thay vì trên dữ liệu dựng.
+
+**Và chốt tiếp: máy soạn nháp, Gun duyệt** — thay vì Gun tự viết từng phác đồ.
+Antigravity hỏi NotebookLM trên kho nguồn Gun đã chọn lọc, sinh **bản ghi có toạ độ
+nguồn**, Gun duyệt. Đặc tả: `docs/DAC_TA_PHAC_DO_NHAP.md`.
+
+- **Ranh giới quan trọng nhất**: NotebookLM bảo đảm *"câu này dựa trên đoạn kia"* —
+  **không** bảo đảm câu đó **giữ nguyên nghĩa** đoạn kia. Nguồn ghi *"7 mg/kg khi có
+  adrenaline"* có thể thành *"liều tối đa 7 mg/kg [tr.12]"*: trích dẫn thật, số thật,
+  **sai lâm sàng** vì điều kiện bị rơi. Cùng hạng lỗi carvedilol. Nên đầu ra là **ứng
+  viên**, bắt buộc qua phép kiểm A0, không phải phác đồ dùng ngay.
+- **Đo cổng duyệt trước khi tin nó**: gài 5 lỗi có chủ đích, Gun phải bắt ≥4/5. Bản nháp
+  trôi chảy có trích dẫn làm người đọc **dễ gật hơn** — duyệt là phép kiểm yếu hơn tự
+  viết, nên phải đo, không giả định.
+- **Nói rõ để không kỳ vọng sai**: đây **không** phải tiết kiệm thời gian. Duyệt từng
+  khẳng định đối chiếu nguyên văn có thể chậm hơn tự viết. Cái được là **vết bằng
+  chứng** — mục đích của cả dự án.
+- **Hai tệp sổ notebook + cây Notion KHÔNG vào kho git** (cấu trúc tri thức cá nhân, URL
+  riêng, tài khoản). Kho chỉ giữ số đo rút ra.
+- **Kiểm chứng**: đo trên tệp thật — 873 notebook · 11.805 tài liệu nguồn · miền gây mê
+  35/36 đã liên kết (toàn kho 15%) · chủ đề thí điểm nối được ngay · **nhưng chỉ 112/873
+  notebook có URL máy dùng được, và ASRA — nguồn của chủ đề thí điểm — không có trong
+  kho.**
+
+---
+
 ## CHỜ CHỐT
 
 | # | Tên gọi | Vì sao cần chốt |
