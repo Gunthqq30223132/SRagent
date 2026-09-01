@@ -60,8 +60,11 @@ class ToaDoNguon(BaseModel):
     trich_nguyen_van: str   # BẮT BUỘC, không rỗng — đoạn văn chứa con số
 ```
 
-`trich_nguyen_van` rỗng → **ném lỗi lúc dựng đối tượng**, không nhận rồi báo sau. Toạ độ
-không có trích dẫn thì không phải toạ độ.
+`trich_nguyen_van` **cắt khoảng trắng hai đầu rồi vẫn rỗng** → **ném lỗi lúc dựng đối
+tượng**, không nhận rồi báo sau. Toạ độ không có trích dẫn thì không phải toạ độ.
+
+> Chuỗi `"   "` bị từ chối y như `""` (Critic Q9a): trích dẫn toàn khoảng trắng không
+> chứng minh được gì, mà lại **trông như đã có trích dẫn**.
 
 ### 2.2 · Phép kiểm "nội dung có truy được trong nguồn không"
 
@@ -102,7 +105,7 @@ def the_so(s: str) -> set[Decimal]
 | 1 | Chuẩn hoá gạch nối: `–` `—` `−` → `-` |
 | 2 | Tìm mọi khớp của `\d+(?:[.,]\d+)?` |
 | 3 | Dấu phẩy theo sau bởi **1–2** chữ số → dấu thập phân (`4,5` → `4.5`) |
-| 4 | Dấu phẩy theo sau bởi **đúng 3** chữ số → **NHẬP NHẰNG** (`1,500` = một nghìn rưỡi hay một phẩy năm?) |
+| 4 | Dấu phẩy theo sau bởi **số chữ số KHÁC 1–2** → **NHẬP NHẰNG**. `1,500` = một nghìn rưỡi hay một phẩy năm? `1,5000` thì không phải cách viết hợp lệ nào cả (Critic Q9b) |
 | 5 | Chuyển sang `Decimal`, trả về **tập hợp** |
 
 **Bước 4 là chỗ chọn thà dừng còn hơn đoán.** Gặp số nhập nhằng → cả phép kiểm trả
@@ -129,7 +132,12 @@ Mười bốn ca đó còn lộ ra **hai loại nội dung nữa** mà phép ki�
 | Dạng | Ví dụ thật | A0 xử |
 |---|---|---|
 | **Tỷ lệ pha loãng** | `1:10,000 = 100 mcg/mL` (adrenaline) | `SO_NHAP_NHANG` — Chặng B cần quy tắc riêng cho ký hiệu tỷ lệ |
-| **Chuỗi trích dẫn** | `Walker BJ et al. Anesthesiology 2018;129` | số trong đó là **năm và số tập**, không phải liều. Trường `references` không được đưa qua phép kiểm số |
+| **Chuỗi trích dẫn** | `Walker BJ et al. Anesthesiology 2018;129` | số trong đó là **năm và số tập**, không phải liều — xem quy tắc ngay dưới |
+
+**Quy tắc loại trừ theo khoá** (Critic Q7): khẳng định có `khoa == "references"` **không
+được** đưa qua phép kiểm số — trả `KHÔNG KIỂM ĐƯỢC` / `KHANG_DINH_KHONG_SO`. Cho một
+chuỗi trích dẫn qua phép kiểm liều nghĩa là coi **năm xuất bản và số tập** như thể chúng
+là liều thuốc.
 
 **So bằng tập hợp `Decimal`, không so chuỗi.** Lý do: `4.50` và `4.5` là **một** giá trị;
 còn so chuỗi con thì `5` sẽ khớp nhầm vào `500` — cho ĐẠT sai.
@@ -166,8 +174,17 @@ Khoá vào ba thứ cùng lúc:
 
 ```python
 def van_tay_bo_ba(bam_nguon: str, bam_ma_rut: str, bam_luoc_do: str) -> str
-    # trả "sha256:<16 hex>" — cùng định dạng van_tay_kho() trong so_quyet_dinh.py
+    # trả ĐÚNG dạng "sha256:<16 hex>" — hai phần, KHÔNG có phần thứ ba
 ```
+
+> **Đính chính (Critic Q4).** Bản trước ghi *"cùng định dạng `van_tay_kho()`"*, nhưng
+> `van_tay_kho()` trả **ba** phần `sha256:<16hex>:<số bản ghi>`. Hai vế loại trừ nhau.
+> Chốt: `van_tay_bo_ba` trả **hai** phần — không có phần đếm, vì bộ ba **luôn đúng ba
+> thành phần**, đếm một hằng số là vô nghĩa.
+>
+> **Ghép ba thành phần phải có dấu ngăn không xuất hiện được trong băm** (dùng `\n`).
+> Nối chuỗi thẳng thì `("ab","c","d")` và `("a","bc","d")` cho **cùng** vân tay — hai
+> nguồn khác nhau đội chung một chữ ký.
 
 Hồ sơ giữ **hai** trường: `van_tay_tham_dinh` (lúc được thẩm định) và `van_tay_hien_tai`
 (tính lại lúc đọc). Vân tay **còn hiệu lực** khi và chỉ khi cả hai khác `None` **và** bằng nhau.
@@ -231,9 +248,13 @@ A∩B = ∅, B∩C ≠ ∅, A∩C = ∅ → hai cụm `{A}` và `{B,C}` → `DOC
 | `KHONG_CO` | không có gì | 0 |
 | `NGUON_CAP_TEP` | có trích dẫn cấp tệp *(đổi tên từ `CHI_CO_NGUON`)* | **16.417** |
 | **`DA_DOI_CHIEU`** ← bậc mới | có toạ độ cấp dòng **và** nội dung `ĐẠT` **và** vân tay còn hiệu lực | 0 |
-| `CO_CHUOI_DAY_DU` | thêm phả hệ **và** bậc chứng cứ **và** GRADE **và** đồng thuận ≠ `KHONG_DO_DUOC` | 0 |
+| `CO_CHUOI_DAY_DU` | **đạt đủ `DA_DOI_CHIEU`, CỘNG THÊM** phả hệ **và** `bac_chung_cu` **và** `do_manh` (GRADE) **và** đồng thuận ≠ `KHONG_DO_DUOC` | 0 |
 
 Xét từ bậc **cao xuống thấp**, dừng ở bậc đầu tiên thoả.
+
+> **`CO_CHUOI_DAY_DU` CỘNG DỒN lên `DA_DOI_CHIEU`** (Critic Q6). Không có toạ độ nguồn
+> thì **không** thể có chuỗi đầy đủ, dù đã điền phả hệ, bậc chứng cứ và GRADE. Chữ
+> "GRADE" ở bảng trên ánh xạ vào trường `do_manh` (Critic Q9d).
 
 > ### 「Vì sao bậc này phải TỰ TÍNH, không được điền tay」
 >
@@ -273,7 +294,7 @@ class ToaDoNguon(BaseModel):
     ma_tai_lieu:      str
     loai_tai_lieu:    str
     vi_tri:           str
-    trich_nguyen_van: str        # không rỗng, ném lỗi nếu rỗng
+    trich_nguyen_van: str        # cắt khoảng trắng hai đầu rồi phải còn ký tự
 
 class HoSoBangChung(BaseModel):
     # — giữ nguyên từ V1 —
@@ -302,9 +323,21 @@ class HoSoBangChung(BaseModel):
     @property
     def muc_phu(self) -> MucPhu:                ...   # §2.5
 
-def the_so(s: str) -> set[Decimal]
+class SoNhapNhang(ValueError):
+    """Gặp `<số>,<đúng 3 chữ số>` — không quyết được hàng nghìn hay thập phân."""
+
+def the_so(s: str) -> set[Decimal]      # NÉM SoNhapNhang khi gặp số nhập nhằng
 def van_tay_bo_ba(bam_nguon: str, bam_ma_rut: str, bam_luoc_do: str) -> str
 ```
+
+> **Vì sao `the_so` NÉM LỖI chứ không trả tập rỗng hay `None`.** Chữ ký trả
+> `set[Decimal]` không có chỗ nào chở được lý do. Trả tập rỗng thì chỗ gọi không phân
+> biệt được *"khẳng định không có số"* với *"có số nhưng không đọc nổi"* — hai thứ dẫn
+> tới hai kết luận khác hẳn nhau. Ném lỗi buộc mọi chỗ gọi phải xử tường minh; quên xử
+> thì vỡ to, không im lặng sai.
+>
+> `noi_dung_truy_duoc` bắt `SoNhapNhang` và trả `KHÔNG KIỂM ĐƯỢC` kèm
+> `ly_do_khong_kiem = SO_NHAP_NHANG`.
 
 **Trường `bo_ba` và `doi_chieu_nguoc` của V1 bị `nguon` + `pha_he` + `noi_dung_truy_duoc`
 thay thế.** Không giữ song song hai cách biểu diễn cùng một việc.
@@ -333,6 +366,23 @@ thay thế.** Không giữ song song hai cách biểu diễn cùng một việc.
 python3 tools/so_phu_bang_chung.py --du-lieu <AnesthOS>/src/domain/data/
 ```
 
+> ### 「Dữ liệu để đo nằm ở đâu」 — Critic Q10
+>
+> **Cây làm việc của AnesthOS KHÔNG chứa dữ liệu.** `src/domain/data/` ở nhánh đang
+> checkout có **0 tệp JSON**. Dữ liệu thật nằm ở nhánh **`origin/feat/p1-domain`**.
+>
+> Nên AG‑3 phải **bày dữ liệu ra trước khi đo**, và bày bằng **git**, không bằng cách đi
+> tìm thư mục trên ổ đĩa — vì đi tìm thư mục chính là cách sự cố cũ đã xảy ra (luật L7):
+>
+> ```bash
+> git -C <AnesthOS-app> ls-tree -r --name-only origin/feat/p1-domain | grep domain/data
+> # phải ra ĐÚNG 23 tệp, trong đó có provenance_manifest.json
+> ```
+>
+> **Không bày được thì báo `KHÔNG ĐO ĐƯỢC`, tuyệt đối không báo ĐẠT** (nguyên tắc 4).
+> Hiện tại Đ1–Đ8 **chưa có gì trong kho ràng buộc** — không kiểm thử, không script,
+> không cổng. Bịt chỗ này là việc của bước AG‑3, và phải bịt trước khi ai nói "A0 xong".
+
 **In đường dẫn tuyệt đối và số tệp JSON đọc được TRƯỚC mọi con số khác** (luật L7).
 Thiếu `provenance_manifest.json` → **DỪNG** (luật L8).
 
@@ -344,8 +394,16 @@ Thiếu `provenance_manifest.json` → **DỪNG** (luật L8).
 | Đ4 | `KHONG_CO` = **0** | → dừng |
 | Đ5 | Tổng = **16.417**; ưu tiên 1 = **2.271** | đổi tên thang đã đổi cả ngữ nghĩa → dừng |
 | Đ6 | `dong_thuan` = `MOT_NGUON` cho **cả 16.417** | chưa nguồn nào được nạp |
-| Đ7 | Khẳng định **có thẻ số** = **4.016**; riêng ưu tiên 1 = **1.630** | quy tắc bóc thẻ số sai → dừng |
+| Đ7 | Khẳng định **chứa chữ số** = **4.016**; riêng ưu tiên 1 = **1.630** | quy tắc đếm sai → dừng |
 | Đ8 | Khẳng định gặp `SO_NHAP_NHANG` = **14** (ưu tiên 1: **4**) | ra 0 nghĩa là bước 4 đang **đoán thay vì dừng** → dừng ngay |
+
+> **Đ7 đếm bằng phép nào** (Critic Q8). Đếm khẳng định mà **chuỗi chứa ít nhất một chữ
+> số** — KHÔNG phải đếm `len(the_so(x)) > 0`. Hai phép lệch nhau **đúng 4**: bốn khẳng
+> định nhập nhằng ở ưu tiên 1 **có** chữ số nên nằm trong 1.630 của Đ7, nhưng `the_so()`
+> **ném lỗi** trên chúng nên phép đếm kia bỏ ra, cho 1.626.
+>
+> **Đ8 là tập con của Đ7**, không phải tập rời. Dùng nhầm phép đếm tạo một "bất đồng
+> giả" lệch đúng 4, và người cài đặt sẽ đi tìm một lỗi không tồn tại.
 
 > **Đ2 và Đ3 là hai mục quan trọng nhất.** A0 chưa đi lấy nguồn nào. Nếu có khẳng định
 > nào tự lên bậc `DA_DOI_CHIEU` thì biểu mẫu **đang tự phong hạng cho chính nó** — đúng
@@ -387,7 +445,7 @@ khác, chuyển Gun quyết. Bốn con số của V1 **đã sai một lần rồ
 | Vai | Được làm | **Cấm** |
 |---|---|---|
 | Claude | đặc tả này, tính Đ1–Đ8 | viết mã cài đặt, tự chạy nghiệm thu |
-| **AG‑2** | sửa 5 dòng `MucPhu` cũ + viết kiểm thử A0 | đọc mã AG‑1, chạm `tools/**` |
+| **AG‑2** | sửa **9 dòng** trong kiểm thử V1 + viết kiểm thử A0 | đọc mã AG‑1, chạm `tools/**` |
 | **AG‑1** | `tools/so_phu_bang_chung.py` | chạm `tests/**`, **dò ngược Đ1–Đ8** |
 | **AG‑3** | chạy nghiệm thu trên mã đã đẩy, **chỉ báo số** | sửa bất cứ thứ gì |
 | Gun | duyệt lâm sàng | — |
@@ -402,10 +460,16 @@ khác, chuyển Gun quyết. Bốn con số của V1 **đã sai một lần rồ
 > ba điều kiện: chỉ chạm `tests/**` · thông điệp ghi **chính xác số kiểm thử đỏ** · đỏ vì
 > **thiếu mã**, không vì `skip`/`xfail`/`assert True`.
 
+> **Bước 1 chạm bao nhiêu dòng kiểm thử V1** (Critic Q3). **9 dòng**, không phải 5:
+> 2 dòng đổi `CHI_CO_NGUON` → `NGUON_CAP_TEP`, và 7 dòng bỏ `bo_ba`/`doi_chieu_nguoc`.
+> Đo bằng bản mô phỏng: **2 kiểm thử V1 sẽ đỏ** khi AG‑1 cài A0. Vì AG‑1 **cấm chạm
+> `tests/`**, AG‑2 phải sửa xong **ngay ở commit đỏ đầu tiên** — bỏ qua là đẩy AG‑1 vào
+> chỗ buộc phải vi phạm phân vai.
+
 ### Thứ tự bắt buộc
 
 ```
-1. AG-2  → sửa 5 dòng MucPhu trong tests/test_so_phu_bang_chung.py
+1. AG-2  → sửa 9 dòng trong tests/test_so_phu_bang_chung.py
            + viết tests/test_a0_*.py                        (ĐỎ, ghi rõ số đỏ)
 2. AG-1  → tools/so_phu_bang_chung.py                        (chuyển XANH)
 3. AG-3  → chạy nghiệm thu + bash scripts/gate_m6.sh         (chỉ báo số)
