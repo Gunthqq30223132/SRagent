@@ -311,6 +311,11 @@ thay thế.** Không giữ song song hai cách biểu diễn cùng một việc.
 
 ### Ràng buộc bất biến
 
+> **Mã tài liệu: `A0`.** R-series dưới đây **cục bộ, riêng của đặc tả này** — `A0.R1`
+> nói về mọi `@property`, còn `V1.R1` nói về `muc_phu`: **hai luật khác nhau, trùng tên
+> là do cùng đánh số từ 1**. Dẫn từ tài liệu khác phải viết đủ `A0.R4`.
+> Xem `docs/QUY_UOC_KY_HIEU.md`.
+
 | # | Ràng buộc | Vì sao |
 |---|---|---|
 | **R1** | **Mọi** thuộc tính ở §3 là `@property`, **không có setter** | trường tự khai độ tin cậy là chế độ hỏng đã gặp |
@@ -328,21 +333,21 @@ thay thế.** Không giữ song song hai cách biểu diễn cùng một việc.
 python3 tools/so_phu_bang_chung.py --du-lieu <AnesthOS>/src/domain/data/
 ```
 
-**In đường dẫn tuyệt đối và số tệp JSON đọc được TRƯỚC mọi con số khác** (luật N‑1).
-Thiếu `provenance_manifest.json` → **DỪNG** (luật N‑2).
+**In đường dẫn tuyệt đối và số tệp JSON đọc được TRƯỚC mọi con số khác** (luật L7).
+Thiếu `provenance_manifest.json` → **DỪNG** (luật L8).
 
 | # | Phải ra đúng | Lệch thì |
 |---|---|---|
-| M1 | `NGUON_CAP_TEP` = **16.417** | → dừng |
-| **M2** | `DA_DOI_CHIEU` = **0** | **cổng chống tự khai** → dừng |
-| **M3** | `CO_CHUOI_DAY_DU` = **0** | **cổng chống tự khai** → dừng |
-| M4 | `KHONG_CO` = **0** | → dừng |
-| M5 | Tổng = **16.417**; ưu tiên 1 = **2.271** | đổi tên thang đã đổi cả ngữ nghĩa → dừng |
-| M6 | `dong_thuan` = `MOT_NGUON` cho **cả 16.417** | chưa nguồn nào được nạp |
-| M7 | Khẳng định **có thẻ số** = **4.016**; riêng ưu tiên 1 = **1.630** | quy tắc bóc thẻ số sai → dừng |
-| M8 | Khẳng định gặp `SO_NHAP_NHANG` = **14** (ưu tiên 1: **4**) | ra 0 nghĩa là bước 4 đang **đoán thay vì dừng** → dừng ngay |
+| Đ1 | `NGUON_CAP_TEP` = **16.417** | → dừng |
+| **Đ2** | `DA_DOI_CHIEU` = **0** | **cổng chống tự khai** → dừng |
+| **Đ3** | `CO_CHUOI_DAY_DU` = **0** | **cổng chống tự khai** → dừng |
+| Đ4 | `KHONG_CO` = **0** | → dừng |
+| Đ5 | Tổng = **16.417**; ưu tiên 1 = **2.271** | đổi tên thang đã đổi cả ngữ nghĩa → dừng |
+| Đ6 | `dong_thuan` = `MOT_NGUON` cho **cả 16.417** | chưa nguồn nào được nạp |
+| Đ7 | Khẳng định **có thẻ số** = **4.016**; riêng ưu tiên 1 = **1.630** | quy tắc bóc thẻ số sai → dừng |
+| Đ8 | Khẳng định gặp `SO_NHAP_NHANG` = **14** (ưu tiên 1: **4**) | ra 0 nghĩa là bước 4 đang **đoán thay vì dừng** → dừng ngay |
 
-> **M2 và M3 là hai mục quan trọng nhất.** A0 chưa đi lấy nguồn nào. Nếu có khẳng định
+> **Đ2 và Đ3 là hai mục quan trọng nhất.** A0 chưa đi lấy nguồn nào. Nếu có khẳng định
 > nào tự lên bậc `DA_DOI_CHIEU` thì biểu mẫu **đang tự phong hạng cho chính nó** — đúng
 > lỗi cả thiết kế này dựng lên để chặn. Ra khác 0 thì **dừng và báo**, đừng đi tiếp.
 
@@ -362,7 +367,7 @@ Thiếu `provenance_manifest.json` → **DỪNG** (luật N‑2).
 | đủ mọi điều kiện, nhưng `van_tay_hien_tai` ≠ `van_tay_tham_dinh` | `NGUON_CAP_TEP` — **R4** |
 | `ToaDoNguon` với `trich_nguyen_van=""` | **ném lỗi lúc dựng** |
 
-### Vì sao KHÔNG kèm đoạn mã đã tính M1–M7
+### Vì sao KHÔNG kèm đoạn mã đã tính Đ1–Đ8
 
 Bảy con số này do Claude tính bằng một đoạn mã dùng một lần, **cố ý không đưa vào kho**.
 
@@ -371,7 +376,7 @@ Bảy con số này do Claude tính bằng một đoạn mã dùng một lần, 
 | Số khớp = **hai lần đọc độc lập cùng ra một kết quả** | Số khớp **không chứng minh gì** |
 | Lỗi trong cách đọc của Claude **lộ ra** | Lỗi đó **nhân bản** và biến mất khỏi tầm nhìn |
 
-**Số của bạn lệch M1–M7 → đó là BẤT ĐỒNG THẬT.** Ghi cả hai số, chỉ ra khoá nào đếm
+**Số của bạn lệch Đ1–Đ8 → đó là BẤT ĐỒNG THẬT.** Ghi cả hai số, chỉ ra khoá nào đếm
 khác, chuyển Gun quyết. Bốn con số của V1 **đã sai một lần rồi**
 (20.416/16.562/2.241 → 20.279/16.417/2.271) — chúng là **số đo, không phải chân lý**.
 
@@ -381,9 +386,9 @@ khác, chuyển Gun quyết. Bốn con số của V1 **đã sai một lần rồ
 
 | Vai | Được làm | **Cấm** |
 |---|---|---|
-| Claude | đặc tả này, tính M1–M7 | viết mã cài đặt, tự chạy nghiệm thu |
+| Claude | đặc tả này, tính Đ1–Đ8 | viết mã cài đặt, tự chạy nghiệm thu |
 | **AG‑2** | sửa 5 dòng `MucPhu` cũ + viết kiểm thử A0 | đọc mã AG‑1, chạm `tools/**` |
-| **AG‑1** | `tools/so_phu_bang_chung.py` | chạm `tests/**`, **dò ngược M1–M7** |
+| **AG‑1** | `tools/so_phu_bang_chung.py` | chạm `tests/**`, **dò ngược Đ1–Đ8** |
 | **AG‑3** | chạy nghiệm thu trên mã đã đẩy, **chỉ báo số** | sửa bất cứ thứ gì |
 | Gun | duyệt lâm sàng | — |
 

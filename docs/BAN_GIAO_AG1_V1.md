@@ -27,7 +27,7 @@ chân lý. Kiểm thử là bản diễn dịch của đặc tả, không thay t
 | # | Cấm | Vì sao |
 |---|---|---|
 | **C1** | **Sửa bất cứ tệp nào trong `tests/`** | kiểm thử được viết TRƯỚC khi có mã, bởi người khác. Sửa nó là phá đúng rào cản mà nó tồn tại để dựng |
-| **C2** | **Đi tìm bốn con số N1–N4 rồi cài cho khớp** | xem §3 — đây là điều quan trọng nhất trong tài liệu này |
+| **C2** | **Đi tìm bốn con số Đ1–Đ4 rồi cài cho khớp** | xem §3 — đây là điều quan trọng nhất trong tài liệu này |
 | **C3** | Thêm thư viện mới, chạm `sr_agent/`, `pipeline.py`, `pyproject.toml` | vùng cấm sửa; chỉ dùng `pydantic` + thư viện chuẩn |
 
 **Nếu bạn tin một kiểm thử SAI:** không sửa nó. Ghi lại bất đồng (tên kiểm thử,
@@ -38,7 +38,7 @@ phép dừng giữa chừng.
 
 ## 3. Điều quan trọng nhất: bốn con số phải do BẠN tự suy ra
 
-Đặc tả §4 nêu bốn con số nghiệm thu (N1–N4) trên dữ liệu AnesthOS thật. Chúng do
+Đặc tả §4 nêu bốn con số nghiệm thu (Đ1–Đ4) trên dữ liệu AnesthOS thật. Chúng do
 Claude tính khi soạn đặc tả, **bằng một đoạn mã cố ý không đưa vào repo**.
 
 | Nếu bạn cài đặt từ **quy tắc §2** | Nếu bạn dò ngược để khớp số |
@@ -50,7 +50,7 @@ Claude tính khi soạn đặc tả, **bằng một đoạn mã cố ý không �
 / 2.241 — sai vì đếm cả tệp khai xuất xứ, xếp nhầm ba khoá trình bày, và bỏ sót
 `timeToDeath` khỏi nhóm chết người. Chúng là **số đo**, không phải chân lý.
 
-> **Số của bạn lệch với N1–N4 → đó là BẤT ĐỒNG THẬT, không phải lỗi của bạn.**
+> **Số của bạn lệch với Đ1–Đ4 → đó là BẤT ĐỒNG THẬT, không phải lỗi của bạn.**
 > Ghi cả hai con số, chỉ ra **khoá nào đếm khác**, rồi chuyển Gun quyết.
 > Quy tắc §2 là nguồn chân lý; bốn con số chỉ là hệ quả của nó.
 
@@ -98,14 +98,14 @@ Báo cáo **số thô**, đối chiếu với đặc tả §4:
 
 | # | Kỳ vọng |
 |---|---|
-| N1 | tổng lá **20.279** |
-| N2 | nhãn/định danh/trình bày **3.862** |
-| N3 | mang hệ quả lâm sàng **16.417** |
-| N4 | ưu tiên 1 **2.271** · ưu tiên 2 **4.908** · ưu tiên 3 **9.238** |
-| N5 | **0** khẳng định ở mức "có chuỗi bằng chứng đầy đủ" |
-| N6 | `3.862 + 2.271 + 4.908 + 9.238 == 20.279` |
+| Đ1 | tổng lá **20.279** |
+| Đ2 | nhãn/định danh/trình bày **3.862** |
+| Đ3 | mang hệ quả lâm sàng **16.417** |
+| Đ4 | ưu tiên 1 **2.271** · ưu tiên 2 **4.908** · ưu tiên 3 **9.238** |
+| Đ5 | **0** khẳng định ở mức "có chuỗi bằng chứng đầy đủ" |
+| Đ6 | `3.862 + 2.271 + 4.908 + 9.238 == 20.279` |
 
-**N5 là cổng quan trọng nhất.** Ra khác 0 nghĩa là bộ tính mức phủ đang tự khai —
+**Đ5 là cổng quan trọng nhất.** Ra khác 0 nghĩa là bộ tính mức phủ đang tự khai —
 chưa có V2/V3 thì không khẳng định nào được phép có chuỗi đầy đủ. Ra khác 0 thì
 **dừng và báo**, đừng đi tiếp.
 

@@ -180,6 +180,35 @@ bằng `TreeSummarize`).
 
 ---
 
+### 10. Quy ước ký hiệu — một chữ cái, một nghĩa, vĩnh viễn
+**Chốt ngày**: 2026-08-31 · **Người chốt**: chủ dự án (Gun)
+
+Ký hiệu trong kho này sinh sôi theo cảm tính lúc viết, không theo quy tắc. Soát lại
+tìm được **bốn va chạm thật**, trong đó nặng nhất là chữ `M`: nó vốn đã là chặng phát
+triển `M0…M6` (`gate_m6.sh` là cổng của M6), nhưng lại bị dùng làm đích nghiệm thu
+`M1…M8` trong `DAC_TA_A0.md` — nên **cùng một tệp có `M6` mang hai nghĩa**.
+
+- **Chốt**: `docs/QUY_UOC_KY_HIEU.md` là nguồn chân lý. Ký hiệu không có dòng trong sổ
+  đăng ký ở §3 thì coi như không tồn tại.
+- **Hai trục phân loại**: phạm vi (toàn cục / cục bộ) và vai trò (luật · mốc lộ trình ·
+  phân loại · ràng buộc bất biến · đích nghiệm thu).
+- **Toàn cục** thì một chữ cái mang **một** nghĩa, đời đời, không tái cấp kể cả khi
+  series đã ngừng dùng. **Cục bộ** (`R`, `Đ`) thì cố ý khởi động lại từ 1 ở mỗi đặc tả,
+  nhưng dẫn từ ngoài **bắt buộc** gắn mã tài liệu: `A0.R4`, `V1.Đ2`.
+- **Luật cấp ký hiệu mới, bốn bước**: tra sổ trước · nếu là luật vận hành thì nối vào
+  `L` đừng đẻ series mới · cục bộ thì dùng lại `R`/`Đ` và khai rõ · cấp series toàn cục
+  mới thì cùng commit phải thêm dòng vào sổ.
+- **Đã áp**: `N‑1/N‑2/N‑3` gộp vào series luật thành `L7/L8/L9` (bớt hẳn một series,
+  không phải đổi tên nó); `N1…N6` của V1 và `M1…M8` của A0 đều thành `Đ1…`; hai bộ
+  `R` được khai rõ là cục bộ và độc lập nhau.
+- **Không đụng**: mã bước `A0…C3`, cổng `G1/G2`, `P1/P2/P3`, `M0…M6`. Bốn bộ này không
+  có lỗi, chỉ thiếu chỗ khai — đổi tên thứ đang chạy đúng là tự tạo rủi ro.
+- **Không sửa kho AnesthOS**: `BS-B/BS-C/BS-F` chỉ được **đăng ký** để tránh đụng.
+- **Kiểm chứng**: tập hợp mọi con số trong các tệp bị sửa **y hệt trước và sau** — chỉ
+  chữ cái đổi.
+
+---
+
 ## CHỜ CHỐT
 
 | # | Tên gọi | Vì sao cần chốt |

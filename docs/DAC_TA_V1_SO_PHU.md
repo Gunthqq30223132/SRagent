@@ -134,6 +134,10 @@ def bao_cao_phu(ds: list[HoSoBangChung]) -> str
 
 ### Ràng buộc bất biến
 
+> **Mã tài liệu: `V1`.** R-series dưới đây **cục bộ, riêng của đặc tả này** — `R1` ở đây
+> không liên hệ gì với `R1` của đặc tả khác. Dẫn từ tài liệu khác phải viết đủ `V1.R1`.
+> Xem `docs/QUY_UOC_KY_HIEU.md`.
+
 | # | Ràng buộc | Vì sao |
 |---|---|---|
 | R1 | `muc_phu` **suy ra** từ các trường, không có setter | trường tự khai độ tin cậy là chế độ hỏng đã gặp ở đợt kiểm toán trước |
@@ -158,19 +162,19 @@ python3 tools/so_phu_bang_chung.py --du-lieu <AnesthOS>/src/domain/data/
 
 | # | Phải ra đúng | Lệch thì |
 |---|---|---|
-| N1 | Tổng lá: **20.279** | quy tắc duyệt sai → **dừng** |
-| N2 | Nhãn/định danh/trình bày: **3.862** | tập khoá nhãn sai → **dừng** |
-| N3 | Mang hệ quả lâm sàng: **16.417** | → **dừng** |
-| N4 | Ưu tiên 1: **2.271** · Ưu tiên 2: **4.908** · Ưu tiên 3: **9.238** | bảng xếp hạng sai → **dừng** |
-| N5 | **0** khẳng định ở mức `CO_CHUOI_DAY_DU` | **cổng chống tự khai** — chưa có V2/V3 thì không khẳng định nào được phép có chuỗi đầy đủ |
-| N6 | `3.862 + 2.271 + 4.908 + 9.238 == 20.279` | phép cộng không khớp = có lá bị đếm hai lần hoặc rơi mất |
+| Đ1 | Tổng lá: **20.279** | quy tắc duyệt sai → **dừng** |
+| Đ2 | Nhãn/định danh/trình bày: **3.862** | tập khoá nhãn sai → **dừng** |
+| Đ3 | Mang hệ quả lâm sàng: **16.417** | → **dừng** |
+| Đ4 | Ưu tiên 1: **2.271** · Ưu tiên 2: **4.908** · Ưu tiên 3: **9.238** | bảng xếp hạng sai → **dừng** |
+| Đ5 | **0** khẳng định ở mức `CO_CHUOI_DAY_DU` | **cổng chống tự khai** — chưa có V2/V3 thì không khẳng định nào được phép có chuỗi đầy đủ |
+| Đ6 | `3.862 + 2.271 + 4.908 + 9.238 == 20.279` | phép cộng không khớp = có lá bị đếm hai lần hoặc rơi mất |
 
-**N5 là cổng quan trọng nhất.** Ra khác 0 nghĩa là bộ tính mức phủ đang tự khai —
+**Đ5 là cổng quan trọng nhất.** Ra khác 0 nghĩa là bộ tính mức phủ đang tự khai —
 đúng chế độ hỏng cả hệ này dựng lên để chặn.
 
 ### Vì sao KHÔNG kèm đoạn mã đã dùng để ra bốn con số này
 
-Bốn con số ở N1–N4 do Claude tính khi soạn đặc tả, bằng một đoạn mã dùng một lần.
+Bốn con số ở Đ1–Đ4 do Claude tính khi soạn đặc tả, bằng một đoạn mã dùng một lần.
 Đoạn mã đó **cố ý không được đưa vào repo**.
 
 Lý do giống hệt lý do AG-2 phải viết kiểm thử trước khi có mã cài đặt:
@@ -181,7 +185,7 @@ Lý do giống hệt lý do AG-2 phải viết kiểm thử trước khi có mã
 | Khớp nhau **không chứng minh được gì** | Khớp nhau = **hai lần đọc độc lập cùng ra một kết quả** |
 | Lỗi trong cách đọc dữ liệu của Claude sẽ **nhân bản sang** AG-1 | Lỗi của Claude sẽ **lộ ra** thành bất đồng |
 
-**Nếu số của AG-1 lệch với N1–N4:** đó là **bất đồng thật, phải phân xử**, không
+**Nếu số của AG-1 lệch với Đ1–Đ4:** đó là **bất đồng thật, phải phân xử**, không
 phải lỗi của AG-1. Ghi lại cả hai con số, chỉ ra khoá nào đếm khác, rồi chuyển
 Gun quyết. Tuyệt đối **không** chỉnh mã cho khớp con số của Claude — quy tắc §2
 mới là nguồn chân lý, bốn con số chỉ là hệ quả của nó.
@@ -196,7 +200,7 @@ phải chân lý.
 | Lớp | Nội dung | Ai viết |
 |---|---|---|
 | 1 · Đơn vị | quy tắc duyệt (§2.1), tập khoá (§2.3), ràng buộc R1–R5 — dữ liệu dựng nhỏ | AG-2 |
-| 2 · Đối chứng dữ liệu thật | chạy trên dữ liệu AnesthOS thật, khớp N1–N6 | AG-2 |
+| 2 · Đối chứng dữ liệu thật | chạy trên dữ liệu AnesthOS thật, khớp Đ1–Đ6 | AG-2 |
 | 3 · Kiểm chéo nguồn | **không áp dụng cho V1** — V1 chưa chạm nguồn nào | — |
 
 Lớp 3 để trống ở đây là **đúng**, không phải thiếu sót. Ghi rõ thay vì bỏ lửng.
@@ -219,7 +223,7 @@ Lớp 3 để trống ở đây là **đúng**, không phải thiếu sót. Ghi 
 |---|---|---|
 | 1 | **AG-2** | kiểm thử **ĐỎ** (chưa có mã) — **chốt của cả bộ khung** |
 | 2 | AG-1 | cài đặt tới khi xanh, **không sửa kiểm thử** |
-| 3 | AG-3 | chạy N1–N6, báo số |
+| 3 | AG-3 | chạy Đ1–Đ6, báo số |
 | 4 | Gun | duyệt |
 
 Bước 1 là chốt: kiểm thử viết **trước khi tồn tại mã cài đặt** thì không thể chỉ
@@ -242,7 +246,7 @@ Sáu luật cứng L1–L6 ở `docs/KE_HOACH_ANTIGRAVITY.md` §1 áp dụng ngu
 
 | Hạng mục | Điều kiện mở |
 |---|---|
-| V2 · đối chiếu ngược | sau khi V1 qua N1–N6 |
+| V2 · đối chiếu ngược | sau khi V1 qua Đ1–Đ6 |
 | V3 · chuỗi bằng chứng | sau khi V2 đạt trên mẫu nhỏ |
 | V4 · dò lỗi thời | **khoá cứng** cho tới khi V3 đạt — nguyên tắc ĐÚNG trước MỚI |
 

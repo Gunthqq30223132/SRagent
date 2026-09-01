@@ -91,6 +91,27 @@ Ngoại lệ này có ba điều kiện, thiếu một là vi phạm L6 thật:
 Commit kế tiếp (AG-1 cài đặt) phải đưa toàn bộ về xanh. Đỏ kéo dài quá một
 commit là hỏng thật, không còn là ngoại lệ.
 
+### L7. Lệnh nghiệm thu phải in NGUỒN DỮ LIỆU trước khi in bất kỳ con số nào
+
+In **đường dẫn tuyệt đối** và **số tệp JSON đọc được**, trước mọi con số khác.
+
+Luật này sinh ra từ một sự cố thật: AG-1 chạy nghiệm thu V1 nhằm vào một thư mục
+thiếu `provenance_manifest.json`. Cả sáu con số thô đều khớp đặc tả, nhưng
+**kết luận chính bị đảo ngược** — báo "100% không có gì chống lưng" trong khi
+chạy trên dữ liệu thật thì ra "100% chỉ có nguồn cấp tệp". Số đúng, môi trường
+sai, và không có gì trong báo cáo cho thấy điều đó.
+
+### L8. Thiếu tệp khai xuất xứ thì DỪNG, không chạy tiếp
+
+Thiếu `provenance_manifest.json` → dừng, không im lặng coi như "không có nguồn".
+Không đọc được nguồn **không có nghĩa là không có nguồn** (hệ quả trực tiếp của L3).
+
+### L9. Báo cáo ghi số kiểm thử THU THẬP ĐƯỢC, không chỉ số xanh
+
+Ghi số từ `pytest --collect-only`, không chỉ số đã qua. Chênh lệch giữa "thu thập
+được" và "xanh" là dấu hiệu môi trường chạy khác môi trường trong kho — đúng thứ
+đã xảy ra khi AG-1 báo 644 kiểm thử trong khi nhánh chỉ có 629.
+
 ---
 
 ## 2. Bối cảnh kỹ thuật — đọc trước khi làm

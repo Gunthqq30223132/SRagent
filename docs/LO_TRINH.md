@@ -45,7 +45,7 @@ kiểm thử nào phụ thuộc biến môi trường, không có tệp `test_*.
 Nên **15 kiểm thử kia chỉ tồn tại trên máy AG‑1 và chưa từng vào kho.**
 
 > Đây **cùng hạng lỗi** với sự cố thư mục dữ liệu: báo số đo từ một môi trường **không
-> phải** môi trường đang được kiểm. Luật N‑1/N‑2/N‑3 (§7) sinh ra để chặn đúng việc này.
+> phải** môi trường đang được kiểm. Luật L7/L8/L9 (§7) sinh ra để chặn đúng việc này.
 
 ### 2.2 · AnesthOS
 
@@ -185,7 +185,7 @@ dẫn **và phả hệ mỗi con số**. Hai nguồn cùng dẫn một bài 1978
 
 | Mã | Việc |
 |---|---|
-| **C0** | **Liệt kê N quyết định app phải ra** → suy ra tập cờ tối thiểu. Cờ không quyết định nào cần → thẻ tự do |
+| **C0** | **Liệt kê TOÀN BỘ quyết định app phải ra** → suy ra tập cờ tối thiểu. Cờ không quyết định nào cần → thẻ tự do |
 | **C1** | Cấu trúc lại bệnh van tim theo **bộ ba huyết động** (tần số · tiền tải · hậu tải · co bóp) |
 | **C2** | Mở rộng theo **miền nguồn**: `drugs` (683 P1) → `chronic_meds` (692) → `surgeries` (463) → `nora_locations` (123) → `lab_tests` (172) → `crisis_protocols` (30) |
 | **C3** | Rà lỗi thời + tìm khoảng trống y văn + đề xuất thiết kế nghiên cứu — dùng lại `THIET_KE_TOI_UU` trong `tools/dat_cau_hoi.py` |
@@ -222,18 +222,20 @@ số, chỉ ra khoá nào đếm khác, chuyển Gun quyết. Số nghiệm thu 
 |---|---|---|
 | mọi bước | `python3 -m pytest` | xanh hết; **số kiểm thử chỉ tăng** (luật L6) |
 | mọi bước | `bash scripts/gate_m6.sh` | qua — cổng **đóng khi không kiểm được** |
-| A1 | `python3 tools/<bộ đo>.py --chu-de thuoc-te` | in đường dẫn tuyệt đối + số tệp **trước** mọi con số (N‑1); tổng 4 trạng thái **= 54** |
-| A2 | `python3 tools/<kiểm biên>.py --du-lieu .../src/domain/data/` | **dừng** nếu thiếu `provenance_manifest.json` (N‑2); liệt kê **đích danh** cái vượt trần |
+| A1 | `python3 tools/<bộ đo>.py --chu-de thuoc-te` | in đường dẫn tuyệt đối + số tệp **trước** mọi con số (L7); tổng 4 trạng thái **= 54** |
+| A2 | `python3 tools/<kiểm biên>.py --du-lieu .../src/domain/data/` | **dừng** nếu thiếu `provenance_manifest.json` (L8); liệt kê **đích danh** cái vượt trần |
 | A3 | kiểm thử phả hệ có ca dựng sẵn **3 chặng** | bắt chung tổ tiên qua ≥2 chặng; ca thiếu danh mục → `KHONG_DO_DUOC`, **không** → `DOC_LAP` |
 
-**Ba luật nguồn dữ liệu** — sinh ra sau sự cố AG‑1 chạy nhầm vào thư mục thiếu
-`provenance_manifest.json`, khiến **kết luận chính bị đảo ngược** dù cả 6 số thô đều khớp:
+**Ba luật nguồn dữ liệu — `L7`, `L8`, `L9`**, khai đầy đủ ở
+`docs/KE_HOACH_ANTIGRAVITY.md` §1. Chúng sinh ra sau sự cố AG‑1 chạy nhầm vào thư mục
+thiếu `provenance_manifest.json`, khiến **kết luận chính bị đảo ngược** dù cả 6 số thô
+đều khớp:
 
 | Luật | Nội dung |
 |---|---|
-| **N‑1** | mọi lệnh nghiệm thu in **đường dẫn tuyệt đối + số tệp JSON đọc được** trước mọi con số khác |
-| **N‑2** | thiếu `provenance_manifest.json` → **DỪNG**, không im lặng chạy tiếp như "không có nguồn" |
-| **N‑3** | báo cáo ghi số kiểm thử `--collect-only` **thu thập được**, không chỉ số xanh |
+| **L7** | mọi lệnh nghiệm thu in **đường dẫn tuyệt đối + số tệp JSON đọc được** trước mọi con số khác |
+| **L8** | thiếu `provenance_manifest.json` → **DỪNG**, không im lặng chạy tiếp như "không có nguồn" |
+| **L9** | báo cáo ghi số kiểm thử `--collect-only` **thu thập được**, không chỉ số xanh |
 
 **Nguồn dữ liệu chốt bằng git, không bằng đường dẫn ổ đĩa:**
 
