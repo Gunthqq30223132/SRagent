@@ -177,36 +177,43 @@ class TestRangBuocBatBien:
                             khang_dinh="5 mg", muc_rui_ro=1)
         assert h.muc_phu is m.MucPhu.KHONG_CO
 
-    def test_chi_co_nguon_cap_tep_thi_la_CHI_CO_NGUON(self):
+    def test_chi_co_nguon_cap_tep_thi_la_NGUON_CAP_TEP(self):
         m = _mo_dun()
         h = m.HoSoBangChung(duong_dan="a.json#x", khoa="dose", khang_dinh="5 mg",
                             muc_rui_ro=1, nguon_khai="ASRA 2018 4th ed")
-        assert h.muc_phu is m.MucPhu.CHI_CO_NGUON
+        assert h.muc_phu is m.MucPhu.NGUON_CAP_TEP
 
-    def test_R2_chuoi_day_du_doi_DU_CA_BA_manh(self):
-        m = _mo_dun()
-        h = m.HoSoBangChung(
-            duong_dan="a.json#x", khoa="dose", khang_dinh="5 mg", muc_rui_ro=1,
+    # V1.R2 chuyển sang mô hình A0: `bo_ba` và `doi_chieu_nguoc` bị `nguon` +
+    # `pha_he` + `noi_dung_truy_duoc` thay thế (docs/DAC_TA_A0.md §3). Ràng buộc
+    # "thiếu một mắt là chưa đầy đủ" giữ nguyên, chỉ đổi cách biểu diễn.
+    # Kiểm thử chi tiết cho mô hình mới nằm ở tests/test_a0_bang_chung.py.
+
+    def _day_du_a0(self, m):
+        v = "sha256:aaaaaaaaaaaaaaaa"
+        return dict(
+            duong_dan="a.json#x", khoa="dose", khang_dinh="4.5", muc_rui_ro=1,
             nguon_khai="ASRA 2018 4th ed",
-            doi_chieu_nguoc=m.TrangThai.DAT,
-            bo_ba=[("5 mg", "dựa trên", "pubmed:26095867")],
-            bac_chung_cu=3,
+            nguon=[m.ToaDoNguon(ma_tai_lieu="pmid:1", loai_tai_lieu="huong_dan",
+                                vi_tri="bảng 3", trich_nguyen_van="max 4.5 mg/kg"),
+                   m.ToaDoNguon(ma_tai_lieu="pmid:2", loai_tai_lieu="nhan_thuoc",
+                                vi_tri="mục 2", trich_nguyen_van="not exceed 4.5 mg/kg")],
+            pha_he={"pmid:1": ["pmid:111"], "pmid:2": ["pmid:222"]},
+            bac_chung_cu=3, do_manh="1C",
+            van_tay_tham_dinh=v, van_tay_hien_tai=v,
         )
-        assert h.muc_phu is m.MucPhu.CO_CHUOI_DAY_DU
 
-    @pytest.mark.parametrize("thieu", ["doi_chieu_nguoc", "bo_ba", "bac_chung_cu"])
-    def test_R2_thieu_MOT_manh_thi_CHUA_day_du(self, thieu):
+    def test_R2_chuoi_day_du_doi_DU_moi_manh(self):
+        m = _mo_dun()
+        assert m.HoSoBangChung(**self._day_du_a0(m)).muc_phu is m.MucPhu.CO_CHUOI_DAY_DU
+
+    @pytest.mark.parametrize("thieu,gia_tri", [
+        ("nguon", []), ("pha_he", {}), ("bac_chung_cu", None), ("do_manh", None),
+    ])
+    def test_R2_thieu_MOT_manh_thi_CHUA_day_du(self, thieu, gia_tri):
         """Thiếu một mắt là chưa đầy đủ. Nới chỗ này là mở đường cho tự khai."""
         m = _mo_dun()
-        day_du = dict(
-            duong_dan="a.json#x", khoa="dose", khang_dinh="5 mg", muc_rui_ro=1,
-            nguon_khai="ASRA 2018 4th ed",
-            doi_chieu_nguoc=m.TrangThai.DAT,
-            bo_ba=[("5 mg", "dựa trên", "pubmed:26095867")],
-            bac_chung_cu=3,
-        )
-        day_du[thieu] = {"doi_chieu_nguoc": m.TrangThai.KHONG_KIEM_DUOC,
-                         "bo_ba": [], "bac_chung_cu": None}[thieu]
+        day_du = self._day_du_a0(m)
+        day_du[thieu] = gia_tri
         assert m.HoSoBangChung(**day_du).muc_phu is not m.MucPhu.CO_CHUOI_DAY_DU
 
     def test_R3_duong_dan_duy_nhat_trong_toan_bo_ket_qua(self, tmp_path):
