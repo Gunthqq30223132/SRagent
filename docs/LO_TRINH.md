@@ -129,11 +129,21 @@ SR-Agent. Nhưng nó là **bước cuối**, không phải bước đầu (nguy�
 | Mã | Việc | Nghiệm thu | Trạng thái |
 |---|---|---|---|
 | **A‑0** | Đưa lộ trình vào kho (`docs/LO_TRINH.md`) + quyết định tầng đồ thị vào `DECISIONS.md`; kéo `cb86e3a`; giải chênh 629/644; sửa `EF2`; **sửa cổng M6** | phiên mới đọc được lộ trình **không cần hỏi lại** | ✓ xong |
-| **A0** | Lược đồ **cấp dòng** + băm bộ ba `(nguồn ‖ mã rút ‖ lược đồ)` + **bốn trạng thái đồng thuận** + tách mức phủ thành 4 mức | nguồn đổi **hoặc** mã rút đổi → khẳng định **tự rơi về chưa-thẩm-định** | ⏳ **đặc tả xong** (`docs/DAC_TA_A0.md`) — chờ AG‑2 viết kiểm thử |
-| **A1** | **ĐO TỶ LỆ ĐO ĐƯỢC ĐỘC LẬP** trên 54 khẳng định thuốc tê — phép giao tập hợp thuần, **chưa thêm thư viện** | phân bố 4 trạng thái, tổng **= 54** | ○ |
-| **A2** | **Kiểm biên** — mọi liều đối chiếu trần nhãn DailyMed (XML, bóc tất định) | chạy trên **1.492** khẳng định; báo **đích danh** cái vượt trần | ○ |
+| **A0** | Lược đồ **cấp dòng** + băm bộ ba `(nguồn ‖ mã rút ‖ lược đồ)` + **bốn trạng thái đồng thuận** + tách mức phủ thành 4 mức | nguồn đổi **hoặc** mã rút đổi → khẳng định **tự rơi về chưa-thẩm-định** | ⏳ đặc tả + **100 kiểm thử đỏ** xong — chờ cài đặt |
+| **A3a** | Nối cửa `/references` **mức tối thiểu** — kéo lên TRƯỚC A1 | với bài đã biết trước danh mục: trả về đúng và đủ mã | ○ |
+| **A1** | **ĐO TỶ LỆ ĐO ĐƯỢC ĐỘC LẬP** trên 54 khẳng định P1 của `local_anesthetics.json` (**bản EN** — bản `_vi` trùng byte cũng có 54) | phân bố 4 trạng thái, tổng **= 54** | ○ |
+| **A2** | **Kiểm biên** — đối chiếu trần nhãn. Chạy **bất kể G1** | phạm vi **đo trước khi chạy** (A2.0); ca đối chứng dương phải bị bắt | ○ |
 | **A3** | Xây `tools/sources/tham_khao.py`; kiểm phả hệ **cấp khẳng định**. NetworkX vào đây **có điều kiện** | với một con số: trả về bài gốc **mỗi nguồn** dẫn; bắt chung tổ tiên qua ≥2 chặng | ○ |
 | **A4** | Đo độ nhạy truy vấn — báo **số bài sót + mã đích danh**, không báo phần trăm | 0 bài sót trên tập chuẩn | ○ |
+
+> **Vì sao A3a chen lên trước A1.** A1 đòi trưng phả hệ của từng nguồn, mà phả hệ lấy
+> qua cửa `/references` — cửa đó vốn xếp ở A3, tức **sau** A1. A1 sẽ không có dữ liệu
+> vào. Tách phần tối thiểu của A3 lên trước là lắp đầu dò trước khi đo.
+>
+> **Vì sao phạm vi A2 phải đo lại trước khi chạy.** Nhãn cũ "1.492 khẳng định liều"
+> **sai**: ~34% trong đó là `route`/`weightBasis`/`periop` — không có số để so trần —
+> trong khi liều thật ở `local_anesthetics` (54, có ca lidocaine 4,5), `nora_locations`,
+> `crisis_protocols` lại nằm ngoài. Đó là đặt nhãn trước khi đo.
 
 #### Bốn trạng thái đồng thuận
 
@@ -158,10 +168,21 @@ phần trăm danh mục tham khảo?"*
 > ký: *một người ký đủ cho bao nhiêu phần trăm?* **Chưa đo xong thì không hứa khối
 > lượng, không hứa thời hạn.**
 
-| Kết quả A1 | Nghĩa | Đi tiếp |
+A1 xếp 54 khẳng định vào **bốn** nhóm, nên quy tắc dừng phải có ô cho **cả bốn** —
+định trước, không nghĩ tiếp sau khi đã thấy số. Ngưỡng: **≥28/54** (đa số chặt).
+
+| Kết quả trội (≥28/54) | Nghĩa | Đi tiếp |
 |---|---|---|
-| phần lớn `DOC_LAP` | một người ký đủ | chạy Chặng B |
-| phần lớn `KHONG_DO_DUOC` | mô hình một-người-ký **không đủ** | **DỪNG**, thiết kế lại mức ký |
+| `DOC_LAP` | hai nguồn thật sự là hai bằng chứng | một-người-ký đứng được → **chạy Chặng B** |
+| `CHUNG_TO_TIEN` | đo được, nhưng cùng chép một gốc — nền bằng chứng **hẹp hơn vẻ ngoài** | đối chiếu chéo **không thay được** người ký thứ hai → **DỪNG**, thiết kế lại mức ký |
+| `KHONG_DO_DUOC_DOC_LAP` | nguồn không khai nó dẫn từ đâu | **DỪNG**, thiết kế lại |
+| `MOT_NGUON` | chỉ tìm được một nguồn | **DỪNG**, kèm câu hỏi riêng: vì sao y văn mỏng ở đây? |
+| *không nhóm nào ≥28* | bức tranh trộn | **coi như DỪNG** — không đủ căn cứ đi tiếp là dừng, không phải đi |
+
+**Ai quyết: Gun.** Đội chỉ nộp bảng phân bố + danh sách đích danh từng nhóm. Ca sát
+ngưỡng đưa Gun kèm số thô.
+
+**A2 không phụ thuộc cổng này** — dù G1 ra dừng hay đi tiếp, A2 vẫn chạy.
 
 ### 5.2 · Chặng B — chạy thử chủ đề thuốc tê (108 khẳng định · 54 P1)
 
@@ -240,8 +261,11 @@ thiếu `provenance_manifest.json`, khiến **kết luận chính bị đảo ng
 **Nguồn dữ liệu chốt bằng git, không bằng đường dẫn ổ đĩa:**
 
 ```bash
-git -C <AnesthOS-app> ls-tree -r --name-only origin/feat/p1-domain | grep domain/data
-# phải ra 23 tệp, có provenance_manifest.json
+git -C <AnesthOS-app> ls-tree -r --name-only origin/feat/p1-domain \
+  | grep 'domain/data/.*\.json$' | wc -l        # PHẢI ra 23
+
+# Lệnh trước thiếu `\.json$` nên bắt 25 dòng — dính index.ts và types.ts. Nó TRƯỢT
+# TRÊN DỮ LIỆU ĐÚNG: đội làm đúng lời sẽ phải dừng dù dữ liệu chuẩn.
 ```
 
 **Ca kiểm thử quan trọng nhất Chặng A** là ca âm tính: hai nguồn cùng dẫn một bài 1978

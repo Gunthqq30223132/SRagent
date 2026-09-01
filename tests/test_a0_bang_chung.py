@@ -69,6 +69,19 @@ def _toa_do(m, trich, ma="pmid:1", loai="huong_dan", vi_tri="bảng 3"):
                         vi_tri=vi_tri, trich_nguyen_van=trich)
 
 
+def _khong_co_so_truoc(ra: str, duong_dan: str) -> bool:
+    """Luật L7: không một CHỮ SỐ nào được in ra trước đường dẫn nguồn dữ liệu.
+
+    Chặt có chủ đích. Luật này sinh ra từ một sự cố thật: một lượt nghiệm thu
+    chạy nhầm thư mục, cả sáu số thô đều khớp, nhưng kết luận chính bị đảo ngược
+    và không gì trong báo cáo cho thấy điều đó. Nới ra để cho phép "số vô hại"
+    đứng trước là mở lại đúng khe đó.
+    """
+    if duong_dan not in ra:
+        return False
+    return not any(c.isdigit() for c in ra[: ra.index(duong_dan)])
+
+
 # ------------------------------------------------------------- §2.1 toạ độ nguồn
 
 class TestToaDoNguon:
@@ -590,17 +603,27 @@ class TestLuatNguonDuLieu:
             '{"drugs.json":{"citation":"Stoelting","synthetic":true}}', encoding="utf-8")
         return tmp_path
 
+    def test_CHINH_PHEP_KIEM_bat_duoc_ca_vi_pham(self):
+        """Chốt canh phải tự chứng minh nó có răng.
+
+        Bản trước viết `... or "1" in ra[:vi_tri]` — một cửa thoát: chuỗi "16417"
+        có chứa "1", nên một cài đặt in số TRƯỚC nguồn dữ liệu vẫn qua. Phép kiểm
+        chưa từng bắt được gì thì không có bằng chứng nào nói nó đang canh cái gì.
+        """
+        d = "/du/lieu"
+        assert _khong_co_so_truoc(f"Nguồn: {d}\n23 tệp\n16417 khẳng định\n", d)
+        assert not _khong_co_so_truoc(f"Tổng số khẳng định: 16417\nNguồn: {d}\n", d)
+        assert not _khong_co_so_truoc(f"Đọc 23 tệp\n{d}\n", d)
+        assert not _khong_co_so_truoc("không in đường dẫn nào", d)
+
     def test_L7_in_duong_dan_va_so_tep_TRUOC_moi_con_so_khac(self, tmp_path, capsys):
         m = _mo_dun()
         thu_muc = self._thu_muc_co_manifest(tmp_path)
         m.main(["--du-lieu", str(thu_muc)])
         ra = capsys.readouterr().out
-        assert str(thu_muc.resolve()) in ra, "không in đường dẫn TUYỆT ĐỐI"
-        vi_tri_duong_dan = ra.index(str(thu_muc.resolve()))
-        import re
-        so_dau_tien = re.search(r"\d", ra)
-        assert so_dau_tien is not None
-        assert so_dau_tien.start() >= vi_tri_duong_dan or "1" in ra[:vi_tri_duong_dan], \
+        duong_dan = str(thu_muc.resolve())
+        assert duong_dan in ra, "không in đường dẫn TUYỆT ĐỐI"
+        assert _khong_co_so_truoc(ra, duong_dan), \
             "có con số in ra TRƯỚC đường dẫn nguồn — vi phạm L7"
 
     def test_L8_thieu_manifest_thi_DUNG_khong_chay_tiep(self, tmp_path):

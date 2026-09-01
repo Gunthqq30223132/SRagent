@@ -375,8 +375,11 @@ python3 tools/so_phu_bang_chung.py --du-lieu <AnesthOS>/src/domain/data/
 > tìm thư mục trên ổ đĩa — vì đi tìm thư mục chính là cách sự cố cũ đã xảy ra (luật L7):
 >
 > ```bash
-> git -C <AnesthOS-app> ls-tree -r --name-only origin/feat/p1-domain | grep domain/data
-> # phải ra ĐÚNG 23 tệp, trong đó có provenance_manifest.json
+> git -C <AnesthOS-app> ls-tree -r --name-only origin/feat/p1-domain \
+>   | grep 'domain/data/.*\.json$' | wc -l      # PHẢI ra 23
+> #
+> # Lệnh trước thiếu `\.json$` nên bắt 25 dòng (dính index.ts, types.ts) — TRƯỢT
+> # TRÊN DỮ LIỆU ĐÚNG.
 > ```
 >
 > **Không bày được thì báo `KHÔNG ĐO ĐƯỢC`, tuyệt đối không báo ĐẠT** (nguyên tắc 4).
@@ -397,8 +400,22 @@ Thiếu `provenance_manifest.json` → **DỪNG** (luật L8).
 | Đ7 | Khẳng định **chứa chữ số** = **4.016**; riêng ưu tiên 1 = **1.630** | quy tắc đếm sai → dừng |
 | Đ8 | Khẳng định gặp `SO_NHAP_NHANG` = **14** (ưu tiên 1: **4**) | ra 0 nghĩa là bước 4 đang **đoán thay vì dừng** → dừng ngay |
 
-> **Đ7 đếm bằng phép nào** (Critic Q8). Đếm khẳng định mà **chuỗi chứa ít nhất một chữ
-> số** — KHÔNG phải đếm `len(the_so(x)) > 0`. Hai phép lệch nhau **đúng 4**: bốn khẳng
+> **Đ7 đếm trên TẬP NÀO, và bằng phép nào.**
+>
+> **Tập đếm: 16.417 khẳng định lâm sàng** — tức đã loại 3.862 lá nhãn/định danh/trình
+> bày. Đếm trên tập khác cho số khác, và cả hai đều đúng với câu hỏi của nó:
+>
+> | Tập | Kết quả |
+> |---|---|
+> | mọi lá, chỉ loại tệp khai xuất xứ | 4.092 |
+> | **chỉ 16.417 khẳng định lâm sàng** | **4.016** ← Đ7 dùng số này |
+>
+> Chênh 76 là số lá nhãn có chứa chữ số. Hai lượt đếm độc lập từng ra 4.016 và 4.092;
+> truy ra là **khác tập đếm, không phải sai phép đếm** — nên đặc tả phải nói rõ tập,
+> không chỉ nói phép.
+>
+> **Phép đếm:** khẳng định mà **chuỗi chứa ít nhất một chữ số** — KHÔNG phải đếm
+> `len(the_so(x)) > 0`. Hai phép lệch nhau **đúng 4**: bốn khẳng
 > định nhập nhằng ở ưu tiên 1 **có** chữ số nên nằm trong 1.630 của Đ7, nhưng `the_so()`
 > **ném lỗi** trên chúng nên phép đếm kia bỏ ra, cho 1.626.
 >
