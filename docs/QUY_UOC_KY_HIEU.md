@@ -56,7 +56,7 @@ Mọi ký hiệu, hiện tại và tương lai, đều xếp được bằng hai
 
 | Ký hiệu | Phạm vi | Vai trò | Nghĩa | Khai ở |
 |---|---|---|---|---|
-| **L1…L10** | toàn cục | luật | luật vận hành dự án | `KE_HOACH_ANTIGRAVITY.md` §1 |
+| **L1…L11** | toàn cục | luật | luật vận hành dự án (L11 → `CLAUDE.md`) | `KE_HOACH_ANTIGRAVITY.md` §1 |
 | **M0…M6** | toàn cục | mốc lộ trình | **chặng phát triển pipeline** (lịch sử, đã xong) — `gate_m6.sh` là cổng của M6 | `HANDOVER.md` |
 | **P1/P2/P3** | toàn cục | phân loại | **mức ưu tiên rủi ro** của một khẳng định (1 = chết người) | `DAC_TA_V1_SO_PHU.md` §2.3 |
 | **A / B / C** | toàn cục | mốc lộ trình | chặng lớn của lộ trình hiện hành | `LO_TRINH.md` §5 |

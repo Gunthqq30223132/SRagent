@@ -156,6 +156,26 @@ ngôn ngữ kỹ thuật.** Gun cần hiểu **cơ chế vận hành**, không c
 > Luật này áp cho **mọi** sản phẩm: đặc tả, kiểm thử, mã, tài liệu. Không có ngoại lệ
 > "việc này nhỏ" — việc nhỏ là chỗ dễ bỏ qua phản biện nhất.
 
+### L11. Trả lời Gun theo LUẬT TRẢ LỜI trong `CLAUDE.md`
+
+**Nguồn chân lý: `CLAUDE.md` §1–§12.** Ghi ở đó chứ không ghi ở đây, vì Claude Code tự
+nạp `CLAUDE.md` mỗi phiên — luật nằm trong `docs/` thì không có hiệu lực tự động.
+
+Bốn điều rút gọn, chi tiết xem `CLAUDE.md`:
+
+| # | Điều |
+|---|---|
+| 1 | **Câu đầu tiên là kết luận.** Không mở bài, không nhắc lại câu hỏi, không kết bài xã giao |
+| 2 | Chọn tầng **T1/T2/T3** trước khi viết. Mặc định T2. Không dùng cấu trúc T3 cho câu hỏi T1 |
+| 3 | So sánh ≥2 phương án hoặc ≥2 tiêu chí → **bảng**, không văn xuôi |
+| 4 | Công thức **Unicode**, cấm LaTeX. Không emoji |
+
+**Quan hệ với L10:** L10 nói *khi nào* được viết cho Gun (sau khi Critic xong). L11 nói
+*viết ra sao*. Không xung đột.
+
+**Vì sao thành luật:** tải nhận thức là chi phí thật. Gun là cổng ký duy nhất và có
+>8 giờ/tuần; mỗi câu thừa trong báo cáo là thời gian lấy khỏi việc chỉ mình anh làm được.
+
 ---
 
 ## 2. Bối cảnh kỹ thuật — đọc trước khi làm
