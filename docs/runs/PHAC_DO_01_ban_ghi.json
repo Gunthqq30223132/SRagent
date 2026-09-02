@@ -1,0 +1,684 @@
+[
+  {
+    "notebook_uuid": "e44dacda-9111-4f5c-8fd5-e0e448068b75",
+    "diem_quyet_dinh": "Q1",
+    "ma_doi_chieu": "lidocaine.maxDoseMgPerKg.plain",
+    "khang_dinh": "5",
+    "don_vi": "mg/kg",
+    "doi_tuong": "lidocaine, người lớn",
+    "dieu_kien": [
+      "KHÔNG kèm adrenaline"
+    ],
+    "trich_nguyen_van": "•\nDose – The dose of lidocaine should not exceed the following [5,14,15]:●\nLidocaine without epinephrine (also called plain lidocaine) – 5 mg/kg (0.5 mL/kg of lidocaine 1 percent, maximum total dose: 300 mg [30 mL of lidocaine 1 percent])\n•\nLidocaine with epinephrine – 7 mg/kg (0.7 mL/kg of lidocaine 1 percent, maximum total dose: 500 mg [50 mL of lidocaine 1 percent with epinephrine]).",
+    "nguon": {
+      "ten": "21. 2026 - UPTODATE - Subcutaneous infiltration of local anesthetics - UpToDate.pdf",
+      "trang": null,
+      "muc": "Dose"
+    },
+    "may_noi_gi": "trich_nguyen_van",
+    "canh_bao": []
+  },
+  {
+    "notebook_uuid": "e44dacda-9111-4f5c-8fd5-e0e448068b75",
+    "diem_quyet_dinh": "Q2",
+    "ma_doi_chieu": "lidocaine.maxDoseMgPerKg.withEpi",
+    "khang_dinh": "7",
+    "don_vi": "mg/kg",
+    "doi_tuong": "lidocaine, người lớn",
+    "dieu_kien": [
+      "CÓ kèm adrenaline"
+    ],
+    "trich_nguyen_van": "•\nDose – The dose of lidocaine should not exceed the following [5,14,15]:●\nLidocaine without epinephrine (also called plain lidocaine) – 5 mg/kg (0.5 mL/kg of lidocaine 1 percent, maximum total dose: 300 mg [30 mL of lidocaine 1 percent])\n•\nLidocaine with epinephrine – 7 mg/kg (0.7 mL/kg of lidocaine 1 percent, maximum total dose: 500 mg [50 mL of lidocaine 1 percent with epinephrine]).",
+    "nguon": {
+      "ten": "21. 2026 - UPTODATE - Subcutaneous infiltration of local anesthetics - UpToDate.pdf",
+      "trang": null,
+      "muc": "Dose"
+    },
+    "may_noi_gi": "trich_nguyen_van",
+    "canh_bao": []
+  },
+  {
+    "notebook_uuid": "e44dacda-9111-4f5c-8fd5-e0e448068b75",
+    "diem_quyet_dinh": "Q3",
+    "ma_doi_chieu": "lidocaine.maxDoseMg.plain",
+    "khang_dinh": "300",
+    "don_vi": "mg",
+    "doi_tuong": "lidocaine, người lớn",
+    "dieu_kien": [
+      "KHÔNG kèm adrenaline"
+    ],
+    "trich_nguyen_van": "•\nDose – The dose of lidocaine should not exceed the following [5,14,15]:●\nLidocaine without epinephrine (also called plain lidocaine) – 5 mg/kg (0.5 mL/kg of lidocaine 1 percent, maximum total dose: 300 mg [30 mL of lidocaine 1 percent])\n•\nLidocaine with epinephrine – 7 mg/kg (0.7 mL/kg of lidocaine 1 percent, maximum total dose: 500 mg [50 mL of lidocaine 1 percent with epinephrine]).",
+    "nguon": {
+      "ten": "21. 2026 - UPTODATE - Subcutaneous infiltration of local anesthetics - UpToDate.pdf",
+      "trang": null,
+      "muc": "Dose"
+    },
+    "may_noi_gi": "trich_nguyen_van",
+    "canh_bao": []
+  },
+  {
+    "notebook_uuid": "e44dacda-9111-4f5c-8fd5-e0e448068b75",
+    "diem_quyet_dinh": "Q4",
+    "ma_doi_chieu": "lidocaine.maxDoseMg.withEpi",
+    "khang_dinh": "500",
+    "don_vi": "mg",
+    "doi_tuong": "lidocaine, người lớn",
+    "dieu_kien": [
+      "CÓ kèm adrenaline"
+    ],
+    "trich_nguyen_van": "•\nDose – The dose of lidocaine should not exceed the following [5,14,15]:●\nLidocaine without epinephrine (also called plain lidocaine) – 5 mg/kg (0.5 mL/kg of lidocaine 1 percent, maximum total dose: 300 mg [30 mL of lidocaine 1 percent])\n•\nLidocaine with epinephrine – 7 mg/kg (0.7 mL/kg of lidocaine 1 percent, maximum total dose: 500 mg [50 mL of lidocaine 1 percent with epinephrine]).",
+    "nguon": {
+      "ten": "21. 2026 - UPTODATE - Subcutaneous infiltration of local anesthetics - UpToDate.pdf",
+      "trang": null,
+      "muc": "Dose"
+    },
+    "may_noi_gi": "trich_nguyen_van",
+    "canh_bao": []
+  },
+  {
+    "notebook_uuid": "e44dacda-9111-4f5c-8fd5-e0e448068b75",
+    "diem_quyet_dinh": "Q1",
+    "ma_doi_chieu": "bupivacaine.maxDoseMgPerKg.plain",
+    "khang_dinh": "2",
+    "don_vi": "mg/kg",
+    "doi_tuong": "bupivacaine, người lớn",
+    "dieu_kien": [
+      "KHÔNG kèm adrenaline"
+    ],
+    "trich_nguyen_van": "Dose – The dose of bupivacaine should not exceed the following [12]:●\nBupivacaine without epinephrine – 2 mg/kg (0.8 mL/kg of bupivacaine 0.25 percent, maximum total dose: 175 mg [70 mL of bupivacaine 0.25 percent])\n•\nBupivacaine with epinephrine – 3 mg/kg (1.2 mL/kg of bupivacaine 0.25 percent, maximum total dose: 225 mg [90 mL of bupivacaine 0.25 percent with epinephrine])",
+    "nguon": {
+      "ten": "21. 2026 - UPTODATE - Subcutaneous infiltration of local anesthetics - UpToDate.pdf",
+      "trang": null,
+      "muc": "Dose"
+    },
+    "may_noi_gi": "trich_nguyen_van",
+    "canh_bao": []
+  },
+  {
+    "notebook_uuid": "e44dacda-9111-4f5c-8fd5-e0e448068b75",
+    "diem_quyet_dinh": "Q2",
+    "ma_doi_chieu": "bupivacaine.maxDoseMgPerKg.withEpi",
+    "khang_dinh": "3",
+    "don_vi": "mg/kg",
+    "doi_tuong": "bupivacaine, người lớn",
+    "dieu_kien": [
+      "CÓ kèm adrenaline"
+    ],
+    "trich_nguyen_van": "Dose – The dose of bupivacaine should not exceed the following [12]:●\nBupivacaine without epinephrine – 2 mg/kg (0.8 mL/kg of bupivacaine 0.25 percent, maximum total dose: 175 mg [70 mL of bupivacaine 0.25 percent])\n•\nBupivacaine with epinephrine – 3 mg/kg (1.2 mL/kg of bupivacaine 0.25 percent, maximum total dose: 225 mg [90 mL of bupivacaine 0.25 percent with epinephrine])",
+    "nguon": {
+      "ten": "21. 2026 - UPTODATE - Subcutaneous infiltration of local anesthetics - UpToDate.pdf",
+      "trang": null,
+      "muc": "Dose"
+    },
+    "may_noi_gi": "trich_nguyen_van",
+    "canh_bao": []
+  },
+  {
+    "notebook_uuid": "e44dacda-9111-4f5c-8fd5-e0e448068b75",
+    "diem_quyet_dinh": "Q3",
+    "ma_doi_chieu": "bupivacaine.maxDoseMg.plain",
+    "khang_dinh": "175",
+    "don_vi": "mg",
+    "doi_tuong": "bupivacaine, người lớn",
+    "dieu_kien": [
+      "KHÔNG kèm adrenaline"
+    ],
+    "trich_nguyen_van": "Dose – The dose of bupivacaine should not exceed the following [12]:●\nBupivacaine without epinephrine – 2 mg/kg (0.8 mL/kg of bupivacaine 0.25 percent, maximum total dose: 175 mg [70 mL of bupivacaine 0.25 percent])\n•\nBupivacaine with epinephrine – 3 mg/kg (1.2 mL/kg of bupivacaine 0.25 percent, maximum total dose: 225 mg [90 mL of bupivacaine 0.25 percent with epinephrine])",
+    "nguon": {
+      "ten": "21. 2026 - UPTODATE - Subcutaneous infiltration of local anesthetics - UpToDate.pdf",
+      "trang": null,
+      "muc": "Dose"
+    },
+    "may_noi_gi": "trich_nguyen_van",
+    "canh_bao": []
+  },
+  {
+    "notebook_uuid": "e44dacda-9111-4f5c-8fd5-e0e448068b75",
+    "diem_quyet_dinh": "Q4",
+    "ma_doi_chieu": "bupivacaine.maxDoseMg.withEpi",
+    "khang_dinh": "225",
+    "don_vi": "mg",
+    "doi_tuong": "bupivacaine, người lớn",
+    "dieu_kien": [
+      "CÓ kèm adrenaline"
+    ],
+    "trich_nguyen_van": "Dose – The dose of bupivacaine should not exceed the following [12]:●\nBupivacaine without epinephrine – 2 mg/kg (0.8 mL/kg of bupivacaine 0.25 percent, maximum total dose: 175 mg [70 mL of bupivacaine 0.25 percent])\n•\nBupivacaine with epinephrine – 3 mg/kg (1.2 mL/kg of bupivacaine 0.25 percent, maximum total dose: 225 mg [90 mL of bupivacaine 0.25 percent with epinephrine])",
+    "nguon": {
+      "ten": "21. 2026 - UPTODATE - Subcutaneous infiltration of local anesthetics - UpToDate.pdf",
+      "trang": null,
+      "muc": "Dose"
+    },
+    "may_noi_gi": "trich_nguyen_van",
+    "canh_bao": []
+  },
+  {
+    "notebook_uuid": "e44dacda-9111-4f5c-8fd5-e0e448068b75",
+    "diem_quyet_dinh": "Q1",
+    "ma_doi_chieu": "levobupivacaine.maxDoseMgPerKg.plain",
+    "khang_dinh": "2",
+    "don_vi": "mg/kg",
+    "doi_tuong": "levobupivacaine, người lớn",
+    "dieu_kien": [
+      "KHÔNG kèm adrenaline"
+    ],
+    "trich_nguyen_van": "MAXIMUM DOSE WITH EPINEPHRINE (mg/kg)\nChloroprocaine 11 14\nLidocaine 5 7\nMepivacaine 5 7\nPrilocaine 6-7 8\nRopivacaine 3 -\nLevobupivacaine 2 3\nBupivacaine 2 3-4",
+    "nguon": {
+      "ten": "4. 2022 - Hadzic's Peripheral Nerve Blocks and Anatomy - CHAPTER 2 - Local Anesthetics - Clinical Pharmacology and Selection.pdf",
+      "trang": null,
+      "muc": "Table 2-1"
+    },
+    "may_noi_gi": "trich_nguyen_van",
+    "canh_bao": []
+  },
+  {
+    "notebook_uuid": "e44dacda-9111-4f5c-8fd5-e0e448068b75",
+    "diem_quyet_dinh": "Q2",
+    "ma_doi_chieu": "levobupivacaine.maxDoseMgPerKg.withEpi",
+    "khang_dinh": "3",
+    "don_vi": "mg/kg",
+    "doi_tuong": "levobupivacaine, người lớn",
+    "dieu_kien": [
+      "CÓ kèm adrenaline"
+    ],
+    "trich_nguyen_van": "MAXIMUM DOSE WITH EPINEPHRINE (mg/kg)\nChloroprocaine 11 14\nLidocaine 5 7\nMepivacaine 5 7\nPrilocaine 6-7 8\nRopivacaine 3 -\nLevobupivacaine 2 3\nBupivacaine 2 3-4",
+    "nguon": {
+      "ten": "4. 2022 - Hadzic's Peripheral Nerve Blocks and Anatomy - CHAPTER 2 - Local Anesthetics - Clinical Pharmacology and Selection.pdf",
+      "trang": null,
+      "muc": "Table 2-1"
+    },
+    "may_noi_gi": "trich_nguyen_van",
+    "canh_bao": []
+  },
+  {
+    "notebook_uuid": "e44dacda-9111-4f5c-8fd5-e0e448068b75",
+    "diem_quyet_dinh": "Q3",
+    "ma_doi_chieu": "levobupivacaine.maxDoseMg.plain",
+    "khang_dinh": "150",
+    "don_vi": "mg",
+    "doi_tuong": "levobupivacaine, người lớn",
+    "dieu_kien": [
+      "KHÔNG kèm adrenaline"
+    ],
+    "trich_nguyen_van": "Section Basic sciences| 1 |\nTable 5.2 Maximum doses of local anaesthetics given as a bolus. Patient ideal body weight should be used\nPlain (mg)\nPlain per kg (mg kg−1)\nWith adrenaline (mg)\nWith adrenaline (mg kg−1)\nOver 24 h (mg)\nChloroprocaine 800 11 1000 mg 13\nPrilocaine 400 6 600 mg 8\nLidocaine 200 3 500 mg 7\nMepivacaine 400 6 500 mga 8a\nBupivacaine 150 2 225 mg 3 400\nLevobupivacaine 150 2 n/a n/a 400\nRopivacaine 250 3 n/a n/a 800",
+    "nguon": {
+      "ten": "5. 2026 - Textbook_of_Anaesthesia - Chapter 5 - Local anaesthetics.pdf",
+      "trang": null,
+      "muc": "Table 5.2"
+    },
+    "may_noi_gi": "trich_nguyen_van",
+    "canh_bao": []
+  },
+  {
+    "notebook_uuid": "e44dacda-9111-4f5c-8fd5-e0e448068b75",
+    "diem_quyet_dinh": "Q1",
+    "ma_doi_chieu": "ropivacaine.maxDoseMgPerKg.plain",
+    "khang_dinh": "3",
+    "don_vi": "mg/kg",
+    "doi_tuong": "ropivacaine, người lớn",
+    "dieu_kien": [
+      "KHÔNG kèm adrenaline"
+    ],
+    "trich_nguyen_van": "Section Basic sciences| 1 |\nTable 5.2 Maximum doses of local anaesthetics given as a bolus. Patient ideal body weight should be used\nPlain (mg)\nPlain per kg (mg kg−1)\nWith adrenaline (mg)\nWith adrenaline (mg kg−1)\nOver 24 h (mg)\nChloroprocaine 800 11 1000 mg 13\nPrilocaine 400 6 600 mg 8\nLidocaine 200 3 500 mg 7\nMepivacaine 400 6 500 mga 8a\nBupivacaine 150 2 225 mg 3 400\nLevobupivacaine 150 2 n/a n/a 400\nRopivacaine 250 3 n/a n/a 800",
+    "nguon": {
+      "ten": "5. 2026 - Textbook_of_Anaesthesia - Chapter 5 - Local anaesthetics.pdf",
+      "trang": null,
+      "muc": "Table 5.2"
+    },
+    "may_noi_gi": "trich_nguyen_van",
+    "canh_bao": []
+  },
+  {
+    "notebook_uuid": "e44dacda-9111-4f5c-8fd5-e0e448068b75",
+    "diem_quyet_dinh": "Q3",
+    "ma_doi_chieu": "ropivacaine.maxDoseMg.plain",
+    "khang_dinh": "250",
+    "don_vi": "mg",
+    "doi_tuong": "ropivacaine, người lớn",
+    "dieu_kien": [
+      "KHÔNG kèm adrenaline"
+    ],
+    "trich_nguyen_van": "Section Basic sciences| 1 |\nTable 5.2 Maximum doses of local anaesthetics given as a bolus. Patient ideal body weight should be used\nPlain (mg)\nPlain per kg (mg kg−1)\nWith adrenaline (mg)\nWith adrenaline (mg kg−1)\nOver 24 h (mg)\nChloroprocaine 800 11 1000 mg 13\nPrilocaine 400 6 600 mg 8\nLidocaine 200 3 500 mg 7\nMepivacaine 400 6 500 mga 8a\nBupivacaine 150 2 225 mg 3 400\nLevobupivacaine 150 2 n/a n/a 400\nRopivacaine 250 3 n/a n/a 800",
+    "nguon": {
+      "ten": "5. 2026 - Textbook_of_Anaesthesia - Chapter 5 - Local anaesthetics.pdf",
+      "trang": null,
+      "muc": "Table 5.2"
+    },
+    "may_noi_gi": "trich_nguyen_van",
+    "canh_bao": []
+  },
+  {
+    "notebook_uuid": "e44dacda-9111-4f5c-8fd5-e0e448068b75",
+    "diem_quyet_dinh": "Q1",
+    "ma_doi_chieu": "mepivacaine.maxDoseMgPerKg.plain",
+    "khang_dinh": "5",
+    "don_vi": "mg/kg",
+    "doi_tuong": "mepivacaine, người lớn",
+    "dieu_kien": [
+      "KHÔNG kèm adrenaline"
+    ],
+    "trich_nguyen_van": "MAXIMUM DOSE WITH EPINEPHRINE (mg/kg)\nChloroprocaine 11 14\nLidocaine 5 7\nMepivacaine 5 7\nPrilocaine 6-7 8\nRopivacaine 3 -\nLevobupivacaine 2 3\nBupivacaine 2 3-4",
+    "nguon": {
+      "ten": "4. 2022 - Hadzic's Peripheral Nerve Blocks and Anatomy - CHAPTER 2 - Local Anesthetics - Clinical Pharmacology and Selection.pdf",
+      "trang": null,
+      "muc": "Table 2-1"
+    },
+    "may_noi_gi": "trich_nguyen_van",
+    "canh_bao": []
+  },
+  {
+    "notebook_uuid": "e44dacda-9111-4f5c-8fd5-e0e448068b75",
+    "diem_quyet_dinh": "Q2",
+    "ma_doi_chieu": "mepivacaine.maxDoseMgPerKg.withEpi",
+    "khang_dinh": "7",
+    "don_vi": "mg/kg",
+    "doi_tuong": "mepivacaine, người lớn",
+    "dieu_kien": [
+      "CÓ kèm adrenaline"
+    ],
+    "trich_nguyen_van": "MAXIMUM DOSE WITH EPINEPHRINE (mg/kg)\nChloroprocaine 11 14\nLidocaine 5 7\nMepivacaine 5 7\nPrilocaine 6-7 8\nRopivacaine 3 -\nLevobupivacaine 2 3\nBupivacaine 2 3-4",
+    "nguon": {
+      "ten": "4. 2022 - Hadzic's Peripheral Nerve Blocks and Anatomy - CHAPTER 2 - Local Anesthetics - Clinical Pharmacology and Selection.pdf",
+      "trang": null,
+      "muc": "Table 2-1"
+    },
+    "may_noi_gi": "trich_nguyen_van",
+    "canh_bao": []
+  },
+  {
+    "notebook_uuid": "e44dacda-9111-4f5c-8fd5-e0e448068b75",
+    "diem_quyet_dinh": "Q3",
+    "ma_doi_chieu": "mepivacaine.maxDoseMg.plain",
+    "khang_dinh": "400",
+    "don_vi": "mg",
+    "doi_tuong": "mepivacaine, người lớn",
+    "dieu_kien": [
+      "KHÔNG kèm adrenaline"
+    ],
+    "trich_nguyen_van": "Section Basic sciences| 1 |\nTable 5.2 Maximum doses of local anaesthetics given as a bolus. Patient ideal body weight should be used\nPlain (mg)\nPlain per kg (mg kg−1)\nWith adrenaline (mg)\nWith adrenaline (mg kg−1)\nOver 24 h (mg)\nChloroprocaine 800 11 1000 mg 13\nPrilocaine 400 6 600 mg 8\nLidocaine 200 3 500 mg 7\nMepivacaine 400 6 500 mga 8a\nBupivacaine 150 2 225 mg 3 400\nLevobupivacaine 150 2 n/a n/a 400\nRopivacaine 250 3 n/a n/a 800",
+    "nguon": {
+      "ten": "5. 2026 - Textbook_of_Anaesthesia - Chapter 5 - Local anaesthetics.pdf",
+      "trang": null,
+      "muc": "Table 5.2"
+    },
+    "may_noi_gi": "trich_nguyen_van",
+    "canh_bao": []
+  },
+  {
+    "notebook_uuid": "e44dacda-9111-4f5c-8fd5-e0e448068b75",
+    "diem_quyet_dinh": "Q4",
+    "ma_doi_chieu": "mepivacaine.maxDoseMg.withEpi",
+    "khang_dinh": "500",
+    "don_vi": "mg",
+    "doi_tuong": "mepivacaine, người lớn",
+    "dieu_kien": [
+      "CÓ kèm adrenaline"
+    ],
+    "trich_nguyen_van": "Section Basic sciences| 1 |\nTable 5.2 Maximum doses of local anaesthetics given as a bolus. Patient ideal body weight should be used\nPlain (mg)\nPlain per kg (mg kg−1)\nWith adrenaline (mg)\nWith adrenaline (mg kg−1)\nOver 24 h (mg)\nChloroprocaine 800 11 1000 mg 13\nPrilocaine 400 6 600 mg 8\nLidocaine 200 3 500 mg 7\nMepivacaine 400 6 500 mga 8a\nBupivacaine 150 2 225 mg 3 400\nLevobupivacaine 150 2 n/a n/a 400\nRopivacaine 250 3 n/a n/a 800",
+    "nguon": {
+      "ten": "5. 2026 - Textbook_of_Anaesthesia - Chapter 5 - Local anaesthetics.pdf",
+      "trang": null,
+      "muc": "Table 5.2"
+    },
+    "may_noi_gi": "trich_nguyen_van",
+    "canh_bao": []
+  },
+  {
+    "notebook_uuid": "e44dacda-9111-4f5c-8fd5-e0e448068b75",
+    "diem_quyet_dinh": "Q1",
+    "ma_doi_chieu": "prilocaine.maxDoseMgPerKg.plain",
+    "khang_dinh": "6",
+    "don_vi": "mg/kg",
+    "doi_tuong": "prilocaine, người lớn",
+    "dieu_kien": [
+      "KHÔNG kèm adrenaline"
+    ],
+    "trich_nguyen_van": "Section Basic sciences| 1 |\nTable 5.2 Maximum doses of local anaesthetics given as a bolus. Patient ideal body weight should be used\nPlain (mg)\nPlain per kg (mg kg−1)\nWith adrenaline (mg)\nWith adrenaline (mg kg−1)\nOver 24 h (mg)\nChloroprocaine 800 11 1000 mg 13\nPrilocaine 400 6 600 mg 8\nLidocaine 200 3 500 mg 7\nMepivacaine 400 6 500 mga 8a\nBupivacaine 150 2 225 mg 3 400\nLevobupivacaine 150 2 n/a n/a 400\nRopivacaine 250 3 n/a n/a 800",
+    "nguon": {
+      "ten": "5. 2026 - Textbook_of_Anaesthesia - Chapter 5 - Local anaesthetics.pdf",
+      "trang": null,
+      "muc": "Table 5.2"
+    },
+    "may_noi_gi": "trich_nguyen_van",
+    "canh_bao": []
+  },
+  {
+    "notebook_uuid": "e44dacda-9111-4f5c-8fd5-e0e448068b75",
+    "diem_quyet_dinh": "Q2",
+    "ma_doi_chieu": "prilocaine.maxDoseMgPerKg.withEpi",
+    "khang_dinh": "8",
+    "don_vi": "mg/kg",
+    "doi_tuong": "prilocaine, người lớn",
+    "dieu_kien": [
+      "CÓ kèm adrenaline"
+    ],
+    "trich_nguyen_van": "Section Basic sciences| 1 |\nTable 5.2 Maximum doses of local anaesthetics given as a bolus. Patient ideal body weight should be used\nPlain (mg)\nPlain per kg (mg kg−1)\nWith adrenaline (mg)\nWith adrenaline (mg kg−1)\nOver 24 h (mg)\nChloroprocaine 800 11 1000 mg 13\nPrilocaine 400 6 600 mg 8\nLidocaine 200 3 500 mg 7\nMepivacaine 400 6 500 mga 8a\nBupivacaine 150 2 225 mg 3 400\nLevobupivacaine 150 2 n/a n/a 400\nRopivacaine 250 3 n/a n/a 800",
+    "nguon": {
+      "ten": "5. 2026 - Textbook_of_Anaesthesia - Chapter 5 - Local anaesthetics.pdf",
+      "trang": null,
+      "muc": "Table 5.2"
+    },
+    "may_noi_gi": "trich_nguyen_van",
+    "canh_bao": []
+  },
+  {
+    "notebook_uuid": "e44dacda-9111-4f5c-8fd5-e0e448068b75",
+    "diem_quyet_dinh": "Q3",
+    "ma_doi_chieu": "prilocaine.maxDoseMg.plain",
+    "khang_dinh": "400",
+    "don_vi": "mg",
+    "doi_tuong": "prilocaine, người lớn",
+    "dieu_kien": [
+      "KHÔNG kèm adrenaline"
+    ],
+    "trich_nguyen_van": "Section Basic sciences| 1 |\nTable 5.2 Maximum doses of local anaesthetics given as a bolus. Patient ideal body weight should be used\nPlain (mg)\nPlain per kg (mg kg−1)\nWith adrenaline (mg)\nWith adrenaline (mg kg−1)\nOver 24 h (mg)\nChloroprocaine 800 11 1000 mg 13\nPrilocaine 400 6 600 mg 8\nLidocaine 200 3 500 mg 7\nMepivacaine 400 6 500 mga 8a\nBupivacaine 150 2 225 mg 3 400\nLevobupivacaine 150 2 n/a n/a 400\nRopivacaine 250 3 n/a n/a 800",
+    "nguon": {
+      "ten": "5. 2026 - Textbook_of_Anaesthesia - Chapter 5 - Local anaesthetics.pdf",
+      "trang": null,
+      "muc": "Table 5.2"
+    },
+    "may_noi_gi": "trich_nguyen_van",
+    "canh_bao": []
+  },
+  {
+    "notebook_uuid": "e44dacda-9111-4f5c-8fd5-e0e448068b75",
+    "diem_quyet_dinh": "Q4",
+    "ma_doi_chieu": "prilocaine.maxDoseMg.withEpi",
+    "khang_dinh": "600",
+    "don_vi": "mg",
+    "doi_tuong": "prilocaine, người lớn",
+    "dieu_kien": [
+      "CÓ kèm adrenaline"
+    ],
+    "trich_nguyen_van": "Section Basic sciences| 1 |\nTable 5.2 Maximum doses of local anaesthetics given as a bolus. Patient ideal body weight should be used\nPlain (mg)\nPlain per kg (mg kg−1)\nWith adrenaline (mg)\nWith adrenaline (mg kg−1)\nOver 24 h (mg)\nChloroprocaine 800 11 1000 mg 13\nPrilocaine 400 6 600 mg 8\nLidocaine 200 3 500 mg 7\nMepivacaine 400 6 500 mga 8a\nBupivacaine 150 2 225 mg 3 400\nLevobupivacaine 150 2 n/a n/a 400\nRopivacaine 250 3 n/a n/a 800",
+    "nguon": {
+      "ten": "5. 2026 - Textbook_of_Anaesthesia - Chapter 5 - Local anaesthetics.pdf",
+      "trang": null,
+      "muc": "Table 5.2"
+    },
+    "may_noi_gi": "trich_nguyen_van",
+    "canh_bao": []
+  },
+  {
+    "notebook_uuid": "e44dacda-9111-4f5c-8fd5-e0e448068b75",
+    "diem_quyet_dinh": "Q1",
+    "ma_doi_chieu": "chloroprocaine.maxDoseMgPerKg.plain",
+    "khang_dinh": "11",
+    "don_vi": "mg/kg",
+    "doi_tuong": "2-chloroprocaine, người lớn",
+    "dieu_kien": [
+      "KHÔNG kèm adrenaline"
+    ],
+    "trich_nguyen_van": "Section Basic sciences| 1 |\nTable 5.2 Maximum doses of local anaesthetics given as a bolus. Patient ideal body weight should be used\nPlain (mg)\nPlain per kg (mg kg−1)\nWith adrenaline (mg)\nWith adrenaline (mg kg−1)\nOver 24 h (mg)\nChloroprocaine 800 11 1000 mg 13\nPrilocaine 400 6 600 mg 8\nLidocaine 200 3 500 mg 7\nMepivacaine 400 6 500 mga 8a\nBupivacaine 150 2 225 mg 3 400\nLevobupivacaine 150 2 n/a n/a 400\nRopivacaine 250 3 n/a n/a 800",
+    "nguon": {
+      "ten": "5. 2026 - Textbook_of_Anaesthesia - Chapter 5 - Local anaesthetics.pdf",
+      "trang": null,
+      "muc": "Table 5.2"
+    },
+    "may_noi_gi": "trich_nguyen_van",
+    "canh_bao": []
+  },
+  {
+    "notebook_uuid": "e44dacda-9111-4f5c-8fd5-e0e448068b75",
+    "diem_quyet_dinh": "Q2",
+    "ma_doi_chieu": "chloroprocaine.maxDoseMgPerKg.withEpi",
+    "khang_dinh": "14",
+    "don_vi": "mg/kg",
+    "doi_tuong": "2-chloroprocaine, người lớn",
+    "dieu_kien": [
+      "CÓ kèm adrenaline"
+    ],
+    "trich_nguyen_van": "MAXIMUM DOSE WITH EPINEPHRINE (mg/kg)\nChloroprocaine 11 14\nLidocaine 5 7\nMepivacaine 5 7\nPrilocaine 6-7 8\nRopivacaine 3 -\nLevobupivacaine 2 3\nBupivacaine 2 3-4",
+    "nguon": {
+      "ten": "4. 2022 - Hadzic's Peripheral Nerve Blocks and Anatomy - CHAPTER 2 - Local Anesthetics - Clinical Pharmacology and Selection.pdf",
+      "trang": null,
+      "muc": "Table 2-1"
+    },
+    "may_noi_gi": "trich_nguyen_van",
+    "canh_bao": []
+  },
+  {
+    "notebook_uuid": "e44dacda-9111-4f5c-8fd5-e0e448068b75",
+    "diem_quyet_dinh": "Q3",
+    "ma_doi_chieu": "chloroprocaine.maxDoseMg.plain",
+    "khang_dinh": "800",
+    "don_vi": "mg",
+    "doi_tuong": "2-chloroprocaine, người lớn",
+    "dieu_kien": [
+      "KHÔNG kèm adrenaline"
+    ],
+    "trich_nguyen_van": "Section Basic sciences| 1 |\nTable 5.2 Maximum doses of local anaesthetics given as a bolus. Patient ideal body weight should be used\nPlain (mg)\nPlain per kg (mg kg−1)\nWith adrenaline (mg)\nWith adrenaline (mg kg−1)\nOver 24 h (mg)\nChloroprocaine 800 11 1000 mg 13\nPrilocaine 400 6 600 mg 8\nLidocaine 200 3 500 mg 7\nMepivacaine 400 6 500 mga 8a\nBupivacaine 150 2 225 mg 3 400\nLevobupivacaine 150 2 n/a n/a 400\nRopivacaine 250 3 n/a n/a 800",
+    "nguon": {
+      "ten": "5. 2026 - Textbook_of_Anaesthesia - Chapter 5 - Local anaesthetics.pdf",
+      "trang": null,
+      "muc": "Table 5.2"
+    },
+    "may_noi_gi": "trich_nguyen_van",
+    "canh_bao": []
+  },
+  {
+    "notebook_uuid": "e44dacda-9111-4f5c-8fd5-e0e448068b75",
+    "diem_quyet_dinh": "Q4",
+    "ma_doi_chieu": "chloroprocaine.maxDoseMg.withEpi",
+    "khang_dinh": "1000",
+    "don_vi": "mg",
+    "doi_tuong": "2-chloroprocaine, người lớn",
+    "dieu_kien": [
+      "CÓ kèm adrenaline"
+    ],
+    "trich_nguyen_van": "Section Basic sciences| 1 |\nTable 5.2 Maximum doses of local anaesthetics given as a bolus. Patient ideal body weight should be used\nPlain (mg)\nPlain per kg (mg kg−1)\nWith adrenaline (mg)\nWith adrenaline (mg kg−1)\nOver 24 h (mg)\nChloroprocaine 800 11 1000 mg 13\nPrilocaine 400 6 600 mg 8\nLidocaine 200 3 500 mg 7\nMepivacaine 400 6 500 mga 8a\nBupivacaine 150 2 225 mg 3 400\nLevobupivacaine 150 2 n/a n/a 400\nRopivacaine 250 3 n/a n/a 800",
+    "nguon": {
+      "ten": "5. 2026 - Textbook_of_Anaesthesia - Chapter 5 - Local anaesthetics.pdf",
+      "trang": null,
+      "muc": "Table 5.2"
+    },
+    "may_noi_gi": "trich_nguyen_van",
+    "canh_bao": []
+  },
+  {
+    "notebook_uuid": "e44dacda-9111-4f5c-8fd5-e0e448068b75",
+    "diem_quyet_dinh": "Q5",
+    "ma_doi_chieu": null,
+    "khang_dinh": "80",
+    "don_vi": "%",
+    "doi_tuong": "thuốc tê nhóm amide, trẻ em dưới 8 tuổi",
+    "dieu_kien": [
+      "trẻ em dưới 8 tuổi"
+    ],
+    "trich_nguyen_van": "For an added margin of safety, 80 percent of the maximum allowable dose should be used in children under eight years of age [1]. In addition, because anesthetics in the amide class are metabolized by the liver and excreted by the kidneys, the total dose of lidocaine should be decreased by approximately 50 percent in older adults with severe liver or kidney disease [7,16].",
+    "nguon": {
+      "ten": "21. 2026 - UPTODATE - Subcutaneous infiltration of local anesthetics - UpToDate.pdf",
+      "trang": null,
+      "muc": "Dose"
+    },
+    "may_noi_gi": "trich_nguyen_van",
+    "canh_bao": []
+  },
+  {
+    "notebook_uuid": "e44dacda-9111-4f5c-8fd5-e0e448068b75",
+    "diem_quyet_dinh": "Q5",
+    "ma_doi_chieu": null,
+    "khang_dinh": "50",
+    "don_vi": "%",
+    "doi_tuong": "lidocaine, người cao tuổi có suy gan nặng hoặc suy thận nặng",
+    "dieu_kien": [
+      "người cao tuổi",
+      "suy gan nặng hoặc suy thận nặng"
+    ],
+    "trich_nguyen_van": "For an added margin of safety, 80 percent of the maximum allowable dose should be used in children under eight years of age [1]. In addition, because anesthetics in the amide class are metabolized by the liver and excreted by the kidneys, the total dose of lidocaine should be decreased by approximately 50 percent in older adults with severe liver or kidney disease [7,16].",
+    "nguon": {
+      "ten": "21. 2026 - UPTODATE - Subcutaneous infiltration of local anesthetics - UpToDate.pdf",
+      "trang": null,
+      "muc": "Dose"
+    },
+    "may_noi_gi": "trich_nguyen_van",
+    "canh_bao": []
+  },
+  {
+    "notebook_uuid": "e44dacda-9111-4f5c-8fd5-e0e448068b75",
+    "diem_quyet_dinh": "Q5",
+    "ma_doi_chieu": null,
+    "khang_dinh": "one-third",
+    "don_vi": null,
+    "doi_tuong": "thuốc tê gây tê tủy sống và ngoài màng cứng, phụ nữ mang thai",
+    "dieu_kien": [
+      "phụ nữ mang thai"
+    ],
+    "trich_nguyen_van": "Pregnancy enhances the neural susceptibility to local anesthetics, and local anesthetic requirements for epidural and spinal anesthesia are reduced by up to one-third during pregnancy.",
+    "nguon": {
+      "ten": "3. 2022 - Stoelting's Pharmacology and Physiology in Anesthetic - CAPTER 10 Local Anesthetics.pdf",
+      "trang": null,
+      "muc": "Pharmacokinetics in Pregnancy"
+    },
+    "may_noi_gi": "dien_giai",
+    "canh_bao": []
+  },
+  {
+    "notebook_uuid": "e44dacda-9111-4f5c-8fd5-e0e448068b75",
+    "diem_quyet_dinh": "Q6",
+    "ma_doi_chieu": null,
+    "khang_dinh": "CNS symptoms and signs usually present first",
+    "don_vi": null,
+    "doi_tuong": "dấu hiệu khởi phát LAST, hệ thần kinh trung ương (CNS)",
+    "dieu_kien": [
+      "bệnh nhân còn tỉnh táo, ngộ độc hấp thu toàn thân"
+    ],
+    "trich_nguyen_van": "The CNS is more sensitive than the heart to the toxic effects of local anaesthetics, and CNS symptoms and signs usually present !rst. These include cir-cumoral paraesthesia, facial numbness, tingling of the tongue, dizziness, metallic taste and tinnitus. Restlessness, slurred speech and tremors may develop, followed by generalised convulsions, coma and respiratory arrest.",
+    "nguon": {
+      "ten": "5. 2026 - Textbook_of_Anaesthesia - Chapter 5 - Local anaesthetics.pdf",
+      "trang": null,
+      "muc": "Local anaesthetic toxicity"
+    },
+    "may_noi_gi": "trich_nguyen_van",
+    "canh_bao": []
+  },
+  {
+    "notebook_uuid": "e44dacda-9111-4f5c-8fd5-e0e448068b75",
+    "diem_quyet_dinh": "Q6",
+    "ma_doi_chieu": null,
+    "khang_dinh": "three",
+    "don_vi": "times",
+    "doi_tuong": "ngưỡng độc tính tim mạch (CVS) so với co giật (CNS) trong LAST",
+    "dieu_kien": [],
+    "trich_nguyen_van": "Major cardiovascular toxicity usually requires about three times the local anesthetic concentration in blood as that required to produce seizures. Cardiac arrhythmias or circulatory collapse are the usual presenting signs of cardiac LAST during general anesthesia.",
+    "nguon": {
+      "ten": "2. 2022 - Morgan and Mikhail's Clinical Anesthesiology, 7th Edition - 16 Local Anesthetics.pdf",
+      "trang": null,
+      "muc": "Systemic Toxicity"
+    },
+    "may_noi_gi": "trich_nguyen_van",
+    "canh_bao": []
+  },
+  {
+    "notebook_uuid": "e44dacda-9111-4f5c-8fd5-e0e448068b75",
+    "diem_quyet_dinh": "Q7",
+    "ma_doi_chieu": null,
+    "khang_dinh": "1.5",
+    "don_vi": "mL/kg",
+    "doi_tuong": "nhũ tương lipid 20% (Intralipid 20%), người lớn <70 kg hoặc trẻ em",
+    "dieu_kien": [
+      "tiêm tĩnh mạch trong 2-3 phút"
+    ],
+    "trich_nguyen_van": "Institute lipid emulsion therapy with 20% lipid emulsion Adults ≥70 kg: Bolus 100 mL IV over 2 to 3 minutes, followed by infusion of 250 mL over 15 to 20 minutes Children or adults <70 kg: Bolus 1.5 mL/kg IBW IV over 2 to 3 minutes, followed by infusion at 0.25 mL/kg/minute For patients with persistent cardiovascular instability, repeat bolus and double infusion rate",
+    "nguon": {
+      "ten": "21. 2026 - UPTODATE - Subcutaneous infiltration of local anesthetics - UpToDate.pdf",
+      "trang": null,
+      "muc": "Management of LAST"
+    },
+    "may_noi_gi": "trich_nguyen_van",
+    "canh_bao": []
+  },
+  {
+    "notebook_uuid": "e44dacda-9111-4f5c-8fd5-e0e448068b75",
+    "diem_quyet_dinh": "Q7",
+    "ma_doi_chieu": null,
+    "khang_dinh": "0.25",
+    "don_vi": "mL/kg/minute",
+    "doi_tuong": "nhũ tương lipid 20% (Intralipid 20%), người lớn <70 kg hoặc trẻ em",
+    "dieu_kien": [
+      "truyền tĩnh mạch liên tục"
+    ],
+    "trich_nguyen_van": "Institute lipid emulsion therapy with 20% lipid emulsion Adults ≥70 kg: Bolus 100 mL IV over 2 to 3 minutes, followed by infusion of 250 mL over 15 to 20 minutes Children or adults <70 kg: Bolus 1.5 mL/kg IBW IV over 2 to 3 minutes, followed by infusion at 0.25 mL/kg/minute For patients with persistent cardiovascular instability, repeat bolus and double infusion rate",
+    "nguon": {
+      "ten": "21. 2026 - UPTODATE - Subcutaneous infiltration of local anesthetics - UpToDate.pdf",
+      "trang": null,
+      "muc": "Management of LAST"
+    },
+    "may_noi_gi": "trich_nguyen_van",
+    "canh_bao": []
+  },
+  {
+    "notebook_uuid": "e44dacda-9111-4f5c-8fd5-e0e448068b75",
+    "diem_quyet_dinh": "Q7",
+    "ma_doi_chieu": null,
+    "khang_dinh": "12",
+    "don_vi": "mL/kg",
+    "doi_tuong": "nhũ tương lipid 20% (Intralipid 20%), tổng liều tối đa",
+    "dieu_kien": [],
+    "trich_nguyen_van": "Maximum dose of lipid emulsion is approximately 12 mL/kg",
+    "nguon": {
+      "ten": "7. 2.2026 - Local anesthetic systemic toxicity - UpToDate.pdf",
+      "trang": null,
+      "muc": "Lipid emulsion therapy"
+    },
+    "may_noi_gi": "trich_nguyen_van",
+    "canh_bao": []
+  },
+  {
+    "notebook_uuid": "e44dacda-9111-4f5c-8fd5-e0e448068b75",
+    "diem_quyet_dinh": "Q8",
+    "ma_doi_chieu": null,
+    "khang_dinh": "digits, penis, ear, nose",
+    "don_vi": null,
+    "doi_tuong": "dung dịch thuốc tê phối hợp adrenaline",
+    "dieu_kien": [
+      "vùng cơ thể có nguy cơ tổn thương mạch máu/tuần hoàn tận"
+    ],
+    "trich_nguyen_van": "Contraindications●\nLacerations of mucous membranes (eg, lip, vulva) or regions where it may cause vascular compromise (eg, digits, penis, ear, nose)\n•\nGrossly contaminated wounds•\nPatients with allergy to amide or ester local anesthetics",
+    "nguon": {
+      "ten": "22. 2026 - UPTODATE - Clinical use of topical anesthetics in children - UpToDate.pdf",
+      "trang": null,
+      "muc": "Contraindications"
+    },
+    "may_noi_gi": "trich_nguyen_van",
+    "canh_bao": []
+  },
+  {
+    "notebook_uuid": "e44dacda-9111-4f5c-8fd5-e0e448068b75",
+    "diem_quyet_dinh": "Q8",
+    "ma_doi_chieu": null,
+    "khang_dinh": "areas of the body supplied by end arteries or having otherwise compromised blood supply",
+    "don_vi": null,
+    "doi_tuong": "lidocaine phối hợp epinephrine",
+    "dieu_kien": [
+      "vùng cơ thể cấp máu bởi động mạch tận"
+    ],
+    "trich_nguyen_van": "Cardiovascular disease: Use with caution in patients with bradycardia, severe shock, heart block, or impaired cardiovascular function; use with caution in areas of the body supplied by end arteries or having otherwise compromised blood supply.",
+    "nguon": {
+      "ten": "17. 2026 - Lidocaine and epinephrine_ Drug information - UpToDate.pdf",
+      "trang": null,
+      "muc": "Warnings/Precautions"
+    },
+    "may_noi_gi": "trich_nguyen_van",
+    "canh_bao": []
+  },
+  {
+    "notebook_uuid": "e44dacda-9111-4f5c-8fd5-e0e448068b75",
+    "diem_quyet_dinh": "Q9",
+    "ma_doi_chieu": null,
+    "khang_dinh": "150",
+    "don_vi": "mg/dose",
+    "doi_tuong": "bupivacaine 0.75%, gây tê ngoài màng cứng",
+    "dieu_kien": [
+      "phẫu thuật cần giãn cơ cao và kéo dài",
+      "chống chỉ định trong sản khoa"
+    ],
+    "trich_nguyen_van": "Epidural block \nSurgical procedures requiring a high degree of muscle relaxation and prolonged effects only: 10 to 20 mL of 0.75%; Note: Not to be used in obstetrical cases (maximum: 150 mg/dose of bupivacaine)",
+    "nguon": {
+      "ten": "11. 2026 - Bupivacaine and epinephrine_ Drug information - UpToDate.pdf",
+      "trang": null,
+      "muc": "Dosing: Adult - Epidural"
+    },
+    "may_noi_gi": "trich_nguyen_van",
+    "canh_bao": []
+  }
+]
