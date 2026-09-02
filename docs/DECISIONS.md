@@ -251,6 +251,41 @@ nguồn**, Gun duyệt. Đặc tả: `docs/DAC_TA_PHAC_DO_NHAP.md`.
 
 ---
 
+### 12. Dữ kiện THỊ TRƯỜNG cần loại nguồn thứ ba — sách và hướng dẫn đều không trả lời được
+**Chốt ngày**: 2026-09-01 · **Người chốt**: chủ dự án (Gun)
+
+Phát hiện khi chuẩn bị phác đồ #1. Đếm 54 khẳng định ưu tiên 1 của
+`local_anesthetics.json` theo **trường cha** — tức theo *bản chất dữ liệu*, không theo
+tên lá:
+
+| Số | Trường | Bản chất | Nguồn đúng |
+|---:|---|---|---|
+| **26** | `concentrations` | **dữ kiện thị trường** — nồng độ nào CÓ BÁN | ⛔ **đăng ký thuốc quốc gia** |
+| 14 | `maxDoseMgPerKg` | khuyến cáo lâm sàng | sách / hướng dẫn hội |
+| 14 | `absoluteMaxAdult` | khuyến cáo lâm sàng | sách / hướng dẫn hội |
+
+**48% khẳng định chết-người của chủ đề thí điểm không thuộc loại mà cả hệ đang xây để
+trả lời.**
+
+Nồng độ lidocaine `[0,5 · 1 · 1,5 · 2 · 4 · 5]` là **danh sách ống thuốc có bán**, không
+phải khuyến cáo y khoa. Hỏi NotebookLM trên sách giáo khoa câu *"ở Việt Nam bán nồng độ
+nào"* sẽ nhận câu trả lời theo thị trường Mỹ hoặc theo nồng độ *thường dùng* — **có
+trích dẫn đầy đủ mà sai ngữ cảnh**. Đúng hạng lỗi cả hệ dựng lên để chặn.
+
+- **Chốt**: `concentrations` **gác lại có tên có lý do**, không hỏi NotebookLM. Chúng
+  cần **Luồng B** — nguồn đăng ký thuốc quốc gia (Cục Quản lý Dược) — là loại nguồn thứ
+  ba chưa có trong hệ.
+- **Hệ quả rộng hơn**: phân loại **ba luồng** (A hằng số lý hoá · B dữ kiện thị
+  trường/pháp quy · C khuyến cáo lâm sàng) từng ghi trong thiết kế nay có **ca thật đầu
+  tiên đo được**. Trước đây nó là phân loại trên giấy.
+- **Việc kéo theo**: câu hỏi *"trần liều đúng lâm sàng ở Việt Nam thuộc nguồn quản lý
+  dược nào"* — đã nêu ở `docs/BAN_GIAO_CHANG_A.md` A2 — nay không hoãn được nữa; nó
+  chặn 26 khẳng định của chính chủ đề thí điểm.
+- **Kiểm chứng**: `docs/runs/PHAC_DO_01_doi_chieu.json` khoá phạm vi ở 28, ghi rõ 26 cái
+  gác lại và lý do.
+
+---
+
 ## CHỜ CHỐT
 
 | # | Tên gọi | Vì sao cần chốt |

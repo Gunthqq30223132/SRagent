@@ -1,0 +1,377 @@
+{
+  "_doc": "BỘ ĐỐI CHIẾU — chốt TRƯỚC khi Antigravity chạy. KHÔNG sửa sau khi có kết quả.",
+  "_vi_sao": "Chốt sau khi thấy kết quả thì rất dễ vô thức chọn đúng những khẳng định ĐÃ KHỚP để báo cáo và lặng lẽ bỏ qua cái lệch. Cùng kỷ luật đăng ký đề cương trước khi thu số liệu.",
+  "_phac_do": "PHAC_DO_01 — Đại Cương Về Thuốc Tê",
+  "_nguon_du_lieu_dung": {
+    "kho": "AnesthOS-app",
+    "nhanh": "origin/feat/p1-domain",
+    "commit": "ad3eb6534e153bbd5edf66daa14e17914c1f7f17",
+    "tep": "src/domain/data/local_anesthetics.json",
+    "bam_sha256_tep": "74f4d6185897e2325fca828be370e4f8917ac36a1447393b94fe002689a5316b"
+  },
+  "_canh_bao": "gia_tri_dung là dữ liệu DỰNG (synthetic) của AnesthOS, KHÔNG phải chân lý. Đây là thứ ĐANG ĐƯỢC ĐEM RA ĐO, không phải thước đo.",
+  "_ket_qua_doi_chieu_hop_le": [
+    "khop",
+    "lech",
+    "khong_co_trong_nguon",
+    "chua_do"
+  ],
+  "_pham_vi_gac_lai": {
+    "so_khang_dinh": 26,
+    "truong": "concentrations",
+    "ly_do": "dữ kiện THỊ TRƯỜNG — nồng độ nào CÓ BÁN — không phải khuyến cáo lâm sàng. Sách giáo khoa không trả lời được 'ở Việt Nam bán nồng độ nào'. Cần nguồn đăng ký thuốc quốc gia (Cục Quản lý Dược)."
+  },
+  "so_muc": 28,
+  "muc": [
+    {
+      "ma": "lidocaine.maxDoseMgPerKg.plain",
+      "diem_quyet_dinh": "Q1",
+      "hoat_chat": "Lidocaine (Lignocaine)",
+      "truong": "maxDoseMgPerKg.plain",
+      "gia_tri_dung": 4.5,
+      "don_vi": "mg/kg",
+      "dieu_kien": [
+        "KHÔNG kèm adrenaline"
+      ],
+      "ket_qua_doi_chieu": null
+    },
+    {
+      "ma": "lidocaine.maxDoseMgPerKg.withEpi",
+      "diem_quyet_dinh": "Q2",
+      "hoat_chat": "Lidocaine (Lignocaine)",
+      "truong": "maxDoseMgPerKg.withEpi",
+      "gia_tri_dung": 7,
+      "don_vi": "mg/kg",
+      "dieu_kien": [
+        "CÓ kèm adrenaline"
+      ],
+      "ket_qua_doi_chieu": null
+    },
+    {
+      "ma": "lidocaine.absoluteMaxAdult.plain",
+      "diem_quyet_dinh": "Q3",
+      "hoat_chat": "Lidocaine (Lignocaine)",
+      "truong": "absoluteMaxAdult.plain",
+      "gia_tri_dung": 300,
+      "don_vi": "mg",
+      "dieu_kien": [
+        "người lớn",
+        "KHÔNG kèm adrenaline"
+      ],
+      "ket_qua_doi_chieu": null
+    },
+    {
+      "ma": "lidocaine.absoluteMaxAdult.withEpi",
+      "diem_quyet_dinh": "Q4",
+      "hoat_chat": "Lidocaine (Lignocaine)",
+      "truong": "absoluteMaxAdult.withEpi",
+      "gia_tri_dung": 500,
+      "don_vi": "mg",
+      "dieu_kien": [
+        "người lớn",
+        "CÓ kèm adrenaline"
+      ],
+      "ket_qua_doi_chieu": null
+    },
+    {
+      "ma": "bupivacaine.maxDoseMgPerKg.plain",
+      "diem_quyet_dinh": "Q1",
+      "hoat_chat": "Bupivacaine",
+      "truong": "maxDoseMgPerKg.plain",
+      "gia_tri_dung": 2,
+      "don_vi": "mg/kg",
+      "dieu_kien": [
+        "KHÔNG kèm adrenaline"
+      ],
+      "ket_qua_doi_chieu": null
+    },
+    {
+      "ma": "bupivacaine.maxDoseMgPerKg.withEpi",
+      "diem_quyet_dinh": "Q2",
+      "hoat_chat": "Bupivacaine",
+      "truong": "maxDoseMgPerKg.withEpi",
+      "gia_tri_dung": 2.5,
+      "don_vi": "mg/kg",
+      "dieu_kien": [
+        "CÓ kèm adrenaline"
+      ],
+      "ket_qua_doi_chieu": null
+    },
+    {
+      "ma": "bupivacaine.absoluteMaxAdult.plain",
+      "diem_quyet_dinh": "Q3",
+      "hoat_chat": "Bupivacaine",
+      "truong": "absoluteMaxAdult.plain",
+      "gia_tri_dung": 150,
+      "don_vi": "mg",
+      "dieu_kien": [
+        "người lớn",
+        "KHÔNG kèm adrenaline"
+      ],
+      "ket_qua_doi_chieu": null
+    },
+    {
+      "ma": "bupivacaine.absoluteMaxAdult.withEpi",
+      "diem_quyet_dinh": "Q4",
+      "hoat_chat": "Bupivacaine",
+      "truong": "absoluteMaxAdult.withEpi",
+      "gia_tri_dung": 175,
+      "don_vi": "mg",
+      "dieu_kien": [
+        "người lớn",
+        "CÓ kèm adrenaline"
+      ],
+      "ket_qua_doi_chieu": null
+    },
+    {
+      "ma": "levobupivacaine.maxDoseMgPerKg.plain",
+      "diem_quyet_dinh": "Q1",
+      "hoat_chat": "Levobupivacaine",
+      "truong": "maxDoseMgPerKg.plain",
+      "gia_tri_dung": 2,
+      "don_vi": "mg/kg",
+      "dieu_kien": [
+        "KHÔNG kèm adrenaline"
+      ],
+      "ket_qua_doi_chieu": null
+    },
+    {
+      "ma": "levobupivacaine.maxDoseMgPerKg.withEpi",
+      "diem_quyet_dinh": "Q2",
+      "hoat_chat": "Levobupivacaine",
+      "truong": "maxDoseMgPerKg.withEpi",
+      "gia_tri_dung": 2.5,
+      "don_vi": "mg/kg",
+      "dieu_kien": [
+        "CÓ kèm adrenaline"
+      ],
+      "ket_qua_doi_chieu": null
+    },
+    {
+      "ma": "levobupivacaine.absoluteMaxAdult.plain",
+      "diem_quyet_dinh": "Q3",
+      "hoat_chat": "Levobupivacaine",
+      "truong": "absoluteMaxAdult.plain",
+      "gia_tri_dung": 150,
+      "don_vi": "mg",
+      "dieu_kien": [
+        "người lớn",
+        "KHÔNG kèm adrenaline"
+      ],
+      "ket_qua_doi_chieu": null
+    },
+    {
+      "ma": "levobupivacaine.absoluteMaxAdult.withEpi",
+      "diem_quyet_dinh": "Q4",
+      "hoat_chat": "Levobupivacaine",
+      "truong": "absoluteMaxAdult.withEpi",
+      "gia_tri_dung": 175,
+      "don_vi": "mg",
+      "dieu_kien": [
+        "người lớn",
+        "CÓ kèm adrenaline"
+      ],
+      "ket_qua_doi_chieu": null
+    },
+    {
+      "ma": "ropivacaine.maxDoseMgPerKg.plain",
+      "diem_quyet_dinh": "Q1",
+      "hoat_chat": "Ropivacaine",
+      "truong": "maxDoseMgPerKg.plain",
+      "gia_tri_dung": 3,
+      "don_vi": "mg/kg",
+      "dieu_kien": [
+        "KHÔNG kèm adrenaline"
+      ],
+      "ket_qua_doi_chieu": null
+    },
+    {
+      "ma": "ropivacaine.maxDoseMgPerKg.withEpi",
+      "diem_quyet_dinh": "Q2",
+      "hoat_chat": "Ropivacaine",
+      "truong": "maxDoseMgPerKg.withEpi",
+      "gia_tri_dung": 3.5,
+      "don_vi": "mg/kg",
+      "dieu_kien": [
+        "CÓ kèm adrenaline"
+      ],
+      "ket_qua_doi_chieu": null
+    },
+    {
+      "ma": "ropivacaine.absoluteMaxAdult.plain",
+      "diem_quyet_dinh": "Q3",
+      "hoat_chat": "Ropivacaine",
+      "truong": "absoluteMaxAdult.plain",
+      "gia_tri_dung": 225,
+      "don_vi": "mg",
+      "dieu_kien": [
+        "người lớn",
+        "KHÔNG kèm adrenaline"
+      ],
+      "ket_qua_doi_chieu": null
+    },
+    {
+      "ma": "ropivacaine.absoluteMaxAdult.withEpi",
+      "diem_quyet_dinh": "Q4",
+      "hoat_chat": "Ropivacaine",
+      "truong": "absoluteMaxAdult.withEpi",
+      "gia_tri_dung": 250,
+      "don_vi": "mg",
+      "dieu_kien": [
+        "người lớn",
+        "CÓ kèm adrenaline"
+      ],
+      "ket_qua_doi_chieu": null
+    },
+    {
+      "ma": "mepivacaine.maxDoseMgPerKg.plain",
+      "diem_quyet_dinh": "Q1",
+      "hoat_chat": "Mepivacaine",
+      "truong": "maxDoseMgPerKg.plain",
+      "gia_tri_dung": 5,
+      "don_vi": "mg/kg",
+      "dieu_kien": [
+        "KHÔNG kèm adrenaline"
+      ],
+      "ket_qua_doi_chieu": null
+    },
+    {
+      "ma": "mepivacaine.maxDoseMgPerKg.withEpi",
+      "diem_quyet_dinh": "Q2",
+      "hoat_chat": "Mepivacaine",
+      "truong": "maxDoseMgPerKg.withEpi",
+      "gia_tri_dung": 7,
+      "don_vi": "mg/kg",
+      "dieu_kien": [
+        "CÓ kèm adrenaline"
+      ],
+      "ket_qua_doi_chieu": null
+    },
+    {
+      "ma": "mepivacaine.absoluteMaxAdult.plain",
+      "diem_quyet_dinh": "Q3",
+      "hoat_chat": "Mepivacaine",
+      "truong": "absoluteMaxAdult.plain",
+      "gia_tri_dung": 400,
+      "don_vi": "mg",
+      "dieu_kien": [
+        "người lớn",
+        "KHÔNG kèm adrenaline"
+      ],
+      "ket_qua_doi_chieu": null
+    },
+    {
+      "ma": "mepivacaine.absoluteMaxAdult.withEpi",
+      "diem_quyet_dinh": "Q4",
+      "hoat_chat": "Mepivacaine",
+      "truong": "absoluteMaxAdult.withEpi",
+      "gia_tri_dung": 500,
+      "don_vi": "mg",
+      "dieu_kien": [
+        "người lớn",
+        "CÓ kèm adrenaline"
+      ],
+      "ket_qua_doi_chieu": null
+    },
+    {
+      "ma": "prilocaine.maxDoseMgPerKg.plain",
+      "diem_quyet_dinh": "Q1",
+      "hoat_chat": "Prilocaine",
+      "truong": "maxDoseMgPerKg.plain",
+      "gia_tri_dung": 6,
+      "don_vi": "mg/kg",
+      "dieu_kien": [
+        "KHÔNG kèm adrenaline"
+      ],
+      "ket_qua_doi_chieu": null
+    },
+    {
+      "ma": "prilocaine.maxDoseMgPerKg.withEpi",
+      "diem_quyet_dinh": "Q2",
+      "hoat_chat": "Prilocaine",
+      "truong": "maxDoseMgPerKg.withEpi",
+      "gia_tri_dung": 8.5,
+      "don_vi": "mg/kg",
+      "dieu_kien": [
+        "CÓ kèm adrenaline"
+      ],
+      "ket_qua_doi_chieu": null
+    },
+    {
+      "ma": "prilocaine.absoluteMaxAdult.plain",
+      "diem_quyet_dinh": "Q3",
+      "hoat_chat": "Prilocaine",
+      "truong": "absoluteMaxAdult.plain",
+      "gia_tri_dung": 400,
+      "don_vi": "mg",
+      "dieu_kien": [
+        "người lớn",
+        "KHÔNG kèm adrenaline"
+      ],
+      "ket_qua_doi_chieu": null
+    },
+    {
+      "ma": "prilocaine.absoluteMaxAdult.withEpi",
+      "diem_quyet_dinh": "Q4",
+      "hoat_chat": "Prilocaine",
+      "truong": "absoluteMaxAdult.withEpi",
+      "gia_tri_dung": 600,
+      "don_vi": "mg",
+      "dieu_kien": [
+        "người lớn",
+        "CÓ kèm adrenaline"
+      ],
+      "ket_qua_doi_chieu": null
+    },
+    {
+      "ma": "2chloroprocaine.maxDoseMgPerKg.plain",
+      "diem_quyet_dinh": "Q1",
+      "hoat_chat": "2-Chloroprocaine",
+      "truong": "maxDoseMgPerKg.plain",
+      "gia_tri_dung": 11,
+      "don_vi": "mg/kg",
+      "dieu_kien": [
+        "KHÔNG kèm adrenaline"
+      ],
+      "ket_qua_doi_chieu": null
+    },
+    {
+      "ma": "2chloroprocaine.maxDoseMgPerKg.withEpi",
+      "diem_quyet_dinh": "Q2",
+      "hoat_chat": "2-Chloroprocaine",
+      "truong": "maxDoseMgPerKg.withEpi",
+      "gia_tri_dung": 14,
+      "don_vi": "mg/kg",
+      "dieu_kien": [
+        "CÓ kèm adrenaline"
+      ],
+      "ket_qua_doi_chieu": null
+    },
+    {
+      "ma": "2chloroprocaine.absoluteMaxAdult.plain",
+      "diem_quyet_dinh": "Q3",
+      "hoat_chat": "2-Chloroprocaine",
+      "truong": "absoluteMaxAdult.plain",
+      "gia_tri_dung": 800,
+      "don_vi": "mg",
+      "dieu_kien": [
+        "người lớn",
+        "KHÔNG kèm adrenaline"
+      ],
+      "ket_qua_doi_chieu": null
+    },
+    {
+      "ma": "2chloroprocaine.absoluteMaxAdult.withEpi",
+      "diem_quyet_dinh": "Q4",
+      "hoat_chat": "2-Chloroprocaine",
+      "truong": "absoluteMaxAdult.withEpi",
+      "gia_tri_dung": 1000,
+      "don_vi": "mg",
+      "dieu_kien": [
+        "người lớn",
+        "CÓ kèm adrenaline"
+      ],
+      "ket_qua_doi_chieu": null
+    }
+  ]
+}

@@ -235,6 +235,44 @@ phân định phạm vi.
 
 ---
 
+## 6b · Lỗ thứ tư, phát hiện ở lượt chạy đầu: SAI LOẠI NGUỒN
+
+> ### 「Nói đơn giản」
+>
+> Ba lỗ ở §2 đều nói về *"nguồn trả lời sai"*. Lỗ thứ tư khác hẳn: **hỏi nhầm nguồn ngay
+> từ đầu**.
+
+Đo trên chủ đề thí điểm — 54 khẳng định ưu tiên 1 của `local_anesthetics.json`:
+
+| Số | Trường | Bản chất | NotebookLM trả lời được? |
+|---:|---|---|---|
+| **26** | `concentrations` | dữ kiện **thị trường** | ⛔ **không** |
+| 14 | `maxDoseMgPerKg` | khuyến cáo lâm sàng | ✅ |
+| 14 | `absoluteMaxAdult` | khuyến cáo lâm sàng | ✅ |
+
+**48% khẳng định chết-người của chủ đề này không thuộc loại mà luồng phác đồ trả lời
+được.** Sách giáo khoa không biết ở Việt Nam bán nồng độ nào.
+
+Nguy hiểm ở chỗ: hỏi vẫn **ra câu trả lời có trích dẫn đầy đủ** — chỉ là sai ngữ cảnh.
+Không phép kiểm nào ở §5 bắt được, vì thẻ số **có** trong nguyên văn, điều kiện **có**
+ghi. Chỉ con người biết đây là câu hỏi sai loại.
+
+**Vá — thêm một bước trước khi hỏi:**
+
+> **Phân loại từng điểm quyết định theo LOẠI NGUỒN trước khi mở notebook.**
+>
+> | Luồng | Bản chất | Nguồn đúng |
+> |---|---|---|
+> | **A** | hằng số lý hoá (pKa, gắn protein) | dược điển |
+> | **B** | dữ kiện thị trường / pháp quy | đăng ký thuốc quốc gia |
+> | **C** | khuyến cáo lâm sàng | sách · hướng dẫn hội → **NotebookLM** |
+>
+> Chỉ **Luồng C** đi qua luồng phác đồ. A và B **gác lại có tên có lý do**, không hỏi.
+
+Xem `docs/DECISIONS.md` #12.
+
+---
+
 ## 7 · Ba việc phát sinh — trên máy Gun, không chặn A0
 
 | # | Việc | Vì sao |
