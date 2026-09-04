@@ -91,7 +91,7 @@ nằm một mức thì không đo được tiến độ → tách thành **bốn
 
 ## 3 · Trạng thái đích
 
-Với **một** khẳng định ưu tiên 1, hệ phải trả lời được cả năm câu:
+Với **một** khẳng định ưu tiên 1, hệ phải trả lời được cả sáu câu:
 
 | # | Câu hỏi | Hôm nay |
 |---|---|---|

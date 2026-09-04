@@ -66,6 +66,28 @@ def test_so_nam_LOT_trong_so_lon_hon_khong_duoc_tinh_la_khop():
     assert trang_thai == TRUOT
 
 
+def test_GIOI_HAN_DA_BIET_hai_ban_ghi_chung_nguyen_van_thi_doi_duoc_cho_nhau():
+    """Tường lửa KHÔNG che được lỗi 'đúng nguồn, nhầm hàng'. Giữ vết, đừng đọc số ĐẠT quá lời.
+
+    Hai bản ghi lidocaine (5 mg/kg không adrenaline · 7 mg/kg có adrenaline) dùng CHUNG
+    một `trich_nguyen_van` chứa cả hai số. Đảo hai khẳng định cho nhau thì cả hai vẫn ĐẠT,
+    vì phép kiểm chỉ hỏi "số này có trong nguyên văn không", không hỏi "có đúng hàng
+    không". Trường `don_vi` cũng chưa bao giờ được dùng.
+
+    Đây là 2 trong 5 lỗi mà ca đối chứng K3 gài (`DAC_TA_PHAC_DO_NHAP.md` §5) — phần máy
+    KHÔNG che, gánh nặng nằm ở mắt người ký. Vá được thì đổi assert dưới thành TRUOT.
+    """
+    nv = (
+        "Lidocaine without epinephrine - 5 mg/kg (maximum total dose: 300 mg); "
+        "Lidocaine with epinephrine - 7 mg/kg (maximum total dose: 500 mg)"
+    )
+    assert kiem_mot_ban_ghi(ban_ghi("5", nguyen_van=nv))[0] == DAT
+    assert kiem_mot_ban_ghi(ban_ghi("7", nguyen_van=nv))[0] == DAT
+    # ĐẢO: 5 gán cho bản ghi CÓ adrenaline, 7 cho bản KHÔNG — sai lâm sàng, vẫn lọt
+    assert kiem_mot_ban_ghi(ban_ghi("7", nguyen_van=nv))[0] == DAT
+    assert kiem_mot_ban_ghi(ban_ghi("5", nguyen_van=nv))[0] == DAT
+
+
 # --- Hành vi ở mức lệnh: mã thoát và luật L7 -------------------------------------------
 
 def _chay_tep(tmp_path, ban_ghi_list):

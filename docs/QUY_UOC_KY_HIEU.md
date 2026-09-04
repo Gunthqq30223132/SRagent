@@ -86,8 +86,8 @@ bắt được** (`DAC_TA_PHAC_DO_NHAP.md` §6b).
 | Mã | Bản chất | Nguồn đúng | Nuôi |
 |---|---|---|---|
 | **S1** | hằng số lý hoá (pKa, gắn protein) | dược điển | H1 |
-| **S2** | dữ kiện thị trường / pháp quy | đăng ký thuốc quốc gia | H1 · `LO_TRINH.md` B1 |
-| **S3** | khuyến cáo lâm sàng | đỉnh tháp P5, nhãn thuốc, hướng dẫn hội | H1 · `LO_TRINH.md` B2 |
+| **S2** | dữ kiện thị trường / pháp quy | đăng ký thuốc quốc gia · **nhãn thuốc** | H1 · `LO_TRINH.md` B1 |
+| **S3** | khuyến cáo lâm sàng | đỉnh tháp P5 · hướng dẫn hội | H1 · `LO_TRINH.md` B2 |
 | **S4** | **hiệu quả so sánh** — A có hơn B không | nghiên cứu gốc, phân tích gộp | bài SR · khuyến cáo chọn thuốc |
 
 `S4` là chỗ bộ khung sàng lọc + RoB2 + meta-analysis thuộc về. **Cả bốn luồng đổ vào MỘT

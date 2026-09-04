@@ -159,6 +159,19 @@ xuất nào gọi nó**. 36 bản ghi thuốc tê, gồm liều nhũ tương lip
 **Số đo lần chạy đầu** (2026-09-04, 36 bản ghi): ĐẠT 31 · TRƯỢT 0 · VÔ HIỆU 5. Khớp với
 phép đếm thẻ số viết độc lập trước đó — hai cách đo, cùng một số.
 
+> ⚠️ **"ĐẠT 31" chứng minh ÍT hơn vẻ ngoài của nó.** Tường lửa chỉ hỏi *"con số này có
+> xuất hiện trong nguyên văn không"*. Nó **không** dùng trường `don_vi`, và **không** biết
+> con số nằm ở hàng nào cột nào. Hệ quả đã thử tay:
+>
+> | Thử | Kết quả |
+> |---|---|
+> | đảo `5` ↔ `7` giữa hai bản ghi lidocaine dùng **chung một** nguyên văn | **cả hai vẫn ĐẠT** |
+> | gán số của hoạt chất khác từ **nguyên văn khác** | TRƯỢT (bắt được) |
+>
+> Nghĩa là: tường lửa che được *"số bịa từ trí nhớ"*, **không** che được *"lấy đúng nguồn
+> nhưng nhầm hàng"* — mà đó chính là 2 trong 5 lỗi mà ca đối chứng K3 gài. Gánh nặng đó
+> vẫn nằm ở mắt người ký.
+
 ---
 
 ## Ba giới hạn hạ tầng — không phải lỗi mã

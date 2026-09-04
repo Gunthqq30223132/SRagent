@@ -59,30 +59,42 @@ Bất đẳng thức thứ hai hiện **không có ô nào trong lược đồ**
 nguyên văn đã trích** (`Table 5.2`, cột *Over 24 h*: bupivacaine 400 · levobupivacaine 400
 · ropivacaine 800 mg). Số đang bị vứt lúc nạp.
 
-### 2.1 · `min()` không phải trang trí — nhưng cũng chưa phải hai bằng chứng
+### 2.1 · `min()` không phải trang trí
 
-Đo trên `local_anesthetics.json` tại `origin/feat/p1-domain`, bệnh nhân 70 kg: **4/14** tổ
-hợp bị **trần** chặn, **10/14** bị **mg/kg** chặn. Nếu bỏ `min()` và chỉ dùng mg/kg thì
-lidocaine plain cho 315 mg trong khi trần là 300.
+Đo trên `local_anesthetics.json` tại `origin/feat/p1-domain`, bệnh nhân 70 kg:
 
-Nhưng tính **cân nặng giao nhau** (= trần ÷ mg/kg) cho cả 14 tổ hợp thì ra một dải rất hẹp:
+| Ràng buộc thật ở 70 kg | Số tổ hợp | Ví dụ |
+|---|---|---|
+| **trần** chặn | **2** | lidocaine plain 315 > 300 · prilocaine plain 420 > 400 |
+| hai vế **bằng nhau** — `min()` không chọn gì | **2** | bupi/levobupi withEpi, đều 175 mg |
+| mg/kg chặn | **10** | — |
 
-| Cân nặng giao nhau | Số tổ hợp |
-|---|---|
-| 66,7 kg | 2 |
-| 70,0 – 72,7 kg | 9 |
-| 75,0 – 80,0 kg | 3 |
+Bỏ `min()` thì lidocaine plain cho 315 mg trong khi trần nhãn là 300. Hai ca là đủ để giữ
+`min()`; không cần con số to hơn.
 
-**Toàn bộ nằm trong 66,7–80,0 kg.** [Suy luận] Đây là dấu vết của một bảng dựng bằng cách
-lấy *một* con số rồi suy ngược ra con số kia quanh mốc người lớn ~70 kg — nghĩa là hai số
-hạng **không độc lập**, chúng là **một phép đo viết hai lần**.
+> **Đính chính, ghi lại để không lặp.** Bản đầu của mục này ghi *"4/14 bị trần chặn"* —
+> sai, do đếm `>=` thành "chặn": hai ca 175 = 175 bị xếp nhầm vào nhóm trần. Bảng dải cân
+> nặng cũng lệch (ghi 2/9/3, đúng là **2/8/4**). Làm mạnh con số lại làm yếu chính luận
+> điểm nó chống lưng.
 
-> **Hệ quả bắt buộc**: `mg/kg` và `trần một lần` của cùng một hoạt chất **không bao giờ
-> được tính là hai xác nhận độc lập**. Cùng một cái bẫy `dong_thuan` của A0 đã chặn ở cấp
-> khẳng định, nay xuất hiện ở cấp **số hạng**.
+### 2.2 · Hai số hạng KHÔNG độc lập — nhưng lý do không phải dải cân nặng
 
-`bupivacaine.withEpi` và `levobupivacaine.withEpi` giao nhau **đúng 70,0 kg** — ở 69 kg
-mg/kg chặn, ở 71 kg trần chặn. Ca kiểm thử bắt buộc, xem Đ3.
+Cân nặng giao nhau (= trần ÷ mg/kg) của cả 14 tổ hợp nằm trong **66,7–80,0 kg**. Phép đo
+này **đã từng chạy và đã bị bác**: `LO_TRINH.md` §9 ghi *"Kiểm nhất quán nội tại
+`mg/kg × cân nặng ↔ trần` — đã chạy thử: 14/14 cặp nhất quán ở 66,7–80 kg → **không có
+sức phân biệt**"*. Không được dùng nó làm bằng chứng.
+
+Và nó **cũng không phân biệt được thật**: tính trên `Table 5.2` (nguồn thật, đã trích
+trong `PHAC_DO_01_ban_ghi.json`), dải là **62,5–83,3 kg** — rộng hơn, nhưng cùng hình dạng.
+
+Lý do đúng để giữ ràng buộc R5 là **cấu trúc, không phải số đo**: bảng liều thuốc tê được
+soạn bằng cách lấy một trong hai con số rồi suy ra con số kia qua một mốc người lớn quy
+chiếu. Điều đó đúng với cả bảng thật lẫn bảng dựng, nên `mg/kg` và `trần` của cùng hoạt
+chất **không bao giờ được tính là hai xác nhận độc lập** — cùng cái bẫy `dong_thuan` của
+A0, ở cấp **số hạng** thay vì cấp khẳng định.
+
+`bupivacaine.withEpi` và `levobupivacaine.withEpi` giao nhau **đúng 70,0 kg** trên tệp
+dựng. Xem Đ3 — và đọc kỹ cảnh báo ở đó.
 
 ---
 
@@ -128,8 +140,8 @@ Toàn bộ bằng chứng hiện có, từ `docs/runs/PHAC_DO_01_ban_ghi.json` �
 
 | Tổ hợp | Hệ số | Ghi chú |
 |---|---|---|
-| trẻ em < 8 tuổi | 0,80 | nguyên văn |
-| **người cao tuổi CÓ suy gan hoặc suy thận nặng** | 0,50 | **một hệ số cho một tổ hợp**, không phải hai hệ số nhân nhau |
+| trẻ em < 8 tuổi | 0,80 | nguyên văn nói *"maximum allowable dose"*, **không nêu hoạt chất** |
+| người cao tuổi CÓ suy gan hoặc suy thận nặng, **RIÊNG lidocaine** | 0,50 | **một hệ số cho một tổ hợp**, không phải hai hệ số nhân nhau |
 | thai kỳ, gây tê trục thần kinh | giảm tới 1/3 | bản ghi `dien_giai` — **chưa phải nguyên văn** |
 
 Ba điều rút ra, đều thành ràng buộc:
@@ -139,6 +151,11 @@ Ba điều rút ra, đều thành ràng buộc:
 - Tổ hợp chưa có trong bảng → **rơi về tổ hợp thận trọng nhất đã có bằng chứng**, không
   nội suy, không nhân.
 - Bản ghi `dien_giai` **không được vào phép tính** cho tới khi có nguyên văn.
+- **Hệ số mang phạm vi hoạt chất riêng, cấm ngoại suy.** Nguyên văn của hệ số 0,50 là
+  *"the total dose of **lidocaine** should be decreased by approximately 50 percent in older
+  adults with severe liver or kidney disease"* — nói **lidocaine**, không nói nhóm amide.
+  Áp nó cho bupivacaine là ngoại suy, mà bản ghi vẫn khai `may_noi_gi = trich_nguyen_van`
+  và `canh_bao = []`: **không tín hiệu nào báo**. R7 chặn việc này.
 
 ### 3.4 · `ma_doi_chieu` = số hạng + đủ khoá
 
@@ -149,12 +166,22 @@ LGH(lidocaine, khong_adrenaline, tham_duoi_da, khong_noi, tran_theo_duong_dung) 
 Thay cho `lidocaine.maxDoseMgPerKg.plain`, vốn **giấu mất** đường dùng, cơ sở cân nặng và
 loại trần.
 
-> **Ca thật, lỗi của chính tài liệu tiền nhiệm.** Bộ đối chiếu
-> `docs/runs/PHAC_DO_01_doi_chieu.json` đặt tên hoạt chất theo **tên hiển thị**
-> (`2-Chloroprocaine`, `Lidocaine (Lignocaine)`), trong khi lược đồ nguồn dùng **khoá**
-> (`chloroprocaine`, `lidocaine`). Khi đối chiếu, chỉ 11/28 mã khớp — và tôi đã kết luận
-> nhầm rằng bên nộp đặt tên sai. **Bên nộp đúng.** Vì vậy R4 dưới đây bắt tên phải là
-> khoá lược đồ, không phải tên hiển thị.
+> **Ca thật — 17/28 mã không nối được, và nguyên nhân chính KHÔNG phải tên hoạt chất.**
+> Đếm lại từng mã lệch giữa `docs/runs/PHAC_DO_01_doi_chieu.json` và
+> `docs/runs/PHAC_DO_01_ban_ghi.json`:
+>
+> | Nguyên nhân | Số mã | Bên nào sai |
+> |---|---|---|
+> | **tên trường**: bộ đối chiếu `absoluteMaxAdult` · bản ghi `maxDoseMg` | **14** | **bản ghi** — `maxDoseMg` không tồn tại trong lược đồ |
+> | tên hoạt chất: bộ đối chiếu `2chloroprocaine` · lược đồ `chloroprocaine` | 4 | **bộ đối chiếu** |
+> | chưa từng có bản ghi | 1 | — |
+>
+> (14 + 4 + 1 = 19 > 17 vì hai mã mắc cả hai lỗi cùng lúc.)
+>
+> Trường `ma` của bộ đối chiếu **vốn đã dùng khoá lược đồ**, không dùng tên hiển thị — tên
+> hiển thị nằm ở trường `hoat_chat` riêng. Nghĩa là chẩn đoán "bên nộp đặt tên hiển thị"
+> mà bản đầu tài liệu này đưa ra là **sai**, và nếu chỉ vá tên hoạt chất thì **14/17
+> nguyên nhân thật vẫn còn nguyên**. R4 vì vậy phải phủ cả **tên trường**.
 
 ---
 
@@ -165,9 +192,10 @@ loại trần.
 | **R1** | Mỗi giá trị LGH và trần phải mang **đủ 5 khoá**; thiếu một khoá → không được nạp | khoá thiếu là nguyên nhân của cả ba con số lidocaine bị ép một ô |
 | **R2** | `co_so_can_nang = khong_noi` là trạng thái **riêng**, cấm mặc định thành IBW/TBW | không đo được ≠ đạt (nguyên tắc 4) |
 | **R3** | `C_adjust` tra theo **tổ hợp**; cấm nhân các hệ số với nhau | không có bằng chứng nào cho tính nhân |
-| **R4** | Tên hoạt chất trong `ma_doi_chieu` là **khoá lược đồ**, không phải tên hiển thị | ca 11/28 ở §3.4 |
-| **R5** | `mg/kg` và `trần` của cùng hoạt chất **không** được tính là hai xác nhận độc lập | §2.1 — chúng là một phép đo viết hai lần |
+| **R4** | Mọi thành phần của `ma_doi_chieu` — **tên hoạt chất VÀ tên trường** — phải là khoá có thật trong lược đồ nguồn; mã chứa khoá không tồn tại thì bị loại ngay khi nạp | ca 17/28 ở §3.4: 14 lệch do tên trường, chỉ 4 do tên hoạt chất |
+| **R5** | `mg/kg` và `trần` của cùng hoạt chất **không** được tính là hai xác nhận độc lập | §2.2 — bảng liều được soạn bằng cách suy một số ra số kia qua mốc quy chiếu. **Không** viện dải 66,7–80 kg làm bằng chứng: `LO_TRINH.md` §9 đã bác phép đo đó |
 | **R6** | Bản ghi `may_noi_gi = dien_giai` không vào phép tính | máy diễn đạt lại chưa phải nguyên văn |
+| **R7** | Hệ số `C_adjust` chỉ áp cho **đúng hoạt chất mà nguyên văn nêu tên**; nguyên văn không nêu hoạt chất thì phải khai `pham_vi = khong_ro` | hệ số 0,50 nói riêng lidocaine nhưng bảng ghi như hệ số chung — ngoại suy không có tín hiệu báo, xem §3.3 |
 
 ---
 
@@ -177,7 +205,7 @@ loại trần.
 |---|---|---|
 | **Đ1** | v2 chở đủ **5 số hạng**, gồm `tran_24h` hiện đang bị vứt | đếm trường trong `local_anesthetics.v2.json` |
 | **Đ2** | 3 giá trị `tran_24h` đã có nguyên văn (bupi 400 · levobupi 400 · ropi 800) được nạp | so với `Table 5.2` trong bản ghi phác đồ #1 |
-| **Đ3** | Ca 70,0 kg của `bupivacaine.withEpi`: 69 kg → mg/kg chặn · 71 kg → trần chặn | kiểm thử biên, cả hai phía |
+| **Đ3** | Ca biên cân nặng giao nhau: dưới ngưỡng → mg/kg chặn · trên ngưỡng → trần chặn | **ngưỡng lấy từ v2, KHÔNG lấy 70,0 kg của tệp dựng.** Bằng chứng thật (`Table 5.2`) cho bupivacaine 3 mg/kg + 225 mg → giao nhau **75,0 kg**; dùng 70,0 kg là bắt v2 chép lại số của v1 |
 | **Đ4** | Mọi giá trị LGH/trần có `co_so_can_nang`; số cái `khong_noi` được **báo cáo**, không giấu | đếm, in ra |
 | **Đ5** | Không tổ hợp `C_adjust` nào sinh ra bằng phép nhân | rà bảng, không có ô nào là tích của hai ô khác |
 
