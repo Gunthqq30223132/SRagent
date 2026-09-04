@@ -100,9 +100,31 @@ Với **một** khẳng định ưu tiên 1, hệ phải trả lời được c�
 | 3 | Nguồn đó dựa trên **nghiên cứu gốc** nào, bậc mấy, GRADE mấy? | ⛔ |
 | 4 | Hai nguồn xác nhận nó có **thật sự độc lập** không? | ⛔ chưa từng hỏi |
 | 5 | Nó **lỗi thời** chưa? Y văn trống thì **nên nghiên cứu gì**? | ⛔ chưa xây |
+| **6** | **Vì sao ngưỡng là con số này, không phải cao hay thấp hơn?** | ⛔ chưa có ô nào chở được |
 
 Câu 5 là thứ **không công cụ tra cứu nào của con người làm** — giá trị riêng của
 SR-Agent. Nhưng nó là **bước cuối**, không phải bước đầu (nguyên tắc 1).
+
+### Câu 6 — thêm ngày 2026-09-04, và vì sao nó KHÁC câu 3
+
+Câu 3 hỏi *"dựa trên nghiên cứu gốc nào, bậc mấy, GRADE mấy"* — A0 trả lời được bằng
+`pha_he` + `bac_chung_cu` + `do_manh`. Nhưng **biết bài nào và GRADE mấy không trả lời
+được vì sao con số là 5 chứ không phải 6.**
+
+| | Câu 3 | Câu 6 |
+|---|---|---|
+| Hỏi | **định danh** nghiên cứu gốc | **nội dung** nghiên cứu gốc |
+| Cần | mã bài · bậc · GRADE | đo gì · trên ai · liều nào gây độc gì · năm nào |
+| A0 chở được? | ✅ | ⛔ không có ô |
+
+Đây là câu chủ dự án thật sự đặt ra khi duyệt kiến trúc. Không có nó thì một khẳng định
+lên tới bậc `CO_CHUOI_DAY_DU` mà vẫn không ai giải thích được vì sao ngưỡng là ngưỡng —
+thang mức phủ hứa nhiều hơn thứ nó chứng minh được.
+
+> **Vì sao KHÔNG vá A0 ngay bây giờ.** `DAC_TA_A0.md` đang đóng băng cùng **100 kiểm thử
+> đỏ** viết trước, chờ AG-1 cài. Đổi lược đồ lúc này làm hỏng cả 100 cái đó và phá đúng
+> rào cản "không ai chấm bài mình" mà chúng dựng lên. Câu 6 **xếp sau A3** — `tham_khao.py`
+> dựng xong đường đi ngược thì mới có dữ liệu vào để chở.
 
 ---
 
@@ -191,7 +213,7 @@ ngưỡng đưa Gun kèm số thô.
 | **B1** | Rút `max_ceiling` từ nhãn thuốc — **Luồng S2, tất định**, không LLM |
 | **B2** | Rút `clinical_target` từ hướng dẫn hội — **Luồng S3, 5A**; LLM chỉ **định vị** + `verify_quote()` |
 | **B3** | Kiểm phả hệ **từng khẳng định**, gán 1 trong 4 trạng thái |
-| **B4** | Sinh `local_anesthetics.v2.json` — mỗi khẳng định kèm nguồn cấp dòng, bậc chứng cứ, GRADE, trạng thái đồng thuận |
+| **B4** | Sinh `local_anesthetics.v2.json` — mỗi khẳng định kèm nguồn cấp dòng, bậc chứng cứ, GRADE, trạng thái đồng thuận. **Khoá tra của từng số hạng lấy từ `docs/DAC_TA_H1_PHEP_TINH_LIEU.md`** — chốt trước, không để B4 tự đặt |
 | **B5** | Dựng đồ thị (NetworkX) + hiển thị cho cổng người (PyVis, **tài nguyên nội tuyến**) |
 | **B6** | So v2 với tệp dựng cũ — liệt kê **mọi chỗ lệch**, không sửa lặng |
 
@@ -199,7 +221,10 @@ ngưỡng đưa Gun kèm số thô.
 **không phải mâu thuẫn** — nhãn cho trần pháp lý, hướng dẫn cho đích thực hành an toàn
 hơn. Gộp một trường là làm mất thông tin.
 
-**Cổng G2:** ca lidocaine phải phân giải rõ **trần 4,5 vs đích 3,0**, kèm toạ độ trích
+**Cổng G2:** ca lidocaine nay có **ba** con số, không phải hai — 4,5 (tệp dựng) · 3,0
+(đích thực hành) · **5,0** (UpToDate, *gây tê thấm dưới da*, đo ngày 2026-09-02). Con số
+thứ ba không phải mâu thuẫn mới mà là **khoá `duong_dung` bị thiếu**, xem `H1` §1. G2 phải
+phân giải rõ cả ba, kèm toạ độ trích
 dẫn **và phả hệ mỗi con số**. Hai nguồn cùng dẫn một bài 1978 thì **phải nói thẳng**.
 
 ### 5.3 · Chặng C — quyết định trước, dữ liệu sau
