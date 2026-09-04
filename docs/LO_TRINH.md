@@ -188,8 +188,8 @@ ngưỡng đưa Gun kèm số thô.
 
 | Mã | Việc |
 |---|---|
-| **B1** | Rút `max_ceiling` từ nhãn thuốc — **Luồng B, tất định**, không LLM |
-| **B2** | Rút `clinical_target` từ hướng dẫn hội — **Luồng C, 5A**; LLM chỉ **định vị** + `verify_quote()` |
+| **B1** | Rút `max_ceiling` từ nhãn thuốc — **Luồng S2, tất định**, không LLM |
+| **B2** | Rút `clinical_target` từ hướng dẫn hội — **Luồng S3, 5A**; LLM chỉ **định vị** + `verify_quote()` |
 | **B3** | Kiểm phả hệ **từng khẳng định**, gán 1 trong 4 trạng thái |
 | **B4** | Sinh `local_anesthetics.v2.json` — mỗi khẳng định kèm nguồn cấp dòng, bậc chứng cứ, GRADE, trạng thái đồng thuận |
 | **B5** | Dựng đồ thị (NetworkX) + hiển thị cho cổng người (PyVis, **tài nguyên nội tuyến**) |
@@ -279,7 +279,7 @@ chỉ là lần này có mã che.
 | Rủi ro | Dấu hiệu | Xử |
 |---|---|---|
 | **Mô hình một-người-ký không đứng được** | A1 cho phần lớn `KHONG_DO_DUOC` | **Dừng ở G1.** Kết quả đúng, không phải thất bại — biết sớm còn hơn ký 2.271 khẳng định trên một nền độc lập không tồn tại |
-| **Nhãn thuốc không khai phả hệ** | A3 không lấy được danh mục của nguồn Luồng B | ghi `KHONG_DO_DUOC`, **không** suy ra là độc lập |
+| **Nhãn thuốc không khai phả hệ** | A3 không lấy được danh mục của nguồn luồng S2 | ghi `KHONG_DO_DUOC`, **không** suy ra là độc lập |
 | ~~**`drugs.json` dẫn sách giáo khoa** (683 P1, Stoelting's)~~ **ĐÃ GIẢI** | ~~không có cửa tự động nào tới sách~~ | **Kết luận cũ SAI.** Gun có notebook NotebookLM cho chính Stoelting's Pharmacology (8 nguồn), Stoelting's Co-Existing Disease (14), Miller's 10e (8). Cụm P1 lớn nhất truy thẳng được tới nguồn đã trích dẫn — xem `docs/DAC_TA_PHAC_DO_NHAP.md` §6.3 |
 | **Hàng chờ duyệt phình vô hạn** | cổng người chủ đề trước chưa thông mà máy đã chạy chủ đề mới | **giới hạn công việc dở**: máy sang **chế độ tiền xử lý nền** — nạp thô, dựng cây câu hỏi, **nhưng chưa tạo bản ghi** |
 

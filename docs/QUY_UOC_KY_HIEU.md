@@ -62,22 +62,47 @@ Mọi ký hiệu, hiện tại và tương lai, đều xếp được bằng hai
 | **A / B / C** | toàn cục | mốc lộ trình | chặng lớn của lộ trình hiện hành | `LO_TRINH.md` §5 |
 | **A‑0, A0…A4, B1…B6, C0…C3** | toàn cục | mốc lộ trình | bước trong chặng | `LO_TRINH.md` §5 |
 | **G1, G2** | toàn cục | mốc lộ trình | cổng rẽ nhánh giữa các bước | `LO_TRINH.md` §5 |
-| **V1, A0** | toàn cục | mã tài liệu | tên ngắn của một đặc tả, dùng để gắn ký hiệu cục bộ | tên tệp `DAC_TA_*.md` |
+| **V1, A0, H1** | toàn cục | mã tài liệu | tên ngắn của một đặc tả, dùng để gắn ký hiệu cục bộ | tên tệp `DAC_TA_*.md` |
 | **R1…** | **cục bộ** | ràng buộc bất biến | bất biến của riêng một đặc tả | mỗi `DAC_TA_*.md` §3 |
 | **Đ1…** | **cục bộ** | đích nghiệm thu | con số phải khớp của riêng một đặc tả | mỗi `DAC_TA_*.md` §4 |
+| **S1…S4** | toàn cục | phân loại | **luồng nguồn** — bản chất dữ kiện quyết loại nguồn nào trả lời được | §3.1 dưới đây |
+| **X1…** | **cục bộ** | luật | **điều cấm** của riêng một bản giao việc | mỗi bản giao việc, §"điều cấm" |
+| **Q1…** | **cục bộ** | mốc lộ trình | **điểm quyết định** của riêng một chủ đề phác đồ | mỗi `PHAC_DO_*.md` |
+| **K1…** | **cục bộ** | đích nghiệm thu | **phép kiểm nghiệm thu** của riêng một đặc tả luồng | `DAC_TA_PHAC_DO_NHAP.md` §5 |
 | **EF·, ET·** | toàn cục | phân loại | mã tiêu chí sàng lọc | `tools/criteria/default.json` |
 | **BS-B, BS-C, BS-F** | toàn cục — **kho AnesthOS** | luật | chuẩn an toàn lâm sàng | `AnesthOS-app/CLAUDE.md` — **đăng ký để tránh đụng, không sửa từ kho này** |
 | **D30…D33, TS-·** | toàn cục | mã tài liệu | đặc tả các đợt cũ | `docs/specs/` — lịch sử, không cấp thêm |
 
 **Mã tài liệu suy ra từ tên tệp**: bỏ tiền tố `DAC_TA_`, lấy phần đầu →
-`DAC_TA_A0.md` = `A0` · `DAC_TA_V1_SO_PHU.md` = `V1`.
+`DAC_TA_A0.md` = `A0` · `DAC_TA_V1_SO_PHU.md` = `V1` ·
+`DAC_TA_H1_PHEP_TINH_LIEU.md` = `H1`.
+
+### 3.1 · Bốn luồng nguồn — `S1…S4`
+
+**Bản chất dữ kiện quyết loại nguồn nào trả lời được nó.** Hỏi sai loại nguồn thì vẫn ra
+câu trả lời có trích dẫn đầy đủ — chỉ là sai ngữ cảnh, và **không phép kiểm tự động nào
+bắt được** (`DAC_TA_PHAC_DO_NHAP.md` §6b).
+
+| Mã | Bản chất | Nguồn đúng | Nuôi |
+|---|---|---|---|
+| **S1** | hằng số lý hoá (pKa, gắn protein) | dược điển | H1 |
+| **S2** | dữ kiện thị trường / pháp quy | đăng ký thuốc quốc gia | H1 · `LO_TRINH.md` B1 |
+| **S3** | khuyến cáo lâm sàng | đỉnh tháp P5, nhãn thuốc, hướng dẫn hội | H1 · `LO_TRINH.md` B2 |
+| **S4** | **hiệu quả so sánh** — A có hơn B không | nghiên cứu gốc, phân tích gộp | bài SR · khuyến cáo chọn thuốc |
+
+`S4` là chỗ bộ khung sàng lọc + RoB2 + meta-analysis thuộc về. **Cả bốn luồng đổ vào MỘT
+tầng chung: A0 `HoSoBangChung`.** AnesthOS đọc tầng đó, không đọc nguồn.
 
 ### Chữ cái đã bị chiếm — không được cấp lại cho nghĩa khác
 
-`A` `B` `C` `D` `Đ` `E` `G` `L` `M` `P` `R` `T` `V` — cùng với `BS-`, `EF`, `ET`, `TS-`.
+`A` `B` `C` `D` `Đ` `E` `G` `H` `K` `L` `M` `P` `Q` `R` `S` `T` `V` `X` — cùng với `BS-`,
+`EF`, `ET`, `TS-`.
 
-> **Chữ còn trống**: `H` `I` `K` `Q` `S` `U` `X` `Y`. Cấp một chữ mới là việc hiếm —
-> đọc §4 trước, phần lớn nhu cầu nên nối vào series sẵn có.
+> **Chữ còn trống**: `I` `U` `Y`. Cấp một chữ mới là việc hiếm — đọc §4 trước, phần lớn
+> nhu cầu nên nối vào series sẵn có.
+>
+> Sổ này từng khai `H` `K` `Q` `S` `X` là "còn trống" **trong khi `K` và `Q` đang được
+> dùng thật** ở hai tệp. Xem §5 va chạm #5.
 
 ---
 
@@ -94,7 +119,14 @@ Mọi ký hiệu, hiện tại và tương lai, đều xếp được bằng hai
 
 ## 5 · Đã từng sai ở đâu — chứng cứ sống, đừng xoá
 
-Bốn va chạm có thật trong kho này. Giữ lại để người sau hiểu vì sao có luật §4.
+Bảy va chạm có thật trong kho này. Giữ lại để người sau hiểu vì sao có luật §4.
+
+> Bốn cái đầu tìm ra ngày 2026-08-31, lúc lập sổ. **Ba cái sau tìm ra ngày 2026-09-04 —
+> tức là sau khi đã có sổ, có luật, và đã đi sửa cả kho một lần.** Va chạm #5 nặng nhất
+> vì nguồn gây ra nó chính là sổ: sổ khai trống một chữ đang được dùng.
+>
+> Rút ra: **luật §4 là quy ước bằng lời trên một kho đã chứng minh quy ước bằng lời không
+> giữ được.** Bước 1 (tra sổ) cần một lệnh chạy được, không phải một thói quen.
 
 | # | Va chạm | Hậu quả |
 |---|---|---|
@@ -102,6 +134,9 @@ Bốn va chạm có thật trong kho này. Giữ lại để người sau hiểu
 | **2** | Hai bộ **R** trùng tên khác nội dung: `V1.R1` nói `muc_phu`, `A0.R1` nói mọi `@property` | Không tài liệu nào ghi rõ chúng độc lập → người đọc tưởng là một |
 | **3** | Chữ đại diện "đích nghiệm thu" đổi tuỳ hứng: `N` ở V1, `M` ở A0 | Lý do thật (N đã bị chiếm) **chưa từng viết ra**, nên `M` xuất hiện vô căn cứ |
 | **4** | **`M` vốn đã là chặng phát triển M0–M6.** Dùng `M1…M8` làm đích nghiệm thu tạo va chạm **ngay trong một tài liệu**: `DAC_TA_A0.md` dòng 9 `M6` = cổng chặng, dòng 341 `M6` = đích thứ 6 | Cùng tệp, cùng ký hiệu, hai nghĩa |
+| **5** | **Sổ tự khai sai.** §3 khai `K` và `Q` là "chữ còn trống" trong khi `K1…K5` (kiểm nghiệm thu) và `Q1…Q9` (điểm quyết định) đang dùng thật ở hai tệp, `Q1…Q9` còn nằm trong 36 bản ghi JSON | Người sau tra sổ, thấy trống, cấp tiếp — **va chạm do chính sổ gây ra** |
+| **6** | **`C` mang BỐN nghĩa.** chặng C bước `C0…C3` (toàn cục) · điều cấm luồng phác đồ · điều cấm cho AG-1 · số thứ tự phản biện | Nghĩa 1 là **toàn cục**, ba nghĩa còn lại cục bộ — mà §4 bước 1 cấm dùng lại chữ đã có nghĩa toàn cục |
+| **7** | **`A/B/C` vừa là chặng lộ trình vừa là luồng nguồn.** `LO_TRINH.md` B1 ghi *"Luồng B"* ngay trong bảng **Chặng B** | Cùng một dòng, hai hệ ký hiệu khác nhau, cùng chữ |
 
 ### Và một va chạm suýt nữa, do chính lúc sửa
 

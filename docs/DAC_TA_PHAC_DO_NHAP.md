@@ -126,12 +126,16 @@ Văn xuôi không kiểm được bằng máy.
 
 **Bốn điều cấm:**
 
+> Series `X` **cục bộ, riêng tài liệu này**. Dẫn từ tài liệu khác phải viết đủ
+> `PHAC_DO_NHAP.X4`. Trước đây đánh `C1…C4`, đổi ngày 2026-09-04 vì `C` đã là chặng lộ
+> trình toàn cục — xem `QUY_UOC_KY_HIEU.md` §5 va chạm #6.
+
 | # | Cấm | Vì sao |
 |---|---|---|
-| C1 | Điền con số không có trong đoạn trích, dù "biết là đúng" | đó là kiến thức của mô hình, không phải của nguồn — ngoài phạm vi truy vết được |
-| C2 | Gộp nhiều điều kiện vào một khẳng định | *"4,5 mg/kg (7 nếu có adrenaline)"* phải là **hai** bản ghi |
-| C3 | Bỏ bản ghi vì nó mâu thuẫn với bản ghi khác | mâu thuẫn giữa hai nguồn là **phát hiện**, không phải lỗi — giữ cả hai, đánh dấu |
-| C4 | Chép nguyên văn từ **nguồn thương mại** vào kho git | chỉ lưu toạ độ + băm + độ dài. Nguyên văn ở lại máy Gun |
+| X1 | Điền con số không có trong đoạn trích, dù "biết là đúng" | đó là kiến thức của mô hình, không phải của nguồn — ngoài phạm vi truy vết được |
+| X2 | Gộp nhiều điều kiện vào một khẳng định | *"4,5 mg/kg (7 nếu có adrenaline)"* phải là **hai** bản ghi |
+| X3 | Bỏ bản ghi vì nó mâu thuẫn với bản ghi khác | mâu thuẫn giữa hai nguồn là **phát hiện**, không phải lỗi — giữ cả hai, đánh dấu |
+| X4 | Chép nguyên văn từ **nguồn thương mại** vào kho git | chỉ lưu toạ độ + băm + độ dài. Nguyên văn ở lại máy Gun |
 
 ---
 
@@ -160,7 +164,7 @@ Văn xuôi không kiểm được bằng máy.
 
 Đo trên hai tệp Gun cung cấp. **Hai tệp KHÔNG nằm trong kho git** (chứa cấu trúc tri
 thức cá nhân, URL riêng, tài khoản) — kho chỉ giữ số đo rút ra, đúng ranh giới đã đặt
-cho nguồn thương mại (C4).
+cho nguồn thương mại (X4).
 
 | Hạng mục | Số đo |
 |---|---|
@@ -263,11 +267,15 @@ ghi. Chỉ con người biết đây là câu hỏi sai loại.
 >
 > | Luồng | Bản chất | Nguồn đúng |
 > |---|---|---|
-> | **A** | hằng số lý hoá (pKa, gắn protein) | dược điển |
-> | **B** | dữ kiện thị trường / pháp quy | đăng ký thuốc quốc gia |
-> | **C** | khuyến cáo lâm sàng | sách · hướng dẫn hội → **NotebookLM** |
+> | **S1** | hằng số lý hoá (pKa, gắn protein) | dược điển |
+> | **S2** | dữ kiện thị trường / pháp quy | đăng ký thuốc quốc gia |
+> | **S3** | khuyến cáo lâm sàng | sách · hướng dẫn hội → **NotebookLM** |
+> | **S4** | hiệu quả so sánh (A có hơn B không) | nghiên cứu gốc, phân tích gộp |
 >
-> Chỉ **Luồng C** đi qua luồng phác đồ. A và B **gác lại có tên có lý do**, không hỏi.
+> Chỉ **S3** đi qua luồng phác đồ. `S1`, `S2`, `S4` **gác lại có tên có lý do**, không hỏi.
+
+Sổ đăng ký bốn luồng: `docs/QUY_UOC_KY_HIEU.md` §3.1. Trước đây đánh `A/B/C`, đổi ngày
+2026-09-04 vì trùng chặng lộ trình — xem §5 va chạm #7.
 
 Xem `docs/DECISIONS.md` #12.
 

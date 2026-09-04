@@ -273,16 +273,48 @@ nào"* sẽ nhận câu trả lời theo thị trường Mỹ hoặc theo nồng
 trích dẫn đầy đủ mà sai ngữ cảnh**. Đúng hạng lỗi cả hệ dựng lên để chặn.
 
 - **Chốt**: `concentrations` **gác lại có tên có lý do**, không hỏi NotebookLM. Chúng
-  cần **Luồng B** — nguồn đăng ký thuốc quốc gia (Cục Quản lý Dược) — là loại nguồn thứ
+  cần **Luồng S2** — nguồn đăng ký thuốc quốc gia (Cục Quản lý Dược) — là loại nguồn thứ
   ba chưa có trong hệ.
-- **Hệ quả rộng hơn**: phân loại **ba luồng** (A hằng số lý hoá · B dữ kiện thị
-  trường/pháp quy · C khuyến cáo lâm sàng) từng ghi trong thiết kế nay có **ca thật đầu
-  tiên đo được**. Trước đây nó là phân loại trên giấy.
+- **Hệ quả rộng hơn**: phân loại **ba luồng** (hằng số lý hoá · dữ kiện thị trường/pháp
+  quy · khuyến cáo lâm sàng) từng ghi trong thiết kế nay có **ca thật đầu tiên đo được**.
+  Trước đây nó là phân loại trên giấy. *(Ba luồng này nay mang mã `S1/S2/S3`, và có thêm
+  `S4` — xem quyết định #13.)*
 - **Việc kéo theo**: câu hỏi *"trần liều đúng lâm sàng ở Việt Nam thuộc nguồn quản lý
   dược nào"* — đã nêu ở `docs/BAN_GIAO_CHANG_A.md` A2 — nay không hoãn được nữa; nó
   chặn 26 khẳng định của chính chủ đề thí điểm.
 - **Kiểm chứng**: `docs/runs/PHAC_DO_01_doi_chieu.json` khoá phạm vi ở 28, ghi rõ 26 cái
   gác lại và lý do.
+
+---
+
+### 13. Bốn luồng nguồn `S1…S4`, đổ chung MỘT tầng bằng chứng A0
+**Chốt ngày**: 2026-09-04 · **Người chốt**: chủ dự án (Gun)
+
+Gun đưa một bộ khung thu thập đa nguồn: nguồn y khoa (SSD · PubMed · Europe PMC) và
+nguồn khoa học máy tính (IEEE · arXiv · ACM · DBLP · Papers With Code), quy trình EBM 5A
+với PICO ba cấp, cùng năm mô-đun sàng lọc — RoB2 — bóc dữ liệu — phân tích gộp.
+
+Câu hỏi chặn: **bộ máy đó nuôi đích nào?** Chốt: **cả hai, chung một tầng.**
+
+| Mã | Bản chất | Nguồn đúng | Nuôi |
+|---|---|---|---|
+| `S1` | hằng số lý hoá | dược điển | phép tính liều (H1) |
+| `S2` | dữ kiện thị trường / pháp quy | đăng ký thuốc quốc gia | H1 · `LO_TRINH` B1 |
+| `S3` | khuyến cáo lâm sàng | đỉnh tháp P5 · nhãn · hướng dẫn hội | H1 · `LO_TRINH` B2 |
+| `S4` | **hiệu quả so sánh** | nghiên cứu gốc | bài SR · khuyến cáo chọn thuốc |
+
+- **Chốt**: bộ khung năm mô-đun thuộc **`S4`**, không phải toàn bộ hệ. Mọi luồng đổ vào
+  **một tầng chung là A0 `HoSoBangChung`**; AnesthOS đọc tầng đó, **không đọc nguồn**.
+- **Hai luận điểm của Claude bị bác, ghi lại để không lặp**: (a) *"không phân tích gộp
+  nào sinh ra ngưỡng liều nên `S4` vô dụng với AnesthOS"* — sai, Gun không đòi nó **sinh**
+  con số mà đòi nó trả lời **vì sao con số đó là ngưỡng**; (b) *"đỉnh tháp và đáy tháp
+  chỉ ngược hướng nhau"* — sai, muốn có đỉnh tháp thì phải có đáy tháp, và
+  `docs/QUY_TRINH_5A.md:49-56` đã ghi đúng điều đó từ trước.
+- **Ký hiệu**: `S` cấp mới; luồng **không còn** mang mã `A/B/C` vì trùng chặng lộ trình.
+  Cùng đợt dọn thêm ba va chạm: `C` (bốn nghĩa) · `Q` · `K`. Xem `QUY_UOC_KY_HIEU.md` §5
+  va chạm #5–#7.
+- **Chưa gỡ, không thuộc quyết định này**: `S4` cần thư viện số (`scipy`, NetworkX) mà
+  **L2 cấm thêm phụ thuộc**. Phải quyết riêng: sửa L2, hay bỏ phân tích gộp khỏi phạm vi.
 
 ---
 

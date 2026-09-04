@@ -106,12 +106,16 @@ Một khẳng định = một bản ghi. Văn xuôi không kiểm được bằn
 
 ## 4 · Bốn điều cấm
 
+> Series `X` **cục bộ, riêng tài liệu này** — dẫn từ ngoài phải viết đủ
+> `PHAC_DO_01.X4`. Trước đây đánh `C1…C4`, đổi 2026-09-04 vì `C` đã là chặng lộ
+> trình toàn cục. Xem `QUY_UOC_KY_HIEU.md` §5 va chạm #6.
+
 | # | Cấm | Vì sao |
 |---|---|---|
-| **C1** | Điền con số **không có** trong `trich_nguyen_van`, dù "biết là đúng" | đó là kiến thức của mô hình, không phải của nguồn — ngoài phạm vi truy vết được |
-| **C2** | Gộp nhiều điều kiện vào một khẳng định | *"4,5 mg/kg (7 nếu có adrenaline)"* phải là **hai** bản ghi |
-| **C3** | Bỏ bản ghi vì nó mâu thuẫn với bản ghi khác | mâu thuẫn giữa hai nguồn là **phát hiện**, không phải lỗi — giữ cả hai, đánh dấu |
-| **C4** | Chép nguyên văn từ **sách giáo khoa** vào kho git | nguồn thương mại: kho chỉ lưu toạ độ + băm + độ dài. Nguyên văn ở lại máy Gun |
+| **X1** | Điền con số **không có** trong `trich_nguyen_van`, dù "biết là đúng" | đó là kiến thức của mô hình, không phải của nguồn — ngoài phạm vi truy vết được |
+| **X2** | Gộp nhiều điều kiện vào một khẳng định | *"4,5 mg/kg (7 nếu có adrenaline)"* phải là **hai** bản ghi |
+| **X3** | Bỏ bản ghi vì nó mâu thuẫn với bản ghi khác | mâu thuẫn giữa hai nguồn là **phát hiện**, không phải lỗi — giữ cả hai, đánh dấu |
+| **X4** | Chép nguyên văn từ **sách giáo khoa** vào kho git | nguồn thương mại: kho chỉ lưu toạ độ + băm + độ dài. Nguyên văn ở lại máy Gun |
 
 **Và một điều cấm nặng nhất, viết riêng:**
 

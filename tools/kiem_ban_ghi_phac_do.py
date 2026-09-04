@@ -51,9 +51,9 @@ def kiem_mot_ban_ghi(ban_ghi: dict) -> tuple[str, str]:
     if not khang_dinh:
         return VO_HIEU, "bản ghi không có khẳng định"
     if not nguyen_van or not str(nguyen_van).strip():
-        # Sau khi gỡ nguyên văn nguồn thương mại khỏi kho (ràng buộc C4), trường này
-        # còn lại toạ độ + băm. Khi đó phép neo phải chạy trên máy Gun, nơi có nguyên
-        # văn — ở đây khai VÔ HIỆU chứ không khai ĐẠT.
+        # Sau khi gỡ nguyên văn nguồn thương mại khỏi kho (điều cấm PHAC_DO_NHAP.X4),
+        # trường này còn lại toạ độ + băm. Khi đó phép neo phải chạy trên máy Gun, nơi
+        # có nguyên văn — ở đây khai VÔ HIỆU chứ không khai ĐẠT.
         return VO_HIEU, "bản ghi không mang nguyên văn nguồn để đối chiếu"
 
     ket = check_output(khang_dinh, [str(nguyen_van)], domain="clinical", strict=True)

@@ -24,11 +24,14 @@ chân lý. Kiểm thử là bản diễn dịch của đặc tả, không thay t
 
 ## 2. Ba điều cấm
 
+> Series `X` **cục bộ, riêng tài liệu này** — dẫn từ ngoài phải viết đủ `AG1.X1`.
+> Trước đây đánh `C1…C3`, đổi 2026-09-04 vì `C` đã là chặng lộ trình toàn cục.
+
 | # | Cấm | Vì sao |
 |---|---|---|
-| **C1** | **Sửa bất cứ tệp nào trong `tests/`** | kiểm thử được viết TRƯỚC khi có mã, bởi người khác. Sửa nó là phá đúng rào cản mà nó tồn tại để dựng |
-| **C2** | **Đi tìm bốn con số Đ1–Đ4 rồi cài cho khớp** | xem §3 — đây là điều quan trọng nhất trong tài liệu này |
-| **C3** | Thêm thư viện mới, chạm `sr_agent/`, `pipeline.py`, `pyproject.toml` | vùng cấm sửa; chỉ dùng `pydantic` + thư viện chuẩn |
+| **X1** | **Sửa bất cứ tệp nào trong `tests/`** | kiểm thử được viết TRƯỚC khi có mã, bởi người khác. Sửa nó là phá đúng rào cản mà nó tồn tại để dựng |
+| **X2** | **Đi tìm bốn con số Đ1–Đ4 rồi cài cho khớp** | xem §3 — đây là điều quan trọng nhất trong tài liệu này |
+| **X3** | Thêm thư viện mới, chạm `sr_agent/`, `pipeline.py`, `pyproject.toml` | vùng cấm sửa; chỉ dùng `pydantic` + thư viện chuẩn |
 
 **Nếu bạn tin một kiểm thử SAI:** không sửa nó. Ghi lại bất đồng (tên kiểm thử,
 vì sao bạn cho là sai, đặc tả nói gì) rồi **DỪNG**. Đây là chỗ **duy nhất** được

@@ -53,7 +53,7 @@ def test_khong_boc_duoc_mo_neo_thi_VO_HIEU_chu_khong_phai_DAT():
 
 
 def test_khong_co_nguyen_van_thi_VO_HIEU():
-    """Sau khi gỡ nguyên văn nguồn thương mại (C4), trường này rỗng — không được thành ĐẠT."""
+    """Sau khi gỡ nguyên văn nguồn thương mại (X4), trường này rỗng — không được thành ĐẠT."""
     for rong in (None, "", "   "):
         trang_thai, ly_do = kiem_mot_ban_ghi(ban_ghi("5", nguyen_van=rong))
         assert trang_thai == VO_HIEU
