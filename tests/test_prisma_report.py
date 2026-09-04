@@ -55,3 +55,45 @@ def test_prisma_report_counts(store):
     assert "- **Studies included in systematic review**: 1" in report
     # Assert specific exclusion reasons
     assert "- **ET1**: 1 records" in report
+
+
+# --- Không đo được phải kêu VÔ HIỆU, không được trả 0 (luật L3) -------------------------
+
+def test_khong_co_du_lieu_thi_bao_VO_HIEU_chu_khong_bao_0(store):
+    """Kho rỗng: '0 bản trùng bị loại' và 'chưa ai đo bản trùng' KHÔNG được in giống nhau."""
+    report = generate_prisma_report(store)
+    assert "VÔ HIỆU" in report
+    assert "- **Records identified from databases**: 0" not in report
+    assert "- **Duplicate records removed**: 0" not in report
+
+
+def test_du_phong_dem_dung_ten_su_kien_pipeline_dang_ghi(store):
+    """Không có runs -> phải đếm được qua events, bằng ĐÚNG tên pipeline ghi ra."""
+    store.log_event("ieee:11111111", "DEDUP_DROPPED", "trùng mờ với ieee:22222222 (score=97.0)")
+    store.log_event("ieee:33333333", "DEDUP_MERGED", "thay thế arxiv:2401.1 (tier ưu tiên)")
+
+    report = generate_prisma_report(store)
+    assert "- **Duplicate records removed**: 2" in report
+    # Trùng tầng 1 không được pipeline ghi sự kiện -> con số này là SÀN, phải nói ra
+    assert "SÀN" in report
+
+
+def test_ten_su_kien_cu_da_chet_khong_con_duoc_tin(store):
+    """'DUPLICATE_ID'/'FETCHED' là tên KHÔNG AI GHI — không được lấy làm căn cứ."""
+    store.log_event("ieee:11111111", "DUPLICATE_ID", "tên cũ, không nơi nào trong kho ghi ra")
+    store.log_event("ieee:22222222", "FETCHED", "tên cũ, không nơi nào trong kho ghi ra")
+
+    report = generate_prisma_report(store)
+    assert "- **Duplicate records removed**: 1" not in report
+    assert "- **Records identified from databases**: 1" not in report
+    assert "VÔ HIỆU" in report
+
+
+def test_so_do_mermaid_khong_vo_cu_phap_khi_VO_HIEU(store):
+    """Nhãn VÔ HIỆU không được mang dấu ngoặc vuông — sẽ làm hỏng nút mermaid."""
+    report = generate_prisma_report(store)
+    so_do = report.split("```mermaid")[1]
+    for dong in so_do.splitlines():
+        if "Identified:" in dong or "Duplicates Removed:" in dong:
+            assert dong.count("[") == dong.count("]")
+            assert "[1 lần chạy]" not in dong

@@ -20,44 +20,110 @@ from sr_agent.store.staging import StagingStore
 logger = logging.getLogger("tools.prisma_report")
 
 
-def generate_prisma_report(store: StagingStore) -> str:
-    conn = store.conn
-    
-    # 1. Identification
-    # Sum fetched from runs
-    total_fetched_runs = 0
-    total_duplicates_runs = 0
-    total_rubric_rejected_runs = 0
-    
+# --- Số đo của sơ đồ, kèm trạng thái VÔ HIỆU (luật L3) ---------------------------------
+#
+# Trước đây ba bộ đếm dưới đây hỏi `events` bằng những TÊN KHÔNG AI GHI:
+#   hỏi 'FETCHED' · 'DUPLICATE_ID' · 'DUPLICATE_FUZZY' · 'REJECTED'+detail LIKE '%rubric%'
+#   pipeline ghi 'DEDUP_DROPPED' · 'DEDUP_MERGED' · 'RUBRIC_REJECTED'
+# Giao của hai tập là RỖNG, nên mọi nhánh dự phòng luôn trả 0. Nhánh chính (đọc
+# runs.report_json) thì chạy đúng, nên lỗi này bị che: hễ có bản ghi `runs` là số ra đúng.
+# Chỗ chết người là khi KHÔNG có `runs` — báo cáo in ra 0 và "0 bản trùng bị loại" trông
+# y hệt "chưa ai đo bản trùng".
+
+class SoDo:
+    """Một con số của sơ đồ. `vo_hieu=True` nghĩa là KHÔNG ĐO ĐƯỢC, khác hẳn giá trị 0."""
+
+    def __init__(self, gia_tri: int | None, nguon: str, ghi_chu: str = "") -> None:
+        self.gia_tri = gia_tri
+        self.nguon = nguon
+        self.ghi_chu = ghi_chu
+
+    @property
+    def vo_hieu(self) -> bool:
+        return self.gia_tri is None
+
+    def __str__(self) -> str:
+        if self.vo_hieu:
+            return f"VÔ HIỆU (không đo được — {self.ghi_chu})"
+        return f"{self.gia_tri}" + (f"  [{self.ghi_chu}]" if self.ghi_chu else "")
+
+    def cho_so_do(self) -> str:
+        """Nhãn ngắn dùng trong sơ đồ mermaid."""
+        return "VÔ HIỆU" if self.vo_hieu else str(self.gia_tri)
+
+
+def _tong_tu_runs(conn, khoa: str) -> tuple[int, int]:
+    """Cộng một khoá qua mọi bản ghi `runs`. Trả (tổng, số lần chạy CÓ khai khoá đó).
+
+    Số thứ hai mới là thứ phân biệt "đo được và bằng 0" với "chưa ai đo".
+    """
+    tong = 0
+    so_lan = 0
     for row in conn.execute("SELECT report_json FROM runs"):
         try:
             report = json.loads(row["report_json"])
-            total_fetched_runs += report.get("fetched", 0)
-            total_duplicates_runs += report.get("duplicates", 0)
-            total_rubric_rejected_runs += report.get("rejected_by_rubric", 0)
         except Exception:
-            pass
-            
-    # Fallback to events
-    fetched_events = conn.execute("SELECT COUNT(*) n FROM events WHERE event_type = 'FETCHED'").fetchone()["n"]
-    identified = max(total_fetched_runs, fetched_events)
-    
-    # Duplicates
-    dup_events = conn.execute(
-        "SELECT COUNT(*) n FROM events WHERE event_type IN ('DUPLICATE_ID', 'DUPLICATE_FUZZY')"
+            continue
+        if khoa in report:
+            tong += int(report.get(khoa) or 0)
+            so_lan += 1
+    return tong, so_lan
+
+
+def _dem_su_kien(conn, ten: tuple[str, ...]) -> int:
+    cho = ",".join("?" for _ in ten)
+    return conn.execute(
+        f"SELECT COUNT(*) n FROM events WHERE event_type IN ({cho})", ten
     ).fetchone()["n"]
-    duplicates_removed = max(total_duplicates_runs, dup_events)
-    
+
+
+def generate_prisma_report(store: StagingStore) -> str:
+    conn = store.conn
+
+    # 1. Identification
+    tong, so_lan = _tong_tu_runs(conn, "fetched")
+    if so_lan:
+        identified = SoDo(tong, "runs.report_json", f"{so_lan} lần chạy")
+    else:
+        identified = SoDo(
+            None, "—",
+            "không lần chạy nào ghi 'fetched', và không nơi nào trong kho ghi sự kiện FETCHED",
+        )
+
+    # Duplicates — nhánh dự phòng đếm ĐÚNG tên pipeline đang ghi.
+    tong, so_lan = _tong_tu_runs(conn, "duplicates")
+    if so_lan:
+        duplicates_removed = SoDo(tong, "runs.report_json", f"{so_lan} lần chạy")
+    else:
+        n = _dem_su_kien(conn, ("DEDUP_DROPPED", "DEDUP_MERGED"))
+        if n:
+            # pipeline.py:83-85 nhánh DUPLICATE_ID thoát ra KHÔNG ghi sự kiện nào, mà
+            # pipeline.py nằm trong vùng cấm L2 nên không sửa được từ đây. Vậy con số
+            # này là SÀN, không phải tổng.
+            duplicates_removed = SoDo(n, "events", "SÀN — trùng tầng 1 không được ghi sự kiện")
+        else:
+            duplicates_removed = SoDo(
+                None, "—", "không có lần chạy nào và không có sự kiện dedup nào",
+            )
+
     # Rubric rejected
-    rubric_events = conn.execute(
-        "SELECT COUNT(*) n FROM events WHERE event_type = 'REJECTED' AND detail LIKE '%rubric%'"
-    ).fetchone()["n"]
-    # Also fallback to status REJECTED if no events
-    rubric_docs = conn.execute(
-        "SELECT COUNT(*) n FROM documents WHERE status = 'rejected' AND uid NOT IN (SELECT DISTINCT uid FROM screening)"
-    ).fetchone()["n"]
-    rubric_rejected = max(total_rubric_rejected_runs, rubric_events, rubric_docs)
-    
+    tong, so_lan = _tong_tu_runs(conn, "rejected_by_rubric")
+    if so_lan:
+        rubric_rejected = SoDo(tong, "runs.report_json", f"{so_lan} lần chạy")
+    else:
+        n = _dem_su_kien(conn, ("RUBRIC_REJECTED",))
+        if not n:
+            n = conn.execute(
+                "SELECT COUNT(*) n FROM documents WHERE status = 'rejected' "
+                "AND uid NOT IN (SELECT DISTINCT uid FROM screening)"
+            ).fetchone()["n"]
+            nguon = "documents.status"
+        else:
+            nguon = "events"
+        rubric_rejected = SoDo(n, nguon) if n else SoDo(
+            None, "—", "không lần chạy, không sự kiện RUBRIC_REJECTED, không bản ghi bị loại",
+        )
+
     # 2. Screening
     # Screened: documents that have screening verdicts
     screened = conn.execute("SELECT COUNT(DISTINCT uid) n FROM screening").fetchone()["n"]
@@ -141,8 +207,9 @@ def generate_prisma_report(store: StagingStore) -> str:
         "",
         "```mermaid",
         "flowchart TD",
-        f"    ID[Identified: {identified} records] --> DUP[Duplicates Removed: {duplicates_removed} records]",
-        f"    DUP --> RUB[Quality Gate Excluded: {rubric_rejected} records]",
+        f"    ID[Identified: {identified.cho_so_do()} records] --> "
+        f"DUP[Duplicates Removed: {duplicates_removed.cho_so_do()} records]",
+        f"    DUP --> RUB[Quality Gate Excluded: {rubric_rejected.cho_so_do()} records]",
         f"    DUP --> SCR[Screened: {screened} records]",
         f"    SCR --> EXC[Screening Excluded: {excluded} records]",
         f"    SCR --> ELG[Eligible: {eligible} records]",
