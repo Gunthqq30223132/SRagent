@@ -53,6 +53,17 @@ def decide(
     if candidate.uid in existing_uids:
         return DedupDecision(DedupAction.DUPLICATE_ID, candidate.uid, 100.0)
 
+    # Tầng 1 (tiếp): định danh KHÁC của cùng một bài. Europe PMC bơm sẵn
+    # `pubmed:…`/`doi:…` vào alternate_uids đúng để chỗ này nhận ra bản tải từ
+    # Europe PMC và bản tải thẳng từ PubMed là MỘT bài. Không so ở đây thì cả hai
+    # rơi xuống tầng 2 (so tiêu đề mờ): tiêu đề giống thì bản thứ hai bị VỨT, tiêu
+    # đề lệch quá ngưỡng thì lọt cả hai và được đếm thành HAI nguồn độc lập —
+    # hai chiều sai ngược nhau, không chiều nào có tín hiệu.
+    # Duyệt theo thứ tự list (không phải set) để cùng input luôn cho cùng output.
+    for uid_khac in candidate.alternate_uids:
+        if uid_khac in existing_uids:
+            return DedupDecision(DedupAction.DUPLICATE_ID, uid_khac, 100.0)
+
     # --- Tầng 2: Fuzzy title (Levenshtein ratio) ---
     if not titles_index:
         return DedupDecision(DedupAction.NEW)
