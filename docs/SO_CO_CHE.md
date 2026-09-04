@@ -142,9 +142,22 @@ Chỗ trống lớn nhất hiện nay. Xem phần thiết kế đề xuất ở 
 |---|---|
 | **Làm gì** | Mọi con số trong bản tóm tắt phải neo được vào con số có trong nguồn |
 | **Phụ thuộc** | `tools/guard/firewall.py`, tham số `domain="clinical"` |
-| **Hỏng kiểu nào** | Gọi thiếu `domain="clinical"` → liều thuốc, thời gian, INR **lọt hết** |
-| **Dấu hiệu** | `anchors_checked=0` trên văn bản rõ ràng có số lâm sàng |
-| **Xem ở đâu** | `tools/guard/firewall.py` |
+| **Hỏng kiểu nào** | Gọi thiếu `domain="clinical"` → liều thuốc, thời gian, INR **lọt hết**. Không ai gọi → tầng này chỉ có trên bản đồ |
+| **Dấu hiệu** | `python3 tools/kiem_ban_ghi_phac_do.py docs/runs/PHAC_DO_01_ban_ghi.json` — mã thoát `0` ĐẠT · `1` TRƯỢT · `3` còn VÔ HIỆU · `2` không đọc được |
+| **Xem ở đâu** | `tools/guard/firewall.py` · lớp bọc `tools/kiem_ban_ghi_phac_do.py` |
+
+**Đã hỏng thật một lần, im lặng.** Sơ đồ trên vẽ [8] chắn ngay trước AnesthOS, nhưng
+`check_output` chỉ được gọi từ `demo/`, `docs/audit/` và `tests/` — **không đường chạy sản
+xuất nào gọi nó**. 36 bản ghi thuốc tê, gồm liều nhũ tương lipid cấp cứu LAST, chưa từng
+đi qua phép neo nào. Critic (L10) tìm ra, không phải phép kiểm nào.
+
+> ⚠️ **`passed=True` KHÔNG có nghĩa là ĐẠT.** `check_output` trả `passed=True` cho khẳng
+> định không bóc được mỏ neo số nào (`"one-third"`, `"CNS symptoms present first"`). Đó là
+> **VÔ HIỆU**, không phải đạt — `kiem_ban_ghi_phac_do.py` tách hẳn trạng thái thứ ba ra.
+> Gộp hai thứ này là đúng kiểu hỏng cả hệ dựng lên để chặn.
+
+**Số đo lần chạy đầu** (2026-09-04, 36 bản ghi): ĐẠT 31 · TRƯỢT 0 · VÔ HIỆU 5. Khớp với
+phép đếm thẻ số viết độc lập trước đó — hai cách đo, cùng một số.
 
 ---
 
@@ -168,3 +181,9 @@ Giữ kết luận mà bỏ căn cứ nghĩa là khi giả thiết sai thì khô
 
 **3. Loại ở cửa tìm kiếm không để lại vết; loại ở vòng sàng thì có.**
 Nên mọi tiêu chí cần đếm được phải nằm ở vòng sàng, không nằm trong truy vấn.
+
+**4. Một tầng bảo vệ chỉ có trên bản đồ thì tệ hơn là không vẽ nó.**
+Ba lỗi tìm ra ngày 2026-09-04 ([8] không ai gọi · PRISMA hỏi tên sự kiện không ai ghi ·
+D34 không đọc `alternate_uids`) đều lọt qua vì **chưa ai đọc đầu ra thật bao giờ** —
+kiểm thử xanh, tài liệu đúng, đường chạy rỗng. Vì vậy mục **dấu hiệu** của mỗi cơ chế từ
+nay phải là **một dòng lệnh chạy được in ra số thật**, không phải một câu mô tả.
