@@ -1,5 +1,16 @@
 # SR-Agent — Tài liệu bàn giao hệ thống
 
+> # ⚠ TÀI LIỆU LỊCH SỬ — KHÔNG PHẢI HIỆN TRẠNG
+>
+> Tệp này mô tả SR-Agent khi nó còn là **pipeline ingestion cho khoa học máy tính**
+> (M0–M3, 75 kiểm thử, nhánh `claude/sr-agent-pipeline-design-rqtctp`). Hệ **đã xoay sang
+> y khoa** và nay là bộ máy sinh chứng cứ cho AnesthOS.
+>
+> **Hiện trạng thật: `docs/TONG_QUAN.md`.** Lộ trình: `docs/LO_TRINH.md`.
+>
+> Giữ tệp này vì hai lý do: series mã chặng `M0…M6` khai ở đây, và ba nguyên tắc thiết kế
+> ở §1 vẫn còn hiệu lực (rẻ trước đắt sau · tất định ở mọi tầng lọc · người duyệt cuối).
+
 > **Mục đích tài liệu**: bàn giao toàn bộ thiết kế + hiện trạng cho nhóm để tiếp tục brainstorm.
 > Đọc xong tài liệu này, bạn nắm được: hệ thống làm gì, tại sao thiết kế như vậy,
 > cái gì đã chạy được, và những câu hỏi nào còn mở.

@@ -105,7 +105,7 @@ dựng. Xem Đ3 — và đọc kỹ cảnh báo ở đó.
 | **LGH** (mg/kg) | hoạt chất · adrenaline · **đường dùng** · **cơ sở cân nặng** · **loại trần** | có 2, thiếu 3 |
 | **Trần một lần** (mg) | như trên | có 2, thiếu 3 |
 | **C_adjust** | **tổ hợp** tình trạng bệnh nhân | không có trường |
-| **IBW** | công thức · giới tính · chiều cao | không có trường |
+| **IBW** | công thức · giới tính · chiều cao | **đã có** — `AnesthOS/src/domain/calculators/ibw.ts` |
 | **Trần 24 h** (mg) | hoạt chất · đường dùng | không có trường |
 
 ### 3.1 · `loai_tran` là KHOÁ, không phải cột thêm
@@ -126,13 +126,18 @@ ca lidocaine 5,0 mg/kg rơi vào — và nâng nó từ *cột* lên *khoá*.
 
 | Giá trị | Nghĩa |
 |---|---|
-| `IBW` | nguồn nói rõ dùng cân nặng lý tưởng |
-| `TBW` | nguồn nói rõ dùng cân nặng thực |
-| `khong_noi` | **nguồn không nói** — không được mặc định thành IBW hay TBW |
+| `IBW` | cân nặng lý tưởng — nguồn nói rõ |
+| `ABW` | cân nặng hiệu chỉnh — `ABW = IBW + 0,4 × (cân nặng thật − IBW)` |
+| `TBW` | cân nặng thực — nguồn nói rõ |
+| `khong_noi` | **nguồn không nói** — không được mặc định thành bất kỳ giá trị nào |
 
-Bằng chứng thật cho việc này là bắt buộc: `Table 5.2` ghi thẳng *"Patient ideal body
-weight should be used"*; đoạn UpToDate cho lidocaine chỉ ghi *"5 mg/kg"* **không nói cân
-nặng nào**. Ở bệnh nhân béo phì hai cách hiểu lệch nhau rất lớn.
+`ABW` **bắt buộc phải có mặt** trong danh sách: `calculateIBW()` của AnesthOS đã trả về
+`adjustedBodyWeightKg` cùng lúc với `ibwKg`. Bỏ `ABW` khỏi enum là bỏ đúng chỗ nguy hiểm
+nhất — ở bệnh nhân béo phì, ba cách hiểu cân nặng tách xa nhau nhất chính là ở đó.
+
+Vì sao phải khai, có ca thật cả hai phía: `Table 5.2` ghi thẳng *"Patient ideal body
+weight should be used"* → `IBW`; còn đoạn UpToDate cho lidocaine chỉ ghi *"5 mg/kg"*, **không
+nói cân nặng nào** → bắt buộc `khong_noi`, cấm đoán.
 
 ### 3.3 · `C_adjust` là BẢNG TRA TỔ HỢP, cấm nhân chuỗi
 
@@ -218,6 +223,6 @@ cũng không phải ĐẠT. Chạy được thì báo số, không chạy đư�
 
 | Việc | Vì sao hoãn |
 |---|---|
-| Công thức IBW cụ thể (Devine · Robinson · …) | là **một phép tính riêng có nguồn riêng**, thuộc luồng `S3`; chọn công thức trước khi có bằng chứng là đặt nhãn trước khi đo |
+| ~~Công thức IBW cụ thể~~ | **KHÔNG còn hoãn — đã có sẵn.** `AnesthOS/src/domain/calculators/ibw.ts` dùng **Devine 1974**, kèm `ClinicalProvenance` đầy đủ và `ClinicalValidationError` fail-loud. H1 **dùng lại**, không viết mới. Việc còn lại chỉ là đối chiếu xuất xứ đó qua luồng `S3` như mọi khẳng định khác |
 | Ô chở "nghiên cứu gốc đo gì, trên ai" | `HoSoBangChung` chưa có ô; A0 đang đóng băng với 100 kiểm thử đỏ — xem `LO_TRINH.md` §3 câu 6 |
 | Liều tối đa theo đường dùng cho **mọi** hoạt chất | mới có bằng chứng cho lidocaine; phần còn lại cần một lượt phác đồ nữa |

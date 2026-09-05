@@ -5,6 +5,9 @@
 Claude Code tự nạp tệp này mỗi phiên làm việc trong kho SR-Agent. Mọi thứ ghi ở đây có
 hiệu lực ngay, không cần ai nhắc lại.
 
+**Bắt đầu ở đây nếu chưa nắm hệ: `docs/TONG_QUAN.md`** — bản đồ tài liệu + hiện trạng đo
+được. `docs/HANDOVER.md` là **tài liệu lịch sử**, mô tả hệ trước khi xoay sang y khoa.
+
 Luật vận hành kỹ thuật (L1–L11): `docs/KE_HOACH_ANTIGRAVITY.md` §1.
 Ký hiệu và quy ước đánh số: `docs/QUY_UOC_KY_HIEU.md`.
 Quyết định đã chốt: `docs/DECISIONS.md` — đừng mở lại.
